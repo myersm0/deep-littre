@@ -86,22 +86,31 @@ def build_prompt(row: dict) -> str:
 	return "\n".join(lines)
 
 
-def fetch_items(db_path: str, limit: int) -> list[dict]:
+def fetch_items(db_path: str, limit: int, exclude_ids: set | None = None) -> list[dict]:
 	conn = sqlite3.connect(db_path)
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
-	cur.execute("""
-		SELECT s.sense_id, e.headword, s.content_plain, s.role,
+	exclude_clause = ""
+	params = []
+	if exclude_ids:
+		placeholders = ",".join("?" for _ in exclude_ids)
+		exclude_clause = f"AND s.sense_id NOT IN ({placeholders})"
+		params.extend(exclude_ids)
+	params.append(limit)
+
+	cur.execute(f"""
+		SELECT s.sense_id, s.indent_id, e.headword, s.content_plain, s.role,
 			p.content_plain as parent_def, p.num as parent_num,
 			s.parent_sense_id
 		FROM senses s
 		JOIN entries e ON s.entry_id = e.entry_id
 		LEFT JOIN senses p ON s.parent_sense_id = p.sense_id
 		WHERE s.role IN ('continuation', 'elaboration')
+		{exclude_clause}
 		ORDER BY (s.sense_id * 2654435761) % 4294967296
 		LIMIT ?
-	""", (limit,))
+	""", params)
 
 	items = []
 	for row in cur.fetchall():
@@ -149,7 +158,7 @@ def review_batch(
 
 		try:
 			response = client.messages.create(
-				model="claude-opus-4-5",
+				model="claude-opus-4-6",
 				max_tokens=5,
 				system=system,
 				messages=[{"role": "user", "content": prompt}],
@@ -160,12 +169,13 @@ def review_batch(
 			is_target = answer.startswith("loc")
 			tag = f"← {role.upper()}" if is_target else ""
 			print(
-				f"[{i + 1}/{len(items)}] {item['headword']:20} "
+				f"[{i + 1}/{len(items)}] {item['indent_id'] or '?':30} "
 				f"pipeline={item['role']:15} opus={answer:4} {tag}"
 			)
 
 			results.append({
 				"sense_id": item["sense_id"],
+				"indent_id": item["indent_id"],
 				"headword": item["headword"],
 				"content": item["content_plain"][:200],
 				"pipeline_role": item["role"],
@@ -179,6 +189,7 @@ def review_batch(
 			print(f"[{i + 1}] ERROR {item['headword']}: {exc}", file=sys.stderr)
 			results.append({
 				"sense_id": item["sense_id"],
+				"indent_id": item["indent_id"],
 				"headword": item["headword"],
 				"pipeline_role": item["role"],
 				"opus_answer": f"ERROR:{exc}",
@@ -186,7 +197,6 @@ def review_batch(
 			})
 
 	if not dry_run:
-		# Opus 4.5 pricing: $5/M input, $25/M output
 		cost = (total_input_tokens * 5 + total_output_tokens * 25) / 1_000_000
 		print(f"\nTokens: {total_input_tokens} input, {total_output_tokens} output")
 		print(f"Estimated cost: ${cost:.4f}")
@@ -227,13 +237,20 @@ def main():
 	parser.add_argument("--limit", type=int, default=100)
 	parser.add_argument("--dry-run", action="store_true")
 	parser.add_argument("--output", default=None)
+	parser.add_argument("--exclude", default=None, help="JSON from a previous run to skip")
 	args = parser.parse_args()
 
 	output_path = args.output or f"llm_opus_{args.role}.json"
 
+	exclude_ids = None
+	if args.exclude:
+		prev = json.loads(Path(args.exclude).read_text())
+		exclude_ids = {r["sense_id"] for r in prev if r.get("sense_id")}
+		print(f"Excluding {len(exclude_ids)} items from {args.exclude}")
+
 	print(f"Binary review: is it a {args.role}?")
 	print(f"Fetching {args.limit} items from {args.db_path}...")
-	items = fetch_items(args.db_path, args.limit)
+	items = fetch_items(args.db_path, args.limit, exclude_ids=exclude_ids)
 	print(f"Got {len(items)} items\n")
 
 	results = review_batch(items, args.role, dry_run=args.dry_run)
