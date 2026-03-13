@@ -93,7 +93,7 @@ umap_raw = UMAP.fit(X[sample_mask, :]', 2; n_neighbors = 30, min_dist = 0.1)
 
 X_centered = copy(X)
 for (entry, indices) in entry_to_indices
-	length(indices) < 3 && continue
+#	length(indices) < 3 && continue
 	centroid = vec(mean(X[indices, :]; dims = 1))
 	X_centered[indices, :] .-= centroid'
 end
@@ -109,7 +109,18 @@ role_colors = Dict(
 	:other => :gray80,
 )
 
-draw_order = [:other, :possible_locution, :elaboration, :register, :figurative, :domain]
+draw_order = [:possible_locution, :elaboration, :register, :figurative, :domain, :other]
+legend_order = [:domain, :figurative, :register, :elaboration, :possible_locution, :other]
+
+display_name = Dict(
+	:other => "Other / continuation",
+	:possible_locution => "Locution (candidate)",
+	:elaboration => "Elaboration (Il se dit…)",
+	:register => "Register (Familièrement, etc.)",
+	:figurative => "Figurative (Fig.)",
+	:domain => "Domain (Terme de…)",
+)
+
 
 #make_umap_plot(umap_raw, labels, records, "Raw embeddings ($(length(records)) items)")
 #make_umap_plot(umap_centered, labels, records, "Centered embeddings ($(length(records)) items)")
@@ -118,23 +129,43 @@ sampled_labels = labels[sample_mask]
 sampled_records = records[sample_mask]
 title_str = "Centered embeddings ($(length(sample_mask)) items)"
 
-fig = Figure(size = (1200, 800))
-ax = Axis(fig[1, 1]; title = title_str, xlabel = "UMAP 1", ylabel = "UMAP 2")
+fig = Figure(size = (1200, 800), fontsize = 24, figure_padding = 30)
+ax = Axis(
+	fig[1, 1]; 
+	title = title_str, 
+	xlabel = "UMAP 1", 
+	ylabel = "UMAP 2",
+	xlabelsize = 24,
+	ylabelsize = 24,
+	xgridvisible = false,
+	ygridvisible = false,
+	xticklabelsvisible = false,
+	yticklabelsvisible = false,
+	xticksvisible = false,
+	yticksvisible = false,
+)
+
+xlims!(ax, (-34, -22))
+ylims!(ax, (-1, 7.5))
 
 for role in draw_order
 	mask = findall(==(role), sampled_labels)
 	isempty(mask) && continue
 	scatter!(
 		ax, [xy.embedding[j][1] for j in mask], [xy.embedding[j][2] for j in mask];
-		markersize = 4,
+		markersize = 5,
 		alpha = 0.5,
 		color = role_colors[role],
-		label = string(role),
+		label = display_name[role] => (; markersize = 18),
 		inspector_label = (self, i, p) -> sampled_records[mask[i]].id * "\n" * first(sampled_records[mask[i]].text, 120),
 	)
 end
 
 axislegend(ax; position = :rt)
+
+save("umap.png", fig)
+
+
 DataInspector(fig)
 
 
