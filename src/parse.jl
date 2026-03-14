@@ -11,6 +11,7 @@ function escape_xml(text::String)::String
 	text
 end
 
+
 # ── Normalization ────────────────────────────────────────────────
 
 function normalize_source(text::String)::String
@@ -169,7 +170,7 @@ function extract_content(node::XML.Node, ctx::ParseContext)
 	for child in XML.children(node)
 		nt = XML.nodetype(child)
 		if nt == XML.Text
-			push!(content_parts, escape_xml(XML.value(child)))
+			push!(content_parts, XML.value(child))
 		elseif nt == XML.Element
 			name = XML.tag(child)
 			if name == "cit"
@@ -198,7 +199,7 @@ function parse_citation(node::XML.Node)::Citation
 	for child in XML.children(node)
 		nt = XML.nodetype(child)
 		if nt == XML.Text
-			push!(text_parts, escape_xml(XML.value(child)))
+			push!(text_parts, XML.value(child))
 		elseif nt == XML.Element
 			push!(text_parts, XML.write(child))
 		end
