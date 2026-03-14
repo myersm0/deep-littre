@@ -1,0 +1,126 @@
+# Indent-split patches for Littré dictionary XML
+# Each entry is a single-line find-and-replace that inserts
+# a </indent><indent> boundary at a register/usage transition.
+
+# b.xml
+
+# Line 48851: "Substantivement." floats bare after a <cit> block.
+[[patches]]
+file = "b.xml"
+line = 48851
+old = "Substantivement."
+new = "</indent><indent>Substantivement."
+
+# c.xml
+
+# Line 76194: "Substantivement." trails a </cit> on the same line.
+[[patches]]
+file = "c.xml"
+line = 76194
+old = "</cit> Substantivement."
+new = "</cit></indent><indent>Substantivement."
+
+# Line 114492: "Familièrement." starts a new usage note mid-indent.
+[[patches]]
+file = "c.xml"
+line = 114492
+old = "Familièrement."
+new = "</indent><indent>Familièrement."
+
+# Line 182992: "Par extension," starts a new usage note mid-indent.
+[[patches]]
+file = "c.xml"
+line = 182992
+old = "Par extension,"
+new = "</indent><indent>Par extension,"
+
+# d.xml
+
+# Line 96853: "Par extension." starts a new usage note mid-indent.
+[[patches]]
+file = "d.xml"
+line = 96853
+old = "Par extension."
+new = "</indent><indent>Par extension."
+
+# Line 114141: "Absolument." starts a new usage note mid-indent.
+[[patches]]
+file = "d.xml"
+line = 114141
+old = "Absolument."
+new = "</indent><indent>Absolument."
+
+# h.xml
+
+# Line 24687: "Populairement." starts a new usage note mid-indent.
+[[patches]]
+file = "h.xml"
+line = 24687
+old = "Populairement."
+new = "</indent><indent>Populairement."
+
+# Line 32676: "Familièrement." needs its own indent block.
+[[patches]]
+file = "h.xml"
+line = 32676
+old = "Familièrement."
+new = "</indent><indent>Familièrement."
+
+# j.xml
+
+# Line 11321: "Absolument." starts a new usage note mid-indent.
+[[patches]]
+file = "j.xml"
+line = 11321
+old = "Absolument."
+new = "</indent><indent>Absolument."
+
+# o.xml
+
+# Line 9185: "Familièrement." starts a new usage note mid-indent.
+[[patches]]
+file = "o.xml"
+line = 9185
+old = "Familièrement."
+new = "</indent><indent>Familièrement."
+
+# Line 9607: "Populairement." needs its own indent block.
+[[patches]]
+file = "o.xml"
+line = 9607
+old = "Populairement."
+new = "</indent><indent>Populairement."
+
+# p.xml
+
+# Line 34782: "Absolument." starts a new usage note mid-indent.
+[[patches]]
+file = "p.xml"
+line = 34782
+old = "Absolument."
+new = "</indent><indent>Absolument."
+
+# t.xml
+
+# Line 46272: "Substantivement." starts a new usage note mid-indent.
+[[patches]]
+file = "t.xml"
+line = 46272
+old = "Substantivement."
+new = "</indent><indent>Substantivement."
+
+# Line 57208: "Familièrement." starts a new usage note mid-indent.
+[[patches]]
+file = "t.xml"
+line = 57208
+old = "Familièrement."
+new = "</indent><indent>Familièrement."
+
+# v.xml
+
+# Line 42190: "Familièrement." needs its own indent block.
+[[patches]]
+file = "v.xml"
+line = 42190
+old = "Familièrement."
+new = "</indent><indent>Familièrement."
