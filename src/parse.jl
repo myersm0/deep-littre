@@ -14,6 +14,7 @@ end
 # ── Normalization ────────────────────────────────────────────────
 
 function normalize_source(text::String)::String
+	text = replace(text, "<xmlittre" => "<xmlittre xml:space=\"preserve\""; count=1)
 	text = replace(text, "nom=\"PROVERBE\"" => "nom=\"PROVERBES\"")
 	text = replace(text, "nom=\"REMARQUES\"" => "nom=\"REMARQUE\"")
 	text = replace(text, r"<span\s+lang=\"la\">(.*?)</span>"s => s"<i lang=\"la\">\1</i>")
