@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+
 using ArgParse
 using DeepLittre
 
@@ -44,13 +45,16 @@ function main()
 	@info "Phase 5: Scope transitions"
 	scope_all!(entries)
 
+	@info "Collect review flags"
+	flags = collect_flags(entries)
+
 	tei_path = joinpath(output_dir, "littre.tei.xml")
 	@info "Emit TEI → $tei_path"
 	emit_tei(entries, tei_path)
 
 	sqlite_path = joinpath(output_dir, "littre.db")
 	@info "Emit SQLite → $sqlite_path"
-	emit_sqlite(entries, sqlite_path)
+	emit_sqlite(entries, sqlite_path; flags)
 
 	@info "Done."
 end

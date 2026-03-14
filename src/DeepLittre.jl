@@ -2,6 +2,7 @@ module DeepLittre
 
 using DBInterface
 using JSON3
+using Random
 using SQLite
 using TOML
 using Unicode
@@ -32,6 +33,9 @@ export scope_all!
 
 include("emit_tei.jl")
 export emit_tei
+
+include("flags.jl")
+export collect_flags
 
 include("emit_sqlite.jl")
 export emit_sqlite
