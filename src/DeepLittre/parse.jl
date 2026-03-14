@@ -348,7 +348,8 @@ function parse_file(path::String, patches::Vector{Patch} = Patch[])::Vector{Entr
 
 	doc = XML.parse(XML.Node, text)
 	root_node = doc[end]
-	[parse_entry(el, letter, ctx) for el in iter_descendants(root_node, "entree")]
+	entries = [parse_entry(el, letter, ctx) for el in iter_descendants(root_node, "entree")]
+	deduplicate_ids!(entries)
 end
 
 function parse_all(source_dir::String; patches_path::Union{Nothing, String} = nothing)::Vector{Entry}
@@ -369,10 +370,10 @@ function parse_all(source_dir::String; patches_path::Union{Nothing, String} = no
 		append!(all_entries, entries)
 	end
 
-	deduplicate_ids!(all_entries)
+	deduplicate_ids!(all_entries; verbose = true)
 end
 
-function deduplicate_ids!(entries::Vector{Entry})
+function deduplicate_ids!(entries::Vector{Entry}; verbose::Bool = false)
 	counts = Dict{String, Int}()
 	for entry in entries
 		counts[entry.id[]] = get(counts, entry.id[], 0) + 1
@@ -386,6 +387,6 @@ function deduplicate_ids!(entries::Vector{Entry})
 		end
 	end
 
-	@info "Total: $(length(entries)) entries"
+	verbose && @info "Total: $(length(entries)) entries"
 	entries
 end
