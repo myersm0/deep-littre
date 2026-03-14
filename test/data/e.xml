@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="ENVIE" sens="">
+<entete>
+<prononciation>an-vie</prononciation>
+<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Sentiment de tristesse, d'irritation ou de haine qui nous anime contre qui possède un bien que nous n'avons pas.
+<cit aut="BOILEAU" ref="Sat. VII">L'envie suit la vertu comme l'ombre suit le corps</cit>
+<indent><semantique type="indicateur">Fig.</semantique> Le serpent de l'envie.
+<cit aut="VOLTAIRE" ref="Henr. I">Ce monstre impétueux, aveugle en sa furie</cit>
+</indent>
+<indent><semantique type="domaine">Terme de mythologie.</semantique> L'Envie, divinité allégorique.</indent>
+</variante>
+<variante num="2">Désir.
+<cit aut="SÉVIGNÉ" ref="11 sept. 1680">J'aurais bien envie de vous embrasser</cit>
+<indent><exemple>Avoir envie</exemple>, désirer.
+<cit aut="ID." ref="15 janv. 1672">J'ai envie de partir demain</cit>
+</indent>
+<indent>Familièrement. Avoir envie de dormir, se dit quand on a sommeil.</indent>
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIIe s.
+<cit aut="WACE" ref="Rou, 7439">Mult par aveit grant envie</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">Provenç. enveia ; espagn. envidia ; ital. invidia ; du lat. invidia, de invidere (voy. ENVIER).</rubrique>
+</entree>
+<entree terme="ENVIER">
+<entete>
+<prononciation>an-vi-é</prononciation>
+<nature>v. a.</nature>
+</entete>
+<corps>
+<variante num="1">Porter envie à.
+<cit aut="CORNEILLE" ref="Cinna, II, 1">Je n'envie point le sort d'une si triste vie</cit>
+</variante>
+<variante num="2">Désirer ce qu'un autre possède.
+<cit aut="LA FONTAINE" ref="Fab. IV, 13">Ils n'envient point la nourriture des hommes</cit>
+<indent>Absolument.</indent>
+</variante>
+<variante num="3">Se livrer au sentiment de l'envie.
+<cit aut="PASCAL" ref="Pens. XXV, 88">Il n'a point envié la mort</cit>
+</variante>
+<variante num="4">Rivaliser avec.
+<cit aut="VOLTAIRE" ref="Mér. ch. 3">Ces ouvrages envient ceux de l'antiquité</cit>
+</variante>
+</corps>
+</entree>
+</xmlittre>
