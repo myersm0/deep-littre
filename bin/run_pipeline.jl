@@ -1,39 +1,45 @@
 #!/usr/bin/env julia
-
+using ArgParse
 using DeepLittre
 
+function parse_args_pipeline()
+	settings = ArgParseSettings(
+		prog = "run_pipeline",
+		description = "Deep-Littré pipeline: parse → enrich → scope → emit",
+	)
+
+	@add_arg_table! settings begin
+		"source_dir"
+			help = "directory containing Gannaz XML source files (a.xml–z.xml)"
+			required = true
+		"output_dir"
+			help = "directory for output files (littre.tei.xml, littre.db)"
+			required = true
+		"--patches"
+			help = "path to patches.toml"
+			arg_type = String
+			default = nothing
+		"--verdicts"
+			help = "path to verdicts CSV (LLM classification overrides)"
+			arg_type = String
+			default = nothing
+	end
+
+	parse_args(settings)
+end
+
 function main()
-	if length(ARGS) < 2
-		println(stderr, "Usage: julia run_pipeline.jl <source_dir> <output_dir> [--patches PATH] [--verdicts PATH]")
-		exit(1)
-	end
+	args = parse_args_pipeline()
 
-	source_dir = ARGS[1]
-	output_dir = ARGS[2]
-
-	patches_path = nothing
-	verdicts_path = nothing
-	i = 3
-	while i <= length(ARGS)
-		if ARGS[i] == "--patches" && i < length(ARGS)
-			patches_path = ARGS[i + 1]
-			i += 2
-		elseif ARGS[i] == "--verdicts" && i < length(ARGS)
-			verdicts_path = ARGS[i + 1]
-			i += 2
-		else
-			println(stderr, "Unknown argument: $(ARGS[i])")
-			exit(1)
-		end
-	end
-
+	source_dir = args["source_dir"]
+	output_dir = args["output_dir"]
 	mkpath(output_dir)
 
 	@info "Phase 1: Parse"
-	entries = parse_all(source_dir; patches_path)
+	entries = parse_all(source_dir; patches_path = args["patches"])
 
 	@info "Phases 2–4: Enrich"
-	enrich!(entries; verdicts_path)
+	enrich!(entries; verdicts_path = args["verdicts"])
 
 	@info "Phase 5: Scope transitions"
 	scope_all!(entries)
@@ -50,4 +56,3 @@ function main()
 end
 
 main()
-
