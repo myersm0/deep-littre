@@ -124,3 +124,39 @@ file = "v.xml"
 line = 42190
 old = "Familièrement."
 new = "</indent><indent>Familièrement."
+
+
+## Other fixes
+
+# Line 109270: Incorrect headword ESQUAQUE, should be -ESQUE
+[[patches]]
+file = "e.xml"
+line = 109270
+old = '<entree terme="ESQUAQUE">'
+new = '<entree terme="-ESQUE">'
+
+## Homographs needing a `sens` attribute to distinguish them:
+[[patches]]
+file = "d.xml"
+line = 83619
+old = '<entree terme="DI-">'
+new = '<entree terme="DI-" sens="1">'
+
+[[patches]]
+file = "d.xml"
+line = 83629
+old = '<entree terme="DI-">'
+new = '<entree terme="DI-" sens="2">'
+
+
+
+
+
+
+
+
+
+
+
+
+
