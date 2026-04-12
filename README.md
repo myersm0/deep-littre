@@ -76,6 +76,8 @@ Key conventions:
 - Author abbreviations preserved as-is in display; resolved forms in `<author>` elements
 
 ## SQLite schema
+Full schema documentation is available [here](docs/schema.md).
+
 The SQLite database provides a flat, queryable view of the dictionary:
 
 - **entries**: headword, POS, pronunciation, entry_id, source file, supplement flag
