@@ -5,6 +5,8 @@ Littré's dictionary is an important document of French lexicography: 78,600 ent
 
 The pipeline is not a mechanical format conversion. Gannaz's XML uses a flat `<indent>` element as an overloaded catch-all for sub-senses, figurative uses, domain labels, locutions, register shifts, cross-references, proverbs, and grammatical transitions. The pipeline classifies each indent by semantic role, extracts canonical forms from locutions, resolves scope ambiguities in grammatical transitions, and emits structured TEI that preserves Littré's semantic hierarchy.
 
+An introduction and walkthrough of some example entries can be found in my blog post [here](https://myersm0.github.io/maupassant-study/blog/2026-04-intro-to-littre-1/), towards explaining the two formats (SQL and TEI-XML) and many of Littré's notational conventions.
+
 > **Status**: This is still a work in progress. The pipeline produces usable data as-is, but classification accuracy is still being refined. Be sure to review the [Known limitations](#known-limitations) section.
 
 ## Downloads
