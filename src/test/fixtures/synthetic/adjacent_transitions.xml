@@ -1,0 +1,15 @@
+<entree terme="TESTDOUBLE">
+<entete>
+	<prononciation>test-double</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Premier emploi.
+<indent>Substantivement.</indent>
+</variante>
+<variante num="2">Deuxième emploi.
+<indent>Au pluriel.</indent>
+</variante>
+<variante num="3">Troisième emploi qui sert à voir si la deuxième transition ferme la première, ou si seule une certaine classe de transitions le fait.</variante>
+</corps>
+</entree>
