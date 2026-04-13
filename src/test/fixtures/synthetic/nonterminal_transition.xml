@@ -1,0 +1,13 @@
+<entree terme="TESTNONTERM">
+<entete>
+	<prononciation>test-non-term</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Emploi principal.
+<indent><nature>Substantivement.</nature></indent>
+<indent>Cette précision vient après la transition et doit empêcher le scoping inter-sense si l'on conserve la règle terminale stricte.</indent>
+</variante>
+<variante num="2">Emploi qui ne devrait pas être capturé si seul le dernier indent ouvre la portée.</variante>
+</corps>
+</entree>

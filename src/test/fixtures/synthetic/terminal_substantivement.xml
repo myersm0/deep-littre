@@ -1,0 +1,14 @@
+<entree terme="TESTSUB">
+<entete>
+	<prononciation>test-sub</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Emploi principal.
+<indent>Observation ordinaire du premier emploi.</indent>
+<indent><nature>Substantivement.</nature></indent>
+</variante>
+<variante num="2">Se dit d'un homme remarquable.</variante>
+<variante num="3">Se dit aussi d'une chose remarquable.</variante>
+</corps>
+</entree>

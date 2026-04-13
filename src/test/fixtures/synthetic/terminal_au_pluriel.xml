@@ -1,0 +1,14 @@
+<entree terme="TESTPLUR">
+<entete>
+	<prononciation>test-plur</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui a un emploi ordinaire au singulier.
+<indent>Premier développement ordinaire.</indent>
+<indent><nature>Au plur.</nature> En parlant des ancêtres ou des prédécesseurs.</indent>
+</variante>
+<variante num="2">Employé dans une locution particulière.</variante>
+<variante num="3">Employé figurément dans un autre sens.</variante>
+</corps>
+</entree>

@@ -1,0 +1,16 @@
+<entree terme="TESTPOS">
+<entete>
+	<prononciation>test-pos</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui sert d'adjectif. Un emploi adjectival simple.</variante>
+<variante num="2"><nature>S. m.</nature> Emploi substantif principal.
+<indent>Premier développement nominal.</indent>
+<indent>Deuxième développement nominal.</indent>
+</variante>
+<variante num="3"><nature>Loc. adv.</nature> Dans une locution adverbiale.
+<indent>Exemple de locution figée.</indent>
+</variante>
+</corps>
+</entree>

@@ -1,0 +1,14 @@
+<entree terme="TESTCIT">
+<entete>
+	<prononciation>test-cit</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Emploi principal.
+<indent><nature>Substantivement.</nature>
+<cit aut="TEST" ref="1">Exemple attaché à la transition.</cit>
+</indent>
+</variante>
+<variante num="2">Emploi suivant qui ne devrait pas être capturé si la présence d'une citation bloque l'ouverture d'un groupe.</variante>
+</corps>
+</entree>
