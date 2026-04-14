@@ -1,6 +1,8 @@
 using Test
-include("DeepLittre.jl")
-using .DeepLittre
+using DeepLittre
+
+const fixtures_real = joinpath(@__DIR__, "fixtures", "real")
+const fixtures_synthetic = joinpath(@__DIR__, "fixtures", "synthetic")
 
 function parse_fixture(path)
 	xml = """
@@ -28,7 +30,7 @@ end
 
 @testset "scope regression fixtures" begin
 	@testset "devancier wrapped au plur stays local" begin
-		entry = classify_and_scope_fixture("test/fixtures/real/devancier.xml")
+		entry = classify_and_scope_fixture(joinpath(fixtures_real, "devancier.xml"))
 
 		@test length(entry.body) == 1
 		@test entry.body[1] isa Sense
@@ -43,7 +45,7 @@ end
 	end
 
 	@testset "droite body shape remains stable" begin
-		entry = classify_and_scope_fixture("test/fixtures/real/droit_2.xml")
+		entry = classify_and_scope_fixture(joinpath(fixtures_real, "droit_2.xml"))
 
 		@test length(entry.body) == 4
 		@test all(x -> x isa Sense, entry.body)
@@ -64,7 +66,7 @@ end
 	end
 
 	@testset "droite sense 3 remains plain cited sense" begin
-		entry = classify_and_scope_fixture("test/fixtures/real/droit_3.xml")
+		entry = classify_and_scope_fixture(joinpath(fixtures_real, "droit_3.xml"))
 
 		s3 = entry.body[3]::Sense
 
@@ -78,7 +80,7 @@ end
 	end
 
 	@testset "f remains a simple non-transition control" begin
-		entry = classify_and_scope_fixture("test/fixtures/real/f.xml")
+		entry = classify_and_scope_fixture(joinpath(fixtures_real, "f.xml"))
 
 		@test length(entry.body) == 3
 		@test all(x -> x isa Sense, entry.body)

@@ -1,6 +1,8 @@
 using Test
-include("DeepLittre.jl")
-using .DeepLittre
+using DeepLittre
+
+const fixtures_real = joinpath(@__DIR__, "fixtures", "real")
+const fixtures_synthetic = joinpath(@__DIR__, "fixtures", "synthetic")
 
 function parse_fixture(path)
 	xml = """
@@ -27,7 +29,7 @@ end
 
 @testset "transition classification" begin
 	@testset "bare substantivement is a voice transition" begin
-		entry = classify_fixture("test/fixtures/synthetic/terminal_substantivement.xml")
+		entry = classify_fixture(joinpath(fixtures_synthetic, "terminal_substantivement.xml"))
 		s1 = entry.body[1]::Sense
 		i2 = s1.indents[2]
 
@@ -36,7 +38,7 @@ end
 	end
 
 	@testset "wrapped substantivement is currently a nature label" begin
-		entry = classify_fixture("test/fixtures/synthetic/wrapped_substantivement.xml")
+		entry = classify_fixture(joinpath(fixtures_synthetic, "wrapped_substantivement.xml"))
 		s1 = entry.body[1]::Sense
 		i1 = s1.indents[1]
 
@@ -45,7 +47,7 @@ end
 	end
 
 	@testset "wrapped au plur is currently a nature label" begin
-		entry = classify_fixture("test/fixtures/synthetic/terminal_au_pluriel.xml")
+		entry = classify_fixture(joinpath(fixtures_synthetic, "terminal_au_pluriel.xml"))
 		s1 = entry.body[1]::Sense
 		i2 = s1.indents[2]
 
@@ -54,7 +56,7 @@ end
 	end
 
 	@testset "adjacent wrapped labels both classify as nature labels" begin
-		entry = classify_fixture("test/fixtures/synthetic/adjacent_transitions.xml")
+		entry = classify_fixture(joinpath(fixtures_synthetic, "adjacent_transitions.xml"))
 		s1 = entry.body[1]::Sense
 		s2 = entry.body[2]::Sense
 

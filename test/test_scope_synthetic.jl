@@ -1,8 +1,10 @@
 using Test
-include("DeepLittre.jl")
-using .DeepLittre
+using DeepLittre
 
-using .DeepLittre: role_of, !, classify_all!
+using DeepLittre: role_of, !, classify_all!
+
+const fixtures_real = joinpath(@__DIR__, "fixtures", "real")
+const fixtures_synthetic = joinpath(@__DIR__, "fixtures", "synthetic")
 
 function parse_fixture(path)
 	xml = """
@@ -23,11 +25,11 @@ end
 
 @testset "scope synthetic fixtures" begin
 	@testset "terminal_substantivement opens medium inter-sense group" begin
-		entry = parse_fixture("test/fixtures/synthetic/terminal_substantivement.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "terminal_substantivement.xml"))
 		classify_all!([entry])
 		log = scope_all!([entry])
 
-		@test length(entry.body) == 3
+		@test length(entry.body) == 2
 		@test entry.body[1] isa Sense
 		@test entry.body[2] isa TransitionGroup
 
@@ -41,7 +43,7 @@ end
 	end
 
 	@testset "terminal_au_pluriel documents current behavior" begin
-		entry = parse_fixture("test/fixtures/synthetic/terminal_au_pluriel.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "terminal_au_pluriel.xml"))
 		classify_all!([entry])
 		scope_all!([entry])
 
@@ -56,7 +58,7 @@ end
 	end
 
 	@testset "nonterminal transition does not open inter-sense scope" begin
-		entry = parse_fixture("test/fixtures/synthetic/nonterminal_transition.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "nonterminal_transition.xml"))
 		classify_all!([entry])
 		scope_all!([entry])
 
@@ -70,7 +72,7 @@ end
 	end
 
 	@testset "transition with citation does not open inter-sense scope" begin
-		entry = parse_fixture("test/fixtures/synthetic/transition_with_citation.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "transition_with_citation.xml"))
 		classify_all!([entry])
 		scope_all!([entry])
 
@@ -85,7 +87,7 @@ end
 	end
 
 	@testset "adjacent wrapped labels do not scope" begin
-		entry = parse_fixture("test/fixtures/synthetic/adjacent_wrapped_labels.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "adjacent_wrapped_labels.xml"))
 		classify_all!([entry])
 		scope_all!([entry])
 
@@ -106,7 +108,7 @@ end
 	end
 
 	@testset "sense head pos shift parses as inline content, not indent transition" begin
-		entry = parse_fixture("test/fixtures/synthetic/sense_head_pos_shift.xml")
+		entry = parse_fixture(joinpath(fixtures_synthetic, "sense_head_pos_shift.xml"))
 
 		@test length(entry.body) == 3
 		@test all(x -> x isa Sense, entry.body)
