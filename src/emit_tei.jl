@@ -124,6 +124,19 @@ function classify_pre_text(pre_text::AbstractString, label_text::AbstractString)
 	:headword_echo
 end
 
+# ── Bare-text transition splitting ──────────────────────────────
+
+const bare_label_pattern = r"^(Substantivement|Absolument|Adjectivement|Adverbialement|Intransitivement|Neutralement|Impersonnellement|Activement|Au\s+pluriel|Au\s+féminin|Au\s+singulier|Au\s+figuré|Au\s+masculin|Familièrement|Populairement|Vulgairement|Ironiquement|Plaisamment|Poétiquement|Par\s+euphémisme|Par\s+exagération|Par\s+ironie|Par\s+dérision|Par\s+extension|Par\s+analogie|Par\s+métaphore|Par\s+plaisanterie|Par\s+antiphrase)((?:\s+et\b[^,.:]*)*)\s*([,.:])\s*(.*)"s
+
+function split_bare_transition(text::AbstractString)::Union{Nothing, Tuple{String, String}}
+	m = match(bare_label_pattern, text)
+	m === nothing && return nothing
+	label = strip(m.captures[1] * something(m.captures[2], ""))
+	def_text = strip(m.captures[4])
+	isempty(def_text) && return nothing
+	(lowercase(label), def_text)
+end
+
 # ── XML helpers ──────────────────────────────────────────────────
 
 function id_attr(sense_id::String)::String
@@ -231,7 +244,8 @@ end
 
 function emit_indent(io::IO, indent::Indent, ::RegisterLabel, level::Int, sense_id::String)
 	content = markup_to_tei(indent.content)
-	label, def_text = split_label(content)
+	bare = split_bare_transition(content)
+	label, def_text = bare !== nothing ? bare : split_label(content)
 	emit_label_sense(io, label, "register", def_text,
 		indent.citations, indent.children, level; sense_id)
 end
@@ -268,7 +282,8 @@ function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTrans
 	gs = split_gram(content)
 
 	if isempty(gs.label_text)
-		label, def_text = split_label(content)
+		bare = split_bare_transition(content)
+		label, def_text = bare !== nothing ? bare : split_label(content)
 		if !isempty(indent.children) || !isempty(def_text) || !isempty(indent.citations)
 			emit_label_sense(io, label, "gram", def_text,
 				indent.citations, indent.children, level; sense_id)
