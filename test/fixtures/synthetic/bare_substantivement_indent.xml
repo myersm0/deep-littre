@@ -1,0 +1,13 @@
+<entree terme="TESTBARBARE">
+<entete>
+	<prononciation>test-bar-bare</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui est rude.
+<indent>Substantivement, homme cruel, inhumain. C'est un barbare qui se plaît à faire souffrir les animaux.
+<cit aut="TEST" ref="1">Exemple.</cit>
+</indent>
+</variante>
+</corps>
+</entree>

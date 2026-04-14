@@ -1,0 +1,11 @@
+<entree terme="TESTLABELONLY">
+<entete>
+	<prononciation>test-label-only</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Sens principal.
+<indent><nature>S. m.</nature></indent>
+</variante>
+</corps>
+</entree>
