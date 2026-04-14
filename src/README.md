@@ -253,12 +253,41 @@ All `<usg>` text content is lowercased (tag attributes and tag names are preserv
 
 ### Label splitting
 
-For role-dispatched indent types that carry a label (Figurative, DomainLabel, RegisterLabel, NatureLabel, VoiceTransition), the TEI content is split into a label portion and a definition portion. The split tries, in order:
+Three splitting mechanisms handle label/definition separation, each targeting a different content shape.
+
+#### `split_label` (positional, tag-leading)
+
+Used by Figurative, DomainLabel, and as a final fallback. Tries, in order:
 
 1. Leading `<gramGrp><gram>...</gram></gramGrp>` → label is the gram content.
 2. Leading `<usg>...</usg>` → label is the usg content.
 3. Leading `Fig.` → label is `fig.`.
 4. Fallback: the entire content is the label, definition is empty.
+
+#### `split_gram` (structural, tag-anchored)
+
+Used by NatureLabel and VoiceTransition when a `<usg type="gram">` element is present (i.e. the source had a `<nature>` tag). Splits the converted content into three spans around the first `<usg type="gram">` element:
+
+- **pre_text**: everything before the `<usg>` element (stripped of trailing punctuation/whitespace).
+- **label_text**: the `<usg type="gram">` content.
+- **def_text**: everything after `</usg>` (stripped of leading punctuation/whitespace).
+
+A second step classifies `pre_text`:
+
+| Signal | `pre_kind` |
+|--------|------------|
+| Empty | `:none` |
+| Starts with `Se`/`S'` + verb, label contains `réfl` | `:reflexive_form` |
+| Label matches `loc. adv.`/`loc. prépos.`/`locut.` | `:locution_form` |
+| Everything else | `:headword_echo` |
+
+When `def_text` is empty (the `<nature>` tag wrapped both label and definition, e.g. `<nature>Substantivement, le trois pour cent...</nature>`), the fused `label_text` is passed to `split_bare_transition` for sub-splitting.
+
+#### `split_bare_transition` (text-pattern, no tag boundary)
+
+Used by heuristically-classified VoiceTransition and RegisterLabel indents where the content is plain text with no `<usg>` element to anchor on. Matches a known root label (`Substantivement`, `Absolument`, `Familièrement`, `Populairement`, etc.), greedily consumes any `et ...` compound continuation, and splits at the first `,` `.` `:` separator. Returns the label (lowercased) and the definition text after the separator.
+
+Returns `nothing` when no root label matches or when the separator is missing (9 known no-separator cases, deferred to LLM review).
 
 ### Sense IDs
 
@@ -270,11 +299,11 @@ Each `IndentRole` has a dedicated `emit_indent` method:
 
 - **Figurative**: `<sense type="figuré">` with `<usg type="sem">` label.
 - **DomainLabel**: `<sense>` with `<usg type="domain">` label; falls back to default sense if label/def split fails.
-- **RegisterLabel**: `<sense>` with `<usg type="register">` label.
+- **RegisterLabel**: `<sense>` with `<usg type="register">` label. Uses `split_bare_transition` when available, falling back to `split_label`.
 - **Locution**: `<re type="locution">` with optional `<form><orth>` for canonical form.
 - **Proverb**: `<re type="proverbe">`.
 - **CrossReference**: `<note type="xref">`.
-- **NatureLabel / VoiceTransition**: if the indent has children, citations, or definition text, emits `<sense>` with `<usg type="gram">` label. Otherwise emits a bare `<usg type="gram">` element. After intra-sense scoping, transition indents that absorbed followers always have children and therefore always emit as `<sense>` elements.
+- **NatureLabel / VoiceTransition**: three paths depending on content shape. (1) When a `<usg type="gram">` element is present (`<nature>`-tagged source), `split_gram` extracts pre-text, label, and definition; `:reflexive_form` and `:locution_form` pre-text emits as `<form><orth>`, `:headword_echo` pre-text is dropped. If `split_gram` finds the label and definition fused inside the tag, `split_bare_transition` sub-splits them. (2) When no `<usg type="gram">` element is present (heuristic classification), `split_bare_transition` splits the bare text at the first separator. Falls back to `split_label` if no known root label matches. (3) Bare `<usg type="gram">`: emitted only when there is no definition text, no citations, and no children.
 - **Elaboration / Continuation / Constructional**: default `<sense>` with any leading `<usg>` elements extracted.
 
 ### TransitionGroup dispatch
