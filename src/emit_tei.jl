@@ -439,30 +439,75 @@ end
 
 # ── Top-level ────────────────────────────────────────────────────
 
-const tei_header = """<?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="littre">
+const tei_header = """
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="littre" type="lex-0">
 <teiHeader>
-<fileDesc>
-<titleStmt>
-<title>Dictionnaire de la langue française — Émile Littré</title>
-<title type="sub">TEI Lex-0 edition</title>
-<author>Émile Littré</author>
-<editor role="digital">François Gannaz</editor>
-<editor role="enrichment">deep-littre pipeline</editor>
-</titleStmt>
-<publicationStmt>
-<publisher>deep-littre project</publisher>
-<availability status="restricted">
-<licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</licence>
-</availability>
-</publicationStmt>
-<sourceDesc>
-<bibl>Littré, Émile. <title>Dictionnaire de la langue française</title>. Paris: Hachette, 1872–1877.</bibl>
-<bibl>Digital source: François Gannaz, XMLittré v1.3
-<ref target="https://bitbucket.org/Mytskine/xmlittre-data">bitbucket.org/Mytskine/xmlittre-data</ref>
-</bibl>
-</sourceDesc>
-</fileDesc>
+  <fileDesc>
+    <titleStmt>
+      <title type="full">Dictionnaire de la langue française</title>
+      <title type="abbr">Littré</title>
+      <title type="sub">TEI Lex-0 edition</title>
+      <author>
+        <persName><forename>Émile</forename><surname>Littré</surname></persName>
+      </author>
+      <editor role="digital">
+        <persName><forename>François</forename><surname>Gannaz</surname></persName>
+      </editor>
+      <editor role="enrichment">
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </editor>
+    </titleStmt>
+    <publicationStmt>
+      <publisher>
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </publisher>
+      <availability status="free">
+        <licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</licence>
+      </availability>
+    </publicationStmt>
+    <sourceDesc>
+      <listBibl type="dictionaries">
+        <biblStruct xml:id="littre-print">
+          <monogr>
+            <author>
+              <persName><forename>Émile</forename><surname>Littré</surname></persName>
+            </author>
+            <title level="m">Dictionnaire de la langue française</title>
+            <imprint>
+              <publisher>Hachette</publisher>
+              <pubPlace>Paris</pubPlace>
+              <date notBefore="1872" notAfter="1877">1872–1877</date>
+            </imprint>
+          </monogr>
+        </biblStruct>
+        <biblStruct xml:id="xmlittre">
+          <monogr>
+            <author>
+              <persName><forename>François</forename><surname>Gannaz</surname></persName>
+            </author>
+            <title level="m">XMLittré</title>
+            <edition>1.3</edition>
+            <imprint>
+              <ref target="https://bitbucket.org/Mytskine/xmlittre-data"/>
+            </imprint>
+          </monogr>
+        </biblStruct>
+      </listBibl>
+    </sourceDesc>
+  </fileDesc>
+  <profileDesc>
+    <langUsage>
+      <language ident="fr" role="objectLanguage">
+        <name xml:lang="en">French</name>
+        <name xml:lang="fr">Français</name>
+      </language>
+      <language ident="fr" role="workingLanguage">
+        <name xml:lang="en">French</name>
+        <name xml:lang="fr">Français</name>
+      </language>
+    </langUsage>
+  </profileDesc>
 </teiHeader>
 <text>
 <body>
