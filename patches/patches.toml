@@ -505,5 +505,160 @@ old = "<indent>Populairement Elle aura quinze ans viennent les prunes, l'été p
 new = "<indent>Populairement. Elle aura quinze ans viennent les prunes, l'été prochain."
 
 
+## Wrap the 26 bare POS labels in <nature> tags
 
+[[patches]]
+file = "a.xml"
+line = 717
+old = "<indent>S'ABAISSER, v. réfl."
+new = "<indent>S'ABAISSER, <nature>v. réfl.</nature>"
 
+[[patches]]
+file = "a.xml"
+line = 1116
+old = "<indent>S'ABANDONNER, v. réfl."
+new = "<indent>S'ABANDONNER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 1725
+old = "<indent>S'ABATTRE, v. réfl."
+new = "<indent>S'ABATTRE, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 2950
+old = "<indent>S'ABÎMER, v. réfl."
+new = "<indent>S'ABÎMER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 10317
+old = "<indent>S'ACCOMMODER, v. réfl."
+new = "<indent>S'ACCOMMODER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 16396
+old = "<indent>S'ACQUITTER, v. réfl."
+new = "<indent>S'ACQUITTER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 20604
+old = "<indent>S'ADORER, v. réfl."
+new = "<indent>S'ADORER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 21191
+old = "<indent>S'ADRESSER, v. réfl."
+new = "<indent>S'ADRESSER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 30239
+old = "<indent>S'AGRANDIR, v. réfl."
+new = "<indent>S'AGRANDIR, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 33129
+old = "<indent>S'AIGRIR, v. réfl."
+new = "<indent>S'AIGRIR, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 34942
+old = "<indent>S'AIMER, v. réfl."
+new = "<indent>S'AIMER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 37198
+old = "<indent>S'AJUSTER, v. réfl."
+new = "<indent>S'AJUSTER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 37688
+old = "<indent>S'ALARMER, v. réfl."
+new = "<indent>S'ALARMER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 40665
+old = "<indent>S'ALIÉNER, v. réfl."
+new = "<indent>S'ALIÉNER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 55063
+old = "<indent>S'AMUSER, v. réfl."
+new = "<indent>S'AMUSER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 68216
+old = "<indent>S'APAISER, v. réfl."
+new = "<indent>S'APAISER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 68722
+old = "<indent>S'APERCEVOIR, v. réfl."
+new = "<indent>S'APERCEVOIR, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 75949
+old = "<indent>S'APPRÊTER, v. réfl."
+new = "<indent>S'APPRÊTER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 88503
+old = "<indent>ARRÊTER, v. n."
+new = "<indent>ARRÊTER, <nature>v. n.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 88530
+old = "<indent>S'ARRÊTER, v. réfl."
+new = "<indent>S'ARRÊTER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 98481
+old = "<indent>S'ASSURER, v. réfl."
+new = "<indent>S'ASSURER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 102128
+old = "<indent>S'ATTACHER, v. réfl."
+new = "<indent>S'ATTACHER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 103103
+old = "<indent>S'ATTENDRE, v. réfl."
+new = "<indent>S'ATTENDRE, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "a.xml"
+line = 113075
+old = "<indent>S'AVANCER, v. réfl."
+new = "<indent>S'AVANCER, <nature>v. réfl.</nature>"
+
+[[patches]]
+file = "d.xml"
+line = 114500
+old = "<indent>DONNER, v. n."
+new = "<indent>DONNER, <nature>v. n.</nature>"
+
+[[patches]]
+file = "d.xml"
+line = 114640
+old = "<indent>SE DONNER, v. réfl."
+new = "<indent>SE DONNER, <nature>v. réfl.</nature>"
