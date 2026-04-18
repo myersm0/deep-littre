@@ -66,6 +66,16 @@ function scan_indent_lines(text::String)::Vector{Int}
 	line_numbers
 end
 
+function scan_variante_lines(text::String)::Vector{Int}
+	line_numbers = Int[]
+	for (line_number, line) in enumerate(eachsplit(text, '\n'))
+		for _ in eachmatch(r"<variante[\s>]", line)
+			push!(line_numbers, line_number)
+		end
+	end
+	line_numbers
+end
+
 # ── ID generation ────────────────────────────────────────────────
 
 function make_id(headword::String, homograph_index::Union{Nothing, Int} = nothing)::String
@@ -152,12 +162,20 @@ struct ParseContext
 	source_file::String
 	indent_lines::Vector{Int}
 	indent_index::Ref{Int}
+	variante_lines::Vector{Int}
+	variante_index::Ref{Int}
 end
 
 function next_indent_line!(ctx::ParseContext)::Int
 	i = ctx.indent_index[]
 	ctx.indent_index[] = i + 1
 	i <= length(ctx.indent_lines) ? ctx.indent_lines[i] : 0
+end
+
+function next_variante_line!(ctx::ParseContext)::Int
+	i = ctx.variante_index[]
+	ctx.variante_index[] = i + 1
+	i <= length(ctx.variante_lines) ? ctx.variante_lines[i] : 0
 end
 
 function extract_content(node::XML.Node, ctx::ParseContext)
@@ -225,6 +243,7 @@ function parse_indent(node::XML.Node, ctx::ParseContext)::Indent
 end
 
 function parse_sense(node::XML.Node, ctx::ParseContext)::Sense
+	line = next_variante_line!(ctx)
 	num_str = attr(node, "num")
 	num = isempty(num_str) ? nothing : tryparse(Int, num_str)
 	is_resume = attr(node, "option") == "résumé"
@@ -238,6 +257,7 @@ function parse_sense(node::XML.Node, ctx::ParseContext)::Sense
 		citations = citations,
 		indents = indents,
 		rubriques = rubriques,
+		source = SourceLocation(file = ctx.source_file, line = line),
 	)
 end
 
@@ -339,7 +359,8 @@ function parse_file(path::String, patches::Vector{Patch} = Patch[])::Vector{Entr
 	text = normalize_source(text)
 
 	indent_lines = scan_indent_lines(text)
-	ctx = ParseContext(source_file, indent_lines, Ref(1))
+	variante_lines = scan_variante_lines(text)
+	ctx = ParseContext(source_file, indent_lines, Ref(1), variante_lines, Ref(1))
 
 	doc = XML.parse(XML.Node, text)
 	root_node = doc[end]

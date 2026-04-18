@@ -96,6 +96,7 @@ abstract type BodyElement end
 	citations::Vector{Citation} = Citation[]
 	indents::Vector{Indent} = Indent[]
 	rubriques::Vector{Rubrique} = Rubrique[]
+	source::Union{Nothing, SourceLocation} = nothing
 end
 
 Sense(source::Sense; is_supplement::Bool) = Sense(
@@ -106,6 +107,7 @@ Sense(source::Sense; is_supplement::Bool) = Sense(
 	citations = source.citations,
 	indents = source.indents,
 	rubriques = source.rubriques,
+	source = source.source,
 )
 
 @kwdef struct TransitionGroup <: BodyElement
