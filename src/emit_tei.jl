@@ -175,7 +175,7 @@ end
 function emit_indent(io::IO, indent::Indent, level::Int, sense_id::String = "")
 	role = role_of(indent)
 	if role === nothing
-		emit_indent(io, indent, Elaboration(), level, sense_id)
+		emit_indent(io, indent, Unclassified(), level, sense_id)
 	else
 		emit_indent(io, indent, role, level, sense_id)
 	end
@@ -207,11 +207,11 @@ function emit_label_sense(io::IO, label::String, usg_type::String, def_text::Str
 	println(io, "$(p)</sense>")
 end
 
-function emit_default_sense(io::IO, indent::Indent, level::Int, sense_id::String)
+function emit_default_sense(io::IO, indent::Indent, level::Int, sense_id::String; extra_attrs::String = "")
 	p = pad(level)
 	content = markup_to_tei(indent.content)
 	usg_els, clean_def = split_def_usg(content)
-	println(io, "$(p)<sense$(id_attr(sense_id))>")
+	println(io, "$(p)<sense$(id_attr(sense_id))$(extra_attrs)>")
 	for el in usg_els
 		println(io, "$(p)  $(el)")
 	end
@@ -317,8 +317,8 @@ function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTrans
 	println(io, "$(p)</sense>")
 end
 
-function emit_indent(io::IO, indent::Indent, ::Union{Elaboration, Continuation, Constructional}, level::Int, sense_id::String)
-	emit_default_sense(io, indent, level, sense_id)
+function emit_indent(io::IO, indent::Indent, ::Unclassified, level::Int, sense_id::String)
+	emit_default_sense(io, indent, level, sense_id; extra_attrs = " ana=\"unclassified\"")
 end
 
 # ── Body element emission ────────────────────────────────────────

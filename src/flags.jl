@@ -1,10 +1,5 @@
 # ── Configuration ────────────────────────────────────────────────
 
-const low_confidence_threshold = 0.5
-const low_confidence_roles = Set{Type}([
-	Locution, Figurative, DomainLabel, Proverb,
-	CrossReference, RegisterLabel, VoiceTransition, NatureLabel,
-])
 const large_scope_threshold = 15
 const calibration_per_bucket = 5
 const calibration_seed = 42
@@ -34,26 +29,23 @@ end
 
 # ── Flag collectors ──────────────────────────────────────────────
 
-function flag_low_confidence!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+function flag_unclassified!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
 	for entry in entries
 		for sense in all_senses(entry)
 			for (i, indent) in enumerate(sense.indents)
 				cls = indent.classification
 				cls === nothing && continue
-				cls.confidence > low_confidence_threshold && continue
-				typeof(cls.role) in low_confidence_roles || continue
+				cls.role isa Unclassified || continue
 				neighbors = indent_neighbors(sense.indents, i)
 				push!(flags, ReviewFlag(
 					entry_id = entry.id[],
 					headword = entry.headword,
 					phase = "phase3",
-					flag_type = "low_confidence",
-					reason = "confidence=$(round(cls.confidence; digits=2)), role=$(typeof(cls.role))",
+					flag_type = "unclassified",
+					reason = "no rule matched",
 					context = merge(Dict{String, Any}(
 						"sense_num" => sense.num,
 						"indent_content" => first(indent.content, 200),
-						"role" => string(typeof(cls.role)),
-						"confidence" => cls.confidence,
 						"method" => string(cls.method),
 					), neighbors),
 				))
@@ -170,7 +162,6 @@ function flag_calibration_sample!(flags::Vector{ReviewFlag}, entries::Vector{Ent
 		sample = Random.randperm(rng, length(items))[1:sample_size]
 		for idx in sample
 			entry, sense, i, indent = items[idx]
-			cls = indent.classification
 			neighbors = indent_neighbors(sense.indents, i)
 			push!(flags, ReviewFlag(
 				entry_id = entry.id[],
@@ -182,7 +173,6 @@ function flag_calibration_sample!(flags::Vector{ReviewFlag}, entries::Vector{Ent
 					"sense_num" => sense.num,
 					"indent_content" => first(indent.content, 200),
 					"role" => role,
-					"confidence" => cls.confidence,
 					"method" => method,
 					"bucket_size" => length(items),
 				), neighbors),
@@ -221,7 +211,7 @@ end
 
 function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
 	flags = ReviewFlag[]
-	flag_low_confidence!(flags, entries)
+	flag_unclassified!(flags, entries)
 	flag_skipped_locutions!(flags, entries)
 	flag_likely_locutions!(flags, entries)
 	flag_scope_decisions!(flags, entries)

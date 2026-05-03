@@ -12,7 +12,7 @@ include("model.jl")
 export IndentRole,
 	Figurative, DomainLabel, NatureLabel, CrossReference,
 	RegisterLabel, Proverb, VoiceTransition, Locution,
-	Constructional, Elaboration, Continuation,
+	Constructional, Unclassified,
 	RubriqueKind,
 	Historique, Etymologie, Remarque, Synonyme, Proverbes, Supplement,
 	ClassificationMethod, Deterministic, Heuristic, LlmAssisted, Manual,
