@@ -107,6 +107,7 @@ sense_type_for(::Proverb) = "proverb"
 sense_type_for(::CrossReference) = "cross_reference"
 sense_type_for(::DomainLabel) = "domain"
 sense_type_for(::RegisterLabel) = "register"
+sense_type_for(::Unclassified) = "unclassified"
 function sense_type_for(::Union{NatureLabel, VoiceTransition}, indent::Indent)
 	isempty(indent.children) ? "annotation" : "transition_group"
 end

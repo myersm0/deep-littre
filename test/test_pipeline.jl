@@ -130,7 +130,6 @@ end
 
 	@test DeepLittre.role_of(sense1.indents[1]) isa Figurative
 	@test sense1.indents[1].classification.method == Deterministic
-	@test sense1.indents[1].classification.confidence == 1.0
 
 	@test DeepLittre.role_of(sense1.indents[2]) isa DomainLabel
 	@test sense1.indents[2].classification.method == Deterministic

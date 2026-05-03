@@ -72,12 +72,11 @@ end
 # ── Classify indents ─────────────────────────────────────────────
 
 # ── Verdicts (external classification overrides) ─────────────────
-# CSV with columns: file, line, check, heuristic_role, llm_role, llm_confidence
-# Keyed on (file, line). When present, overrides heuristic classification.
+# CSV keyed on (file, line). An llm_confidence column is tolerated
+# if present but ignored; confidence is no longer part of the model.
 
 struct Verdict
 	role::IndentRole
-	confidence::Float64
 	check::String
 end
 
@@ -93,9 +92,7 @@ const role_names = Dict{String, IndentRole}(
 	"Proverb" => Proverb(),
 	"VoiceTransition" => VoiceTransition(),
 	"Locution" => Locution(),
-	"Constructional" => Constructional(),
-	"Elaboration" => Elaboration(),
-	"Continuation" => Continuation(),
+	"Unclassified" => Unclassified(),
 )
 
 function load_verdicts(path::String)::VerdictDict
@@ -113,13 +110,12 @@ function load_verdicts(path::String)::VerdictDict
 		check_col = get(col, "check", nothing)
 		check = check_col !== nothing ? strip(get(fields, check_col, "")) : ""
 		role_str = strip(fields[col["llm_role"]])
-		confidence = parse(Float64, strip(fields[col["llm_confidence"]]))
 		role = get(role_names, role_str, nothing)
 		if role === nothing
 			@warn "Unknown role in verdicts" role_str file line_num
 			continue
 		end
-		verdicts[(file, line_num)] = Verdict(role, confidence, check)
+		verdicts[(file, line_num)] = Verdict(role, check)
 	end
 	@info "Loaded $(length(verdicts)) verdicts from $path"
 	verdicts
@@ -137,52 +133,60 @@ function apply_verdict!(indent::Indent, verdicts::VerdictDict)::Bool
 			return false
 		end
 	end
-	classify!(indent, verdict.role, LlmAssisted, verdict.confidence)
+	classify!(indent, verdict.role, LlmAssisted)
 	true
 end
 
-function classify!(indent::Indent, role::IndentRole, method::ClassificationMethod, confidence::Float64)
-	indent.classification = Classification(role = role, method = method, confidence = confidence)
+function classify!(indent::Indent, role::IndentRole, method::ClassificationMethod)
+	indent.classification = Classification(role = role, method = method)
 end
 
 function role_of(indent::Indent)::Union{Nothing, IndentRole}
 	indent.classification === nothing ? nothing : indent.classification.role
 end
 
+matches_any(patterns::Vector{Regex}, text::AbstractString) =
+	any(p -> occursin(p, text), patterns)
+
 # ── Tier A: deterministic (tag-based) ────────────────────────────
+
+const cross_ref_leading_patterns = [
+	r"^(voy\.|v\.|voyez\b)"i,
+]
+
+const cross_ref_trailing_patterns = [
+	r",\s*voy\.\s*$"i,
+]
 
 function classify_deterministic!(indent::Indent)::Bool
 	c = indent.content
 
 	if occursin("<semantique type=\"indicateur\">Fig.", c)
-		classify!(indent, Figurative(), Deterministic, 1.0)
+		classify!(indent, Figurative(), Deterministic)
 		return true
 	end
 
 	if occursin("<semantique type=\"domaine\">", c)
-		classify!(indent, DomainLabel(), Deterministic, 1.0)
+		classify!(indent, DomainLabel(), Deterministic)
 		return true
 	end
 
 	if occursin("<nature>", c)
-		classify!(indent, NatureLabel(), Deterministic, 1.0)
+		classify!(indent, NatureLabel(), Deterministic)
 		return true
 	end
 
 	if occursin("<exemple>", c)
-		classify!(indent, Locution(), Deterministic, 1.0)
+		classify!(indent, Locution(), Deterministic)
 		return true
 	end
 
 	if occursin("<a ref=", c)
 		plain = strip_tags(c)
 		if length(plain) < 120
-			if occursin(r"^(voy\.|V\.|Voy\.|voyez)"i, plain)
-				classify!(indent, CrossReference(), Deterministic, 1.0)
-				return true
-			end
-			if occursin(r",\s*voy\.\s*$", plain)
-				classify!(indent, CrossReference(), Deterministic, 0.95)
+			if matches_any(cross_ref_leading_patterns, plain) ||
+			   matches_any(cross_ref_trailing_patterns, plain)
+				classify!(indent, CrossReference(), Deterministic)
 				return true
 			end
 		end
@@ -193,61 +197,84 @@ end
 
 # ── Tier B: heuristic (text patterns) ────────────────────────────
 
-const register_pattern = r"^(Populaire|Familière|Familièrement|Familier|Vulgaire|Vulgairement|Triviale|Trivialemen|Bas|Ironiquement|Plaisamment|Burlesque|Poétiquement|Par euphémisme|Par exagération|Par ironie|Par dérision|Par extension|Par analogie|Par métaphore|Par plaisanterie|Par antiphrase|Néologisme|Vieux|Vieilli|Inusité|Peu usité|Très peu usité|Hors d'usage|Tombé en désuétude|Rare|Il est familier|Il est vieux|Il est populaire|Il est inusité|Il est hors d'usage|Il n'est plus usité|Il a vieilli|Il vieillit|Ce mot est|Ce mot a vieilli|Ce sens a vieilli|Cet emploi vieillit|Cet emploi a vieilli|Mot vieilli|Mot populaire|Mot bas|Mot inusité|Terme vieux|Terme vieilli|Terme familier|Terme populaire|Terme inusité|Terme bas)"i
+const register_patterns = [
+	r"^populaire(ment)?\b"i,
+	r"^(familièr|vulgair|ironiqu|burlesqu|poétiqu)ement\b"i,
+	r"^plaisamment\b"i,
+	r"^par (euphémisme|exagération|ironie|dérision|extension|analogie|métaphore|plaisanterie|antiphrase)\b"i,
+	r"^néologisme\b"i,
+	r"^(très )?peu usité\b"i,
+	r"^hors d'usage\b"i,
+	r"^tombé en désuétude\b"i,
+	r"^il est (familier|vieux|populaire|inusité|hors d'usage)\b"i,
+	r"^il n'est plus usité\b"i,
+	r"^il (a vieilli|vieillit)\b"i,
+	r"^ce mot (est|a vieilli)\b"i,
+	r"^ce sens a vieilli\b"i,
+	r"^cet emploi (vieillit|a vieilli)\b"i,
+	r"^(mot|terme) (vieilli|vieux|familier|populaire|inusité|bas)\b"i,
+]
 
-const proverb_pattern = r"^(Prov\.|Proverbe|Proverbialement)"i
+const proverb_patterns = [
+	r"^prov\.\s"i,
+	r"^proverbe\b"i,
+	r"^proverbialement\b"i,
+]
 
-const voice_transition_pattern = r"^(V\.\s*(n|a|réfl)|Se\s+conjugue|Absolument|Substantivement|Adverbialement|Adjectivement|Intransitivement|Neutralement|Impersonnellement|Activement|Au\s+pluriel|Au\s+féminin|Au\s+singulier|Au\s+masc|Au\s+fém|Avec\s+un\s+nom\s+de)"
+const voice_transition_patterns = [
+	r"^v\.\s*(n|a|réfl)\b"i,
+	r"^se\s+conjugue\b"i,
+	r"^(absolument|substantivement|adverbialement|adjectivement|intransitivement|neutralement|impersonnellement|activement)\b"i,
+]
 
-const definition_like_pattern = r"^(Se dit|Il se dit|On dit|On appelle|Se disait|Qui se dit|Il s'est dit|Celui qui|Celle qui|Ce qui|Chose qui|Action de|État de|Qualité de|Nom (donné|que l'on donne)|Terme (de|d')|En termes? (de|d'))"i
+const figurative_patterns = [
+	r"^fig\.\s"i,
+]
 
-const cross_ref_heuristic = r"^(Il est|C'est|On dit|Se dit).{0,40}<a ref="
+const voice_transition_label_only_patterns = [
+	r"^au (pluriel|féminin|singulier|masc(\.|ulin)?|fém(\.|inin)?)\.?\s*$"i,
+	r"^avec un nom de [^,.]*\.?\s*$"i,
+]
+
+const register_label_only_patterns = [
+	r"^(familière?|familier|vieux|vieillie?|rare|bas(se)?|vulgaire|triviale?|inusitée?)\.?\s*$"i,
+]
 
 function classify_heuristic!(indent::Indent)::Bool
-	c = indent.content
-	plain = strip_tags(c)
+	plain = strip_tags(indent.content)
 
-	if occursin(proverb_pattern, plain)
-		classify!(indent, Proverb(), Heuristic, 0.9)
+	if matches_any(proverb_patterns, plain)
+		classify!(indent, Proverb(), Heuristic)
 		return true
 	end
 
-	if occursin(register_pattern, plain)
-		classify!(indent, RegisterLabel(), Heuristic, 0.85)
+	if matches_any(register_patterns, plain)
+		classify!(indent, RegisterLabel(), Heuristic)
 		return true
 	end
 
-	if occursin(voice_transition_pattern, plain)
-		classify!(indent, VoiceTransition(), Heuristic, 0.85)
+	if matches_any(voice_transition_patterns, plain)
+		classify!(indent, VoiceTransition(), Heuristic)
 		return true
 	end
 
-	if occursin("<a ref=", c) && occursin(cross_ref_heuristic, c)
-		classify!(indent, CrossReference(), Heuristic, 0.8)
+	if matches_any(figurative_patterns, plain)
+		classify!(indent, Figurative(), Heuristic)
 		return true
 	end
 
-	if occursin(definition_like_pattern, plain)
-		classify!(indent, Elaboration(), Heuristic, 0.75)
+	if matches_any(voice_transition_label_only_patterns, plain)
+		classify!(indent, VoiceTransition(), Heuristic)
 		return true
 	end
 
-	if startswith(plain, "Fig.")
-		classify!(indent, Figurative(), Heuristic, 0.9)
+	if matches_any(register_label_only_patterns, plain)
+		classify!(indent, RegisterLabel(), Heuristic)
 		return true
 	end
 
-	if !isempty(indent.citations)
-		classify!(indent, Continuation(), Heuristic, 0.5)
-		return true
-	end
-
-	if !isempty(plain)
-		classify!(indent, Elaboration(), Heuristic, 0.4)
-		return true
-	end
-
-	false
+	classify!(indent, Unclassified(), Heuristic)
+	true
 end
 
 # ── Combined classifier ──────────────────────────────────────────
@@ -307,7 +334,7 @@ end
 # ── Extract locutions ────────────────────────────────────────────
 
 const exemple_pattern = r"<exemple>(.*?)</exemple>"
-const reflexive_pattern = r"^S'[A-ZÉÈÊÀÂÎÏÔÙÛÜÇ].*,\s*v\.\s*réfl"
+const reflexive_pattern = r"^S'[A-ZÉÈÊÀÂÎÏÔÙÛÜÇ].*,\s*v\.\s*réfl\b"
 
 function extract_locution!(indent::Indent)
 	role_of(indent) isa Locution || return :skip
@@ -315,7 +342,7 @@ function extract_locution!(indent::Indent)
 	plain = strip_tags(indent.content)
 
 	if occursin(reflexive_pattern, plain)
-		classify!(indent, VoiceTransition(), Heuristic, 0.9)
+		classify!(indent, VoiceTransition(), Heuristic)
 		return :reclassified
 	end
 
