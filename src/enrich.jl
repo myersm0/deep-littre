@@ -224,11 +224,20 @@ const proverb_patterns = [
 const voice_transition_patterns = [
 	r"^v\.\s*(n|a|réfl)\b"i,
 	r"^se\s+conjugue\b"i,
-	r"^(absolu|substantive|adverbiale|adjective|intransitive|neutrale|impersonnelle|active)ment\b"i,
+	r"^(absolument|substantivement|adverbialement|adjectivement|intransitivement|neutralement|impersonnellement|activement)\b"i,
 ]
 
 const figurative_patterns = [
 	r"^fig\.\s"i,
+]
+
+const voice_transition_label_only_patterns = [
+	r"^au (pluriel|féminin|singulier|masc(\.|ulin)?|fém(\.|inin)?)\.?\s*$"i,
+	r"^avec un nom de\b.*\.?\s*$"i,
+]
+
+const register_label_only_patterns = [
+	r"^(familière?|familier|vieux|vieillie?|rare|bas(se)?|vulgaire|triviale?|inusitée?)\.?\s*$"i,
 ]
 
 function classify_heuristic!(indent::Indent)::Bool
@@ -251,6 +260,16 @@ function classify_heuristic!(indent::Indent)::Bool
 
 	if matches_any(figurative_patterns, plain)
 		classify!(indent, Figurative(), Heuristic)
+		return true
+	end
+
+	if matches_any(voice_transition_label_only_patterns, plain)
+		classify!(indent, VoiceTransition(), Heuristic)
+		return true
+	end
+
+	if matches_any(register_label_only_patterns, plain)
+		classify!(indent, RegisterLabel(), Heuristic)
 		return true
 	end
 
