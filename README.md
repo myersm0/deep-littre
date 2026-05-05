@@ -247,12 +247,12 @@ The underlying text is the *Dictionnaire de la langue française* by Émile Litt
 ## Citing Deep-Littré
 A paper describing Deep-Littré is in preparation. In the meantime, if you use Deep-Littré in published research, please cite:
 ```bibtex
-@software{myers-montre,
+@software{myers-deep-littre,
   author       = {Myers, Michael J.},
   title        = {Deep-Littré: Structural Recovery from a Flat Encoding",
   year         = {2026},
   url          = {https://github.com/myersm0/deep-littre},
-  version      = {0.6.0}
+  version      = {0.1.0}
 }
 ```
 
