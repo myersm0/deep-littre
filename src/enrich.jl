@@ -240,6 +240,20 @@ const register_label_only_patterns = [
 	r"^(familière?|familier|vieux|vieillie?|rare|bas(se)?|vulgaire|triviale?|inusitée?)\.?\s*$"i,
 ]
 
+const strong_transition_pattern = r"^(S'[A-ZÉÈÊÀÂÎÏÔÙÛÜÇ].+),\s+(v\.\s*.+)"
+
+const form_pos_pattern = r"^([A-ZÉÈÊÀÂÎÏÔÙÛÜÇ][A-ZÉÈÊÀÂÎÏÔÙÛÜÇ '\-]+),\s+(v\.\s*(?:n|a|réfl)|s\.\s*[mf]|adj)\b"
+
+function is_transition_content(content::AbstractString)::Bool
+	occursin("<nature>", content) && return true
+	plain = strip_tags(content)
+	matches_any(voice_transition_patterns, plain) && return true
+	matches_any(voice_transition_label_only_patterns, plain) && return true
+	occursin(strong_transition_pattern, plain) && return true
+	occursin(form_pos_pattern, plain) && return true
+	false
+end
+
 function classify_heuristic!(indent::Indent)::Bool
 	plain = strip_tags(indent.content)
 

@@ -12,10 +12,6 @@
 
 # ── Transition parsing ───────────────────────────────────────────
 
-const strong_transition_pattern = r"^(S'[A-ZÉÈÊÀÂÎÏÔÙÛÜÇ].+),\s+(v\.\s*.+)"
-
-const form_pos_pattern = r"^([A-ZÉÈÊÀÂÎÏÔÙÛÜÇ][A-ZÉÈÊÀÂÎÏÔÙÛÜÇ '\-]+),\s+(v\.\s*(?:n|a|réfl)|s\.\s*[mf]|adj)\b"
-
 function parse_strong_transition(plain::String)::Union{Nothing, Tuple{String, String}}
 	m = match(strong_transition_pattern, plain)
 	if m !== nothing
