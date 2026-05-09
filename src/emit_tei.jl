@@ -126,15 +126,54 @@ end
 
 # ── Bare-text transition splitting ──────────────────────────────
 
-const bare_label_pattern = r"^(Substantivement|Absolument|Adjectivement|Adverbialement|Intransitivement|Neutralement|Impersonnellement|Activement|Au\s+pluriel|Au\s+féminin|Au\s+singulier|Au\s+figuré|Au\s+masculin|Familièrement|Populairement|Vulgairement|Ironiquement|Plaisamment|Poétiquement|Par\s+euphémisme|Par\s+exagération|Par\s+ironie|Par\s+dérision|Par\s+extension|Par\s+analogie|Par\s+métaphore|Par\s+plaisanterie|Par\s+antiphrase)((?:\s+et\b[^,.:]*)*)\s*([,.:])\s*(.*)"s
+const bare_label_patterns = [
+	r"^substantivement\b"i,
+	r"^absolument\b"i,
+	r"^adjectivement\b"i,
+	r"^adverbialement\b"i,
+	r"^intransitivement\b"i,
+	r"^neutralement\b"i,
+	r"^impersonnellement\b"i,
+	r"^activement\b"i,
+	r"^v\.\s*(?:n|a|réfl)\b"i,
+	r"^se\s+conjugue\b"i,
+	r"^au\s+(?:pluriel|féminin|singulier|figuré|masculin)\b"i,
+	r"^familièrement\b"i,
+	r"^populaire(?:ment)?\b"i,
+	r"^vulgairement\b"i,
+	r"^ironiquement\b"i,
+	r"^plaisamment\b"i,
+	r"^poétiquement\b"i,
+	r"^burlesquement\b"i,
+	r"^par\s+(?:euphémisme|exagération|ironie|dérision|extension|analogie|métaphore|plaisanterie|antiphrase)\b"i,
+	r"^néologisme\b"i,
+	r"^(?:très\s+)?peu\s+usité\b"i,
+	r"^hors\s+d'usage\b"i,
+	r"^tombé\s+en\s+désuétude\b"i,
+	r"^il\s+est\s+(?:familier|vieux|populaire|inusité|hors\s+d'usage)\b"i,
+	r"^il\s+n'est\s+plus\s+usité\b"i,
+	r"^il\s+(?:a\s+vieilli|vieillit)\b"i,
+	r"^ce\s+mot\s+(?:est|a\s+vieilli)\b"i,
+	r"^ce\s+sens\s+a\s+vieilli\b"i,
+	r"^cet\s+emploi\s+(?:vieillit|a\s+vieilli)\b"i,
+	r"^(?:mot|terme)\s+(?:vieilli|vieux|familier|populaire|inusité|bas)\b"i,
+]
+
+const bare_label_tail = r"^((?:\s+et\b[^,.:]*)*)\s*([,.:])\s*(.*)"s
 
 function split_bare_transition(text::AbstractString)::Union{Nothing, Tuple{String, String}}
-	m = match(bare_label_pattern, text)
-	m === nothing && return nothing
-	label = strip(m.captures[1] * something(m.captures[2], ""))
-	def_text = strip(m.captures[4])
-	isempty(def_text) && return nothing
-	(lowercase(label), def_text)
+	for pattern in bare_label_patterns
+		root = match(pattern, text)
+		root === nothing && continue
+		remainder = SubString(text, root.offset + ncodeunits(root.match))
+		tail = match(bare_label_tail, remainder)
+		tail === nothing && continue
+		label = strip(string(root.match) * tail.captures[1])
+		def_text = strip(tail.captures[3])
+		isempty(def_text) && continue
+		return (lowercase(label), def_text)
+	end
+	nothing
 end
 
 # ── XML helpers ──────────────────────────────────────────────────
