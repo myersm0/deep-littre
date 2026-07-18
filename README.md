@@ -249,7 +249,7 @@ A paper describing Deep-Littré is in preparation. In the meantime, if you use D
 ```bibtex
 @software{myers-deep-littre,
   author       = {Myers, Michael J.},
-  title        = {Deep-Littré: Structural Recovery from a Flat Encoding",
+  title        = {Deep-Littré: Structural Recovery from a Flat Encoding},
   year         = {2026},
   url          = {https://github.com/myersm0/deep-littre},
   version      = {0.1.0}
