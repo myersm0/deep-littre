@@ -229,7 +229,7 @@ end
 
 function insert_flags!(db::SQLite.DB, flags::Vector{ReviewFlag})
 	for flag in flags
-		context_json = JSON3.write(flag.context)
+		context_json = JSON.json(flag.context)
 		SQLite.execute(db,
 			"INSERT INTO review_queue (entry_id, headword, phase, flag_type, reason, context, resolution, resolved_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			(flag.entry_id, flag.headword, flag.phase, flag.flag_type,

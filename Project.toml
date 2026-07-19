@@ -5,12 +5,20 @@ version = "0.1.0"
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
-JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SQLite = "0aa819cd-b072-5ff4-a722-6bc24af294d9"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
+
+[compat]
+ArgParse = "1"
+DBInterface = "2.6"
+JSON = "1.6"
+SQLite = "1.8"
+TOML = "1.0"
+XML = "0.3.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

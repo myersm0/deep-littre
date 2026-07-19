@@ -1,7 +1,7 @@
 module DeepLittre
 
 using DBInterface
-using JSON3
+using JSON
 using Random
 using SQLite
 using TOML
