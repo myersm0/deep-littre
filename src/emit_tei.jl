@@ -8,8 +8,6 @@ const markup_substitutions = [
 	r"<a ref=\"([^\"]*)\">(.*?)</a>"s => s"<xr><ref target=\"#\1\">\2</ref></xr>",
 	r"<exemple>(.*?)</exemple>"s => s"<mentioned>\1</mentioned>",
 	r"<nature>(.*?)</nature>"s => s"<usg type=\"gram\">\1</usg>",
-	r"<i lang=\"la\">(.*?)</i>"s => s"<foreign xml:lang=\"la\">\1</foreign>",
-	r"<i>(.*?)</i>"s => s"<mentioned>\1</mentioned>",
 ]
 
 function markup_to_tei(markup::String)::String
@@ -17,6 +15,7 @@ function markup_to_tei(markup::String)::String
 	for (pattern, replacement) in markup_substitutions
 		result = replace(result, pattern => replacement)
 	end
+	result = convert_italics(result)
 	lowercase_usg_content(result)
 end
 
@@ -53,6 +52,47 @@ function split_preserving(s::AbstractString, pattern::Regex)::Vector{String}
 		push!(parts, s[last_end:end])
 	end
 	parts
+end
+
+# Latin italics and emphatic italics share the </i> close tag, so independent
+# regex passes mispair when one <i> nests inside another. A single pass over the
+# tag stream tracks open <i> tags on a stack and emits the matching close by kind.
+function convert_italics(s::AbstractString)::String
+	buffer = IOBuffer()
+	stack = Symbol[]
+	for token in split_preserving(s, r"<[^>]+>")
+		if token == "<i lang=\"la\">"
+			push!(stack, :foreign)
+			print(buffer, "<foreign xml:lang=\"la\">")
+		elseif token == "<i>"
+			push!(stack, :mentioned)
+			print(buffer, "<mentioned>")
+		elseif token == "</i>"
+			kind = isempty(stack) ? :verbatim : pop!(stack)
+			print(buffer, kind === :foreign ? "</foreign>" :
+				kind === :mentioned ? "</mentioned>" : "</i>")
+		elseif startswith(token, "<i ") || startswith(token, "<i\t") || startswith(token, "<i\n")
+			push!(stack, :verbatim)
+			print(buffer, token)
+		else
+			print(buffer, token)
+		end
+	end
+	String(take!(buffer))
+end
+
+function is_balanced(s::AbstractString)::Bool
+	depth = 0
+	for token in split_preserving(s, r"<[^>]+>")
+		startswith(token, "<") || continue
+		if startswith(token, "</")
+			depth -= 1
+			depth < 0 && return false
+		elseif !endswith(token, "/>")
+			depth += 1
+		end
+	end
+	depth == 0
 end
 
 function strip_usg_tags(s::AbstractString)::String
@@ -319,6 +359,11 @@ end
 function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTransition}, level::Int, sense_id::String)
 	content = markup_to_tei(indent.content)
 	gs = split_gram(content)
+
+	if !isempty(gs.label_text) && !(is_balanced(gs.pre_text) && is_balanced(gs.def_text))
+		emit_default_sense(io, indent, level, sense_id)
+		return
+	end
 
 	if isempty(gs.label_text)
 		bare = split_bare_transition(content)

@@ -23,15 +23,18 @@ const wrapper_head = """
 
 const wrapper_foot = "\n</body></text>\n</TEI>\n"
 
-# jing prints "PATH:line:col: level: message". Attribution keys on the file's
-# basename, not the full path: on macOS mktempdir yields /var/... while jing
-# prints the canonical /private/var/..., so full-path matching silently drops
-# errors and counts the entry valid. Any output line naming a file marks it
-# invalid, whether or not the message itself parses.
+# jing prints "PATH:line:col: level: message"; attribution keys on basename.
+# jing is the sole well-formedness authority: XML.jl 0.3.x accepts mis-nested
+# input, so an in-process gate cannot be trusted. jing aborts the remaining
+# argument list on the first fatal error, so run_jing re-runs each batch tail
+# past a fatal until the whole set is covered. Fatal lines are normalized to a
+# single malformed_signature so the not-well-formed population ranks as one row.
 const path_pattern = r"^(.*?\.xml):"
 const message_pattern = r"^.*?\.xml:\d+:\d+:\s*(?:error|fatal(?:\s+error)?):\s*(.*)$"
 const entry_boundary = r"<entry\b|</entry>"
 const id_pattern = r"xml:id=\"([^\"]*)\""
+const fatal_line = r"^(.*?\.xml):\d+:\d+:\s*fatal"
+const malformed_signature = "not well-formed XML"
 
 struct EntryResult
 	id::String
@@ -70,15 +73,37 @@ function extract_id(fragment::AbstractString)::String
 	matched === nothing ? "" : matched.captures[1]
 end
 
+function invoke_jing(paths)
+	buffer = IOBuffer()
+	command = `java -jar $jing_jar $schema_path $paths`
+	process = run(pipeline(ignorestatus(command); stdout = buffer, stderr = buffer))
+	output = String(take!(buffer))
+	process.exitcode > 1 && error("jing failed (exit $(process.exitcode)) on a batch of $(length(paths)) files:\n$(first(output, 1000))")
+	split(output, '\n'; keepempty = false)
+end
+
+function fatal_index(lines, paths)::Union{Nothing, Int}
+	for line in lines
+		matched = match(fatal_line, line)
+		matched === nothing && continue
+		key = basename(matched.captures[1])
+		index = findfirst(path -> basename(path) == key, paths)
+		index === nothing || return index
+	end
+	nothing
+end
+
 function run_jing(paths)::Vector{String}
 	messages = String[]
 	for group in Iterators.partition(collect(paths), chunk_size)
-		buffer = IOBuffer()
-		command = `java -jar $jing_jar $schema_path $group`
-		process = run(pipeline(ignorestatus(command); stdout = buffer, stderr = buffer))
-		output = String(take!(buffer))
-		process.exitcode > 1 && error("jing failed (exit $(process.exitcode)) on a batch of $(length(group)) files:\n$(first(output, 1000))")
-		append!(messages, split(output, '\n'; keepempty = false))
+		remaining = collect(group)
+		while !isempty(remaining)
+			lines = invoke_jing(remaining)
+			append!(messages, lines)
+			poison = fatal_index(lines, remaining)
+			poison === nothing && break
+			remaining = remaining[(poison + 1):end]
+		end
 	end
 	messages
 end
@@ -89,8 +114,12 @@ function group_by_source(messages::Vector{<:AbstractString})::Dict{String, Vecto
 		path_match = match(path_pattern, line)
 		path_match === nothing && continue
 		key = basename(path_match.captures[1])
-		sig_match = match(message_pattern, line)
-		signature = sig_match === nothing ? "unparsed jing output: $(strip(line))" : sig_match.captures[1]
+		signature = if match(fatal_line, line) !== nothing
+			malformed_signature
+		else
+			sig_match = match(message_pattern, line)
+			sig_match === nothing ? "unparsed jing output: $(strip(line))" : sig_match.captures[1]
+		end
 		push!(get!(grouped, key, String[]), signature)
 	end
 	grouped
@@ -115,24 +144,22 @@ function validate_per_entry(corpus_path::String)::Report
 	directory = mktempdir()
 	basename_to_id = Dict{String, String}()
 	filenames = String[]
-	split_errors = EntryResult[]
+	pre_results = EntryResult[]
 	for (index, (id, fragment)) in enumerate(entries)
 		label = isempty(id) ? "entry_$(index)" : id
 		if !occursin("<entry", fragment)
-			push!(split_errors, EntryResult(label, ["split error: fragment contains no entry element"]))
+			push!(pre_results, EntryResult(label, ["split error: fragment contains no entry element"]))
 			continue
 		end
 		name = "$(index).xml"
-		open(joinpath(directory, name), "w") do io
-			print(io, wrapper_head, fragment, wrapper_foot)
-		end
+		write(joinpath(directory, name), string(wrapper_head, fragment, wrapper_foot))
 		basename_to_id[name] = label
 		push!(filenames, name)
 	end
 
 	grouped = group_by_source(run_jing(joinpath.(directory, filenames)))
 	results = [EntryResult(basename_to_id[name], get(grouped, name, String[])) for name in filenames]
-	append!(results, split_errors)
+	append!(results, pre_results)
 	rm(directory; recursive = true)
 
 	valid = count(result -> isempty(result.errors), results)
