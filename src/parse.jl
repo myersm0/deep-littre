@@ -78,19 +78,19 @@ end
 
 # ── ID generation ────────────────────────────────────────────────
 
-function make_id(headword::String, homograph_index::Union{Nothing, Int} = nothing)::String
-	nfkd = Unicode.normalize(lowercase(headword), :NFKD)
+function slugify(text::AbstractString)::String
+	nfkd = Unicode.normalize(lowercase(text), :NFKD)
 	ascii_only = filter(isascii, nfkd)
 	cleaned = replace(ascii_only, r"[^a-z0-9]" => "_")
-	cleaned = replace(cleaned, r"_+" => "_")
-	cleaned = strip(cleaned, '_')
+	String(strip(replace(cleaned, r"_+" => "_"), '_'))
+end
+
+function make_id(headword::String, homograph_index::Union{Nothing, Int} = nothing)::String
+	cleaned = slugify(headword)
 	if isempty(cleaned) || !isletter(first(cleaned))
 		cleaned = "e_" * cleaned
 	end
-	if homograph_index !== nothing
-		cleaned = "$(cleaned).$(homograph_index)"
-	end
-	cleaned
+	homograph_index === nothing ? cleaned : "$(cleaned).$(homograph_index)"
 end
 
 # ── XML helpers ──────────────────────────────────────────────────

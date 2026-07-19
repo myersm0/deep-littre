@@ -1,3 +1,5 @@
+const object_language = "fr-x-lit19c"
+
 # ── Markup conversion ────────────────────────────────────────────
 # Converts Gannaz inline markup to TEI equivalents.
 
@@ -222,6 +224,15 @@ function id_attr(sense_id::String)::String
 	isempty(sense_id) ? "" : " xml:id=\"$(escape_xml(sense_id))\""
 end
 
+# relatedEntry ids: positional sense id + a slug of the canonical form
+# (e.g. cabinet_s4.1.tenir_cabinet). Falls back to the positional id when no
+# form is available. Not yet wired into emission; consumed by W3's <re
+# type="locution"> → <entry type="relatedEntry"> migration.
+function related_entry_id(positional_id::AbstractString, canonical_form::AbstractString)::String
+	slug = slugify(canonical_form)
+	isempty(slug) ? String(positional_id) : "$(positional_id).$(slug)"
+end
+
 pad(level::Int) = "  " ^ level
 
 # ── Citation emission ────────────────────────────────────────────
@@ -441,7 +452,7 @@ end
 function emit_body_element(io::IO, group::TransitionGroup, level::Int, sense_id::String)
 	p = pad(level)
 	if group.kind == :strong
-		println(io, "$(p)<entry type=\"grammaticalVariant\">")
+		println(io, "$(p)<entry$(id_attr(sense_id)) xml:lang=\"$(object_language)\" type=\"grammaticalVariant\">")
 		println(io, "$(p)  <form><orth>$(escape_xml(group.form))</orth></form>")
 		println(io, "$(p)  <gramGrp><gram type=\"pos\">$(escape_xml(group.pos))</gram></gramGrp>")
 	else
@@ -497,7 +508,7 @@ end
 function emit_entry(io::IO, entry::Entry, level::Int)
 	p = pad(level)
 	xml_id = escape_xml(entry.id[])
-	attrs = "xml:id=\"$(xml_id)\""
+	attrs = "xml:id=\"$(xml_id)\" xml:lang=\"$(object_language)\" type=\"mainEntry\""
 	entry.is_supplement && (attrs *= " source=\"supplement\"")
 
 	println(io, "$(p)<entry $(attrs)>")
@@ -531,7 +542,6 @@ const tei_header = """
     <titleStmt>
       <title type="full">Dictionnaire de la langue française</title>
       <title type="abbr">Littré</title>
-      <title type="sub">TEI Lex-0 edition</title>
       <author>
         <persName><forename>Émile</forename><surname>Littré</surname></persName>
       </author>
@@ -542,6 +552,9 @@ const tei_header = """
         <persName><forename>Michael</forename><surname>Myers</surname></persName>
       </editor>
     </titleStmt>
+    <editionStmt>
+      <edition>TEI Lex-0 edition</edition>
+    </editionStmt>
     <publicationStmt>
       <publisher>
         <persName><forename>Michael</forename><surname>Myers</surname></persName>
@@ -563,18 +576,18 @@ const tei_header = """
               <pubPlace>Paris</pubPlace>
               <date notBefore="1872" notAfter="1877">1872–1877</date>
             </imprint>
+            <extent>
+              <measure unit="volumes" quantity="4">4 volumes</measure>
+            </extent>
           </monogr>
         </biblStruct>
         <biblStruct xml:id="xmlittre">
-          <monogr>
+          <monogr corresp="https://bitbucket.org/Mytskine/xmlittre-data">
             <author>
               <persName><forename>François</forename><surname>Gannaz</surname></persName>
             </author>
             <title level="m">XMLittré</title>
             <edition>1.3</edition>
-            <imprint>
-              <ref target="https://bitbucket.org/Mytskine/xmlittre-data"/>
-            </imprint>
           </monogr>
         </biblStruct>
       </listBibl>
@@ -582,9 +595,10 @@ const tei_header = """
   </fileDesc>
   <profileDesc>
     <langUsage>
-      <language ident="fr" role="objectLanguage">
-        <name xml:lang="en">French</name>
-        <name xml:lang="fr">Français</name>
+      <language ident="fr-x-lit19c" role="objectLanguage">
+        <name xml:lang="en">19th-century literary French</name>
+        <name xml:lang="fr">Français littéraire du XIXᵉ siècle</name>
+        <date notBefore="1801" notAfter="1900"/>
       </language>
       <language ident="fr" role="workingLanguage">
         <name xml:lang="en">French</name>
@@ -592,6 +606,9 @@ const tei_header = """
       </language>
     </langUsage>
   </profileDesc>
+  <revisionDesc>
+    <change when="2026-07-19" n="0.2.0">TEI Lex-0 conformance branch: schema-valid corpus (RNG), entry-shell identity attributes, and header shell.</change>
+  </revisionDesc>
 </teiHeader>
 <text>
 <body>
