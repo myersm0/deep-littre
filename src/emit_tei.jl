@@ -304,7 +304,7 @@ pad(level::Int) = "  " ^ level
 function pos_group_markup(pos::AbstractString)::String
 	elements = parse_pos(pos)
 	elements === nothing || return gram_markup(elements)
-	"<gramGrp><gram type=\"pos\">$(escape_xml(String(pos)))</gram></gramGrp>"
+	"<gramGrp><gram type=\"pos\">$(escape_xml(pos))</gram></gramGrp>"
 end
 
 # ── Citation emission ────────────────────────────────────────────
@@ -588,8 +588,8 @@ end
 # ── Orthography and pronunciation ────────────────────────────────
 
 function orth_markup(headword::AbstractString)::String
-	printed = escape_xml(String(headword))
-	"<orth norm=\"$(escape_xml(lowercase(String(headword))))\">$(printed)</orth>"
+	printed = escape_xml(headword)
+	"<orth norm=\"$(escape_xml(lowercase(headword)))\">$(printed)</orth>"
 end
 
 # Littré's <pron> is often prescriptive commentary rather than a transcription.

@@ -223,5 +223,5 @@ end
 function century_date_markup(text::AbstractString)::Union{Nothing, String}
 	range = century_range(text)
 	range === nothing && return nothing
-	"<date notBefore=\"$(range[1])\" notAfter=\"$(range[2])\">$(escape_xml(String(strip(text))))</date>"
+	"<date notBefore=\"$(range[1])\" notAfter=\"$(range[2])\">$(escape_xml(strip(text)))</date>"
 end

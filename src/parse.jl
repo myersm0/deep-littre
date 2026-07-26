@@ -1,14 +1,14 @@
 # ── Shared utilities ─────────────────────────────────────────────
 
-function strip_tags(markup::String)::String
+function strip_tags(markup::AbstractString)::String
 	strip(replace(markup, r"<[^>]+>" => ""))
 end
 
-function escape_xml(text::String)::String
-	text = replace(text, '&' => "&amp;")
-	text = replace(text, '<' => "&lt;")
-	text = replace(text, '>' => "&gt;")
-	text
+function escape_xml(text::AbstractString)::String
+	escaped = replace(text, '&' => "&amp;")
+	escaped = replace(escaped, '<' => "&lt;")
+	escaped = replace(escaped, '>' => "&gt;")
+	escaped
 end
 
 
