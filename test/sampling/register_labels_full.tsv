@@ -1,0 +1,217 @@
+count	normalized_label	routing
+1437	par extension	meaningType/byExtension
+1278	familièrement	socioCultural/familiar
+303	populairement	socioCultural/popular
+151	ironiquement	attitude/ironic
+138	poétiquement	textType/poetic
+125	par exagération	meaningType/hyperbole
+124	par plaisanterie	attitude/jocular
+87	par analogie	meaningType/byAnalogy
+40	peu usité	frequency/rare
+34	par antiphrase	meaningType/byAntiphrasis
+30	vieux	temporal/archaic
+27	familièrement et fig	socioCultural/familiar; meaningType/figurative
+23	inusité	frequency/rare
+22	populairement et fig	socioCultural/popular; meaningType/figurative
+19	peu usité en ce sens	frequency/rare
+17	familièrement et ironiquement	socioCultural/familiar; attitude/ironic
+15	familièrement et par exagération	socioCultural/familiar; meaningType/hyperbole
+15	vieilli	temporal/archaic
+15	par ironie	attitude/ironic
+14	familièrement et par plaisanterie	socioCultural/familiar; attitude/jocular
+11	terme vieilli	temporal/archaic
+9	néologisme	temporal/neologism
+8	familièrement et par ironie	socioCultural/familiar; attitude/ironic
+8	mot vieilli	temporal/archaic
+8	par extension et familièrement	meaningType/byExtension; socioCultural/familiar
+7	il est familier	socioCultural/familiar
+7	très peu usité	frequency/rare
+6	terme populaire	socioCultural/popular
+6	ironiquement et familièrement	attitude/ironic; socioCultural/familiar
+6	par extension et plaisanterie	meaningType/byExtension; attitude/jocular
+5	il a vieilli	temporal/archaic
+5	poétiquement et fig	textType/poetic; meaningType/figurative
+4	familier	socioCultural/familiar
+4	mot populaire	socioCultural/popular
+4	ce mot a vieilli	temporal/archaic
+4	il est vieux	temporal/archaic
+4	ce sens a vieilli	temporal/archaic
+4	par extension et poétiquement	meaningType/byExtension; textType/poetic
+3	peu usité en cet emploi	frequency/rare
+3	terme vieux	temporal/archaic
+3	populaire	socioCultural/popular
+3	familièrement et elliptiquement	socioCultural/familiar; meaningType/elliptical
+3	il vieillit	temporal/archaic
+3	terme familier	socioCultural/familiar
+3	populairement et bassement	socioCultural/popular; socioCultural/low
+3	par exagération et familièrement	meaningType/hyperbole; socioCultural/familiar
+3	par extension et par plaisanterie	meaningType/byExtension; attitude/jocular
+3	par dérision	attitude/derogatory
+2	ce mot est tombé en désuétude	temporal/obsolete
+2	il n'est plus usité	temporal/obsolete
+2	familièrement et populairement	socioCultural/familiar; socioCultural/popular
+2	hors d'usage	temporal/obsolete
+2	familièrement et par extension	socioCultural/familiar; meaningType/byExtension
+2	familièrement et figurément	socioCultural/familiar; meaningType/figurative
+2	ce mot est familier	socioCultural/familiar
+2	mot familier	socioCultural/familiar
+2	mot bas et libre	socioCultural/low; normativity/proscribed
+2	familièrement et par antiphrase	socioCultural/familiar; meaningType/byAntiphrasis
+2	populairement et ironiquement	socioCultural/popular; attitude/ironic
+2	tombé en désuétude	temporal/obsolete
+2	par plaisanterie et antiphrase	attitude/jocular; meaningType/byAntiphrasis
+2	cet emploi vieillit	temporal/archaic
+2	vulgairement	socioCultural/vulgar
+2	par analogie et plaisanterie	meaningType/byAnalogy; attitude/jocular
+2	ironiquement et par antiphrase	attitude/ironic; meaningType/byAntiphrasis
+2	familièrement et absolument	socioCultural/familiar; hint
+2	familièrement et par ellipse	socioCultural/familiar; meaningType/elliptical
+2	par exagération et poétiquement	meaningType/hyperbole; textType/poetic
+1	par exagération poétique	meaningType/hyperbole
+1	mot populaire et du plus mauvais langage	socioCultural/popular; normativity/proscribed
+1	il a vieilli ; on dit étui	temporal/archaic
+1	il est hors d'usage	temporal/obsolete
+1	mot inusité	frequency/rare
+1	peu usité en ce sens hors de la poésie	frequency/rare
+1	peu usité au propre	frequency/rare
+1	peu usité excepté au participe	frequency/rare
+1	tombé en désuétude comme le verbe	temporal/obsolete
+1	poétiquement et par extension	textType/poetic; meaningType/byExtension
+1	par analogie il se dit des choses	meaningType/byAnalogy
+1	familièrement être encore tout étourdi du bateau, n'être pas encore remis de ses fatigues, de son trouble, de son chagrin	hint
+1	par extension et dans le langage familier	meaningType/byExtension; socioCultural/familiar
+1	ce mot est resté au bout de la plume, il a été oublié	hint
+1	familièrement et avec une expression soit de supériorité soit d'ironie	socioCultural/familiar; hint
+1	populairement et par dénigrement	socioCultural/popular; attitude/derogatory
+1	tombé en désuétude au propre	temporal/obsolete
+1	mot bas	socioCultural/low
+1	par extension et dans le langage des soldats	meaningType/byExtension; socioCultural/slang
+1	mot populaire et peu usité	socioCultural/popular; frequency/rare
+1	mot vieilli ; on dit canonicat	temporal/archaic
+1	par ironie et familièrement	attitude/ironic; socioCultural/familiar
+1	par extension et par dépréciation	meaningType/byExtension; attitude/derogatory
+1	mot populaire dans quelques provinces	socioCultural/popular
+1	par extension de l'antique	meaningType/byExtension
+1	néologisme et fig	temporal/neologism; meaningType/figurative
+1	ce mot a vieilli ; il peut pourtant être encore employé	temporal/archaic
+1	familièrement et en plaisantant	socioCultural/familiar; attitude/jocular
+1	ce mot est réservé aujourd'hui aux surfaces engendrées par une droite qui se meut parallèlement à un plan, en s'appuyant sur une autre droite et sur une directrice quelconque. on dit dans le même sens adjectivement surface conoïde	hint; hint
+1	familièrement être content de sa personne, de sa petite personne, avoir un air avantageux	hint
+1	peu usité au singulier	frequency/rare
+1	néologisme d'autant plus acceptable que controversé est en plein usage	hint
+1	néologisme correct, puisque le mot est fait comme passionner de passion, impressionner d'impression	hint
+1	ce mot est barbare	normativity/proscribed
+1	ce mot est régulier	hint
+1	populairement et par pléonasme	socioCultural/popular; meaningType/pleonasm
+1	cet emploi a vieilli ; on dit tailleur	temporal/archaic
+1	terme familier forgé par voltaire	hint
+1	peu usité en ce dernier sens	frequency/rare
+1	populairement et par menace	socioCultural/popular; attitude/derogatory
+1	par extension et avec un sens spécial	meaningType/byExtension; hint
+1	mot vieilli qui est resté dans l'argot	temporal/archaic
+1	ce mot est employé comme titre de journaux. le journal des débats politiques et littéraires, ou, simplement, les débats	hint; hint
+1	peu usité aujourd'hui en ce sens	frequency/rare
+1	poétiquement encore, la mauvaise saison. (cette prise eut lieu en juin comme l'expriment les gémeaux. décembre indique ici les grandes pluies qui tombèrent alors)	hint
+1	il n'est plus usité en ce sens. on dit dégaîner	temporal/obsolete
+1	il n'est plus usité en cet emploi	temporal/obsolete
+1	par analogie et dans le même sens	meaningType/byAnalogy; hint
+1	par extension du sens figuré	meaningType/byExtension
+1	ce mot est du langage familier	hint
+1	ce mot a vieilli au propre	temporal/archaic
+1	mot vieilli et populaire	temporal/archaic; socioCultural/popular
+1	terme vieilli et qui ne se dirait plus qu'en plai antant ou pour railler	temporal/archaic; hint
+1	tombé en désuétude en ce sens	temporal/obsolete
+1	cet emploi a vieilli ; mais on pourrait, imitant corneille, le rajeunir comme a fait m. de lamartine : je n'étais plus qu'une âme errante qui divaguait çà et là dans la campagne pour user les jours, graziella, iv, 2	temporal/archaic; hint
+1	par extension et par dénigrement	meaningType/byExtension; attitude/derogatory
+1	par extension et dans le style badin	meaningType/byExtension; hint
+1	mot populaire et très usité	socioCultural/popular; hint
+1	peu usité à l'actif	frequency/rare
+1	par ironie ou par moquerie	attitude/ironic
+1	par extension et dans le langage général	meaningType/byExtension; hint
+1	terme populaire et vieilli	socioCultural/popular; temporal/archaic
+1	cet emploi a vieilli	temporal/archaic
+1	terme vieilli de marine. navire endormi, navire qui, après avoir été arrêté, n'a pas encore repris son erre	temporal/archaic
+1	par antiphrase et plaisanterie	meaningType/byAntiphrasis; attitude/jocular
+1	mot vieilli et tombé en désuétude	temporal/archaic; temporal/obsolete
+1	peu usité en ce sens propre. on dit plutôt empoisonner	frequency/rare
+1	populairement et par une exagération plaisante	socioCultural/popular; hint
+1	familièrement et par forme d'imprécation	socioCultural/familiar; hint
+1	cet emploi a vieilli ; on dit présentement faire des façons	temporal/archaic
+1	il n'est plus usité dans la jurisprudence où l'on dit, en ce sens, mémoire	temporal/obsolete
+1	populairement encore, une ficelle, un escroc, un filou. méfiez-vous de lui, c'est une vraie ficelle	hint
+1	il est familier en ce sens	hint
+1	il est familier en cet emploi	hint
+1	par extension dans l'usage ordinaire	meaningType/byExtension
+1	terme familier du commerce. donner sa marchandise à vil prix	hint
+1	par extension et hyperbole	meaningType/byExtension; hint
+1	par extension et populairement	meaningType/byExtension; socioCultural/popular
+1	par extension et dénigrement	meaningType/byExtension; hint
+1	ironiquement et très familièrement	attitude/ironic; hint
+1	par extension du sens de se tenir sur la place en attendant de l'ouvrage	meaningType/byExtension
+1	par extension et par imitation d'un anglicisme (this house is haunted	meaningType/byExtension; hint
+1	ironiquement et par moquerie	attitude/ironic; hint
+1	peu usité en ce sens, qui est le sens primitif	frequency/rare
+1	par plaisanterie ou sarcasme	attitude/jocular
+1	peu usité en ce sens ; on dit hygiène	frequency/rare
+1	par antiphrase et ironie	meaningType/byAntiphrasis; attitude/ironic
+1	par extension et toujours en mauvaise part	meaningType/byExtension; hint
+1	par analogie il se dit	meaningType/byAnalogy
+1	ironiquement et populairement	attitude/ironic; socioCultural/popular
+1	néologisme et dans un sens péjoratif	temporal/neologism; hint
+1	par extension de l'insensibilité morale	meaningType/byExtension
+1	peu usité en ce dernier emploi	frequency/rare
+1	il a vieilli en cette signification, et aujourd'hui il ne se dit plus guère qu'avec imagination. son imagination libertine l'écarte sans cesse de son sujet	temporal/archaic; hint
+1	il vieillit en ce sens. cependant on dirait encore très bien, comme racine, pleine licence	temporal/archaic
+1	par extension de ce sens historique	meaningType/byExtension
+1	par exagération et politesse	meaningType/hyperbole; hint
+1	poétiquement et dans le langage élevé	textType/poetic; hint
+1	ironiquement et fig	attitude/ironic; meaningType/figurative
+1	populairement et par injure	socioCultural/popular; hint
+1	il vieillit dans ce sens	temporal/archaic
+1	familièrement et ordinairement en mauvaise part	socioCultural/familiar; hint
+1	familièrement et avec un ton de plainte	socioCultural/familiar; hint
+1	ce mot est pris dans le sens sérieux quand les rois parlaient aux archevêques et aux évêques : mons l'archevêque. ils ne leur disaient ni monsieur, ni monseigneur	hint; hint
+1	par extension et par similitude avec la fourniture qu'on fait d'un cheval	meaningType/byExtension; hint
+1	par extension et par assimilation du poil des chats	meaningType/byExtension; hint
+1	peu usité ; on dit nageant	frequency/rare
+1	peu usité aujourd'hui en cette acception	frequency/rare
+1	par exagération et par plaisanterie	meaningType/hyperbole; attitude/jocular
+1	peu usité ; on dit plutôt nervin	frequency/rare
+1	il a vieilli ; on dit quatre-vingt-dixième	temporal/archaic
+1	terme inusité	frequency/rare
+1	par ironie et avec un sens péjoratif	attitude/ironic; hint
+1	peu usité aujourd'hui	frequency/rare
+1	par euphémisme	hint
+1	il vieillit en ce sens ; on dit habituellement courrier	temporal/archaic
+1	familièrement et par une espèce de modestie	socioCultural/familiar; hint
+1	néologisme des ateliers. un passionné de peinture, de musique, un homme passionné pour la peinture, pour la musique	hint
+1	familièrement se dit de tout aveu qui coûte	hint
+1	il vieillit en cet emploi, et pour l'employer il faut en bien choisir la place	temporal/archaic; hint
+1	familièrement et par dénigrement	socioCultural/familiar; attitude/derogatory
+1	par exagération et pour exprimer une profonde affliction	meaningType/hyperbole; hint
+1	peu usité excepté dans le blason	frequency/rare
+1	ce mot est aussi appliqué en zoologie à certaines pha ses de la reproduction des vers cestoïdes	hint
+1	poétiquement et dans le sens ancien	textType/poetic; hint
+1	par plaisanterie et en jouant sur le mot puissant	attitude/jocular; hint
+1	par analogie et dans le style familier	meaningType/byAnalogy; hint
+1	par extension et en plaisantant	meaningType/byExtension; attitude/jocular
+1	familièrement et par forme d'injure	socioCultural/familiar; hint
+1	populairement et par plaisanterie	socioCultural/popular; attitude/jocular
+1	terme bas et populaire	hint; socioCultural/popular
+1	par extension et avec un sens de dénigrement qui est le plus ordinaire	meaningType/byExtension; hint
+1	ce mot est devenu un terme populaire pour désigner des gens bien mis	hint
+1	familièrement et par abréviation	socioCultural/familiar; hint
+1	ce mot est devenu, dans l'argot, synonyme d'assassiner	hint
+1	populairement et au fém	socioCultural/popular; hint
+1	par analogie et dans le langage ordinaire	meaningType/byAnalogy; hint
+1	populairement et incorrectement (voy	socioCultural/popular; hint
+1	familièrement et par mépris	socioCultural/familiar; attitude/derogatory
+1	ce mot est peu usité ; on dit cubique	frequency/rare
+1	par exagération moqueuse	meaningType/hyperbole
+1	populairement au singulier. voilà de la troupe qui passe. il y a bien de la troupe dans cette ville	hint
+1	familièrement et par manière de reproche	socioCultural/familiar; hint
+1	ce mot est employé dans le refrain de quelque vieilles chansons	hint
+1	par exagération et plaisanterie	meaningType/hyperbole; attitude/jocular
+1	par analogie d'aspect	meaningType/byAnalogy
+1	familièrement et par menace	socioCultural/familiar; attitude/derogatory
+1	par extension et fig	meaningType/byExtension; meaningType/figurative

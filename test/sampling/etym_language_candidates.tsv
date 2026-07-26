@@ -1,0 +1,445 @@
+count	label	bcp47	status
+3775	lat.	la	recognized
+1847	provenç.	pro	recognized
+864	latin	la	recognized
+340	bas-lat.	la	recognized
+340	portug.	pt	recognized
+325	ital.	it	recognized
+293	bourguig.	fr-x-bourguignon	recognized
+268	catal.	ca	recognized
+203	angl.	en	recognized
+192	allem.	de	recognized
+188	prov.	pro	recognized
+181	sanscrit	sa	recognized
+171	sanscr.	sa	recognized
+137	génev.	fr-CH-x-genev	recognized
+103	bourg.	fr-x-bourguignon	recognized
+90	norm.	nrf	recognized
+71	port.	pt	recognized
+68	cat.	ca	recognized
+65	goth.	got	recognized
+58	anc. franç.	fro	recognized
+53	anc. catal.	ca	recognized
+50	provençal	pro	recognized
+48	all.	de	recognized
+44	namur.	wa	recognized
+40	bourguign.	fr-x-bourguignon	recognized
+39	provenc.	pro	recognized
+35	wall.	wa	recognized
+28	anc. haut-allem.	goh	recognized
+28	gaél.	gd	recognized
+25	persan	fa	recognized
+25	wallon	wa	recognized
+25	bas-bret.	br	recognized
+23	allemand	de	recognized
+22	anglo-sax.	ang	recognized
+20	anc. h. allem.	goh	recognized
+17	suéd.	sv	recognized
+16	holl.	nl	recognized
+15	gothique	got	recognized
+15	allem. mod.	de	recognized
+13	picard	pcd	recognized
+13	flamand	nl	recognized
+12	scandinave	non	recognized
+12	saintong.	fr-x-saintongeais	recognized
+12	it.	it	recognized
+11	anc. cat.	ca	recognized
+11	celtique	cel	recognized
+11	haut-allem.	goh	recognized
+10	irland.	ga	recognized
+10	hollandais	nl	recognized
+10	fém.		non_language
+9	espagn.	es	recognized
+9	franç.	fr	recognized
+9	danois	da	recognized
+9	island.	is	recognized
+8	catal. mod.	ca	recognized
+8	holland.	nl	recognized
+8	irl.	ga	recognized
+8	sansc.	sa	recognized
+8	pic.	pcd	recognized
+7	genev.	fr-CH-x-genev	recognized
+7	s.		non_language
+7	normand	nrf	recognized
+6	portugais	pt	recognized
+6	dan.	da	recognized
+6	anc. scand.	non	recognized
+6	anc. scandin.	non	recognized
+5	anglais	en	recognized
+5	anc. espagn.	es	recognized
+5	anc. lat.	la	recognized
+5	suédois	sv	recognized
+5	napolit.	nap	recognized
+5	russe	ru	recognized
+4	celt.	cel	recognized
+4	genév.	fr-CH-x-genev	recognized
+4	provenç. mod.	oc	recognized
+4	hébreu	he	recognized
+4	catalan	ca	recognized
+4	nam.	wa	recognized
+4	latin.	la	recognized
+4	isl.	is	recognized
+3	anc. portug.	pt	recognized
+3	seigneur.		suspect
+3	picard.	pcd	recognized
+3	champ.	fr-x-champenois	recognized
+3	anc. franc.	fro	recognized
+3	vénit.	vec	recognized
+3	piémont.	pms	recognized
+3	piém.	pms	recognized
+3	turc	tr	recognized
+3	faire.		suspect
+3	régime.		suspect
+3	anc. haut-all.	goh	recognized
+3	plur.		non_language
+3	polonais	pl	recognized
+3	all. mod.	de	recognized
+3	rac. sanscr.	sa	recognized
+3	poitev.	fr-x-poitevin	recognized
+3	adj.		non_language
+3	anglet.		suspect
+2	ex.		suspect
+2	romanes.		suspect
+2	sax.	osx	recognized
+2	ennemi.		suspect
+2	arabe	ar	recognized
+2	peine.		suspect
+2	basque	eu	recognized
+2	kymr.	cy	recognized
+2	historique.		suspect
+2	syllabe.		suspect
+2	anc. angl.	ang	recognized
+2	angl. sax.	ang	recognized
+2	cornw.	kw	recognized
+2	cheval.		suspect
+2	sens.		suspect
+2	italien	it	recognized
+2	voy.		non_language
+2	génit.		non_language
+2	grec	grc	recognized
+2	scand.	non	recognized
+2	h. allem.	goh	recognized
+2	german.	de	recognized
+2	herbe.		suspect
+2	héritier.		suspect
+2	nivern.	fr-x-nivernais	recognized
+2	lithuan.	lt	recognized
+2	s. f.		non_language
+2	français.		suspect
+2	anc. irl.	ga	recognized
+2	cat. mod.	ca	recognized
+2	rad. sanscr.	sa	recognized
+2	anglosax.	ang	recognized
+2	chasser.		suspect
+2	anc. all.	de	recognized
+2	wal.	wa	recognized
+1	extraction.		suspect
+1	présage.		suspect
+1	onde.		suspect
+1	prestation.		suspect
+1	absent.		suspect
+1	débit.		suspect
+1	humeur.		suspect
+1	acc.		non_language
+1	espagnoles.		suspect
+1	abondent.		suspect
+1	dieu.		suspect
+1	dextérité. bourguig.		suspect
+1	frapper.		suspect
+1	ombre.		suspect
+1	peloton.		suspect
+1	mouvoir.		suspect
+1	fr.	fr	recognized
+1	anc. nord.		suspect
+1	indompté.		suspect
+1	ital. mod.		suspect
+1	corn.		suspect
+1	gaël.		suspect
+1	pont.		suspect
+1	véritable.		suspect
+1	nourrir.		suspect
+1	grandeur.		suspect
+1	attirer.		suspect
+1	admissible.		suspect
+1	romain.		suspect
+1	alouette.		suspect
+1	uf.		suspect
+1	ital. espagn.		suspect
+1	messager. provenç.		suspect
+1	mission.		suspect
+1	anglo-saxon.		suspect
+1	côtés.		suspect
+1	matériels.		suspect
+1	malt.		suspect
+1	cornouail.		suspect
+1	sicil.		suspect
+1	veron.		suspect
+1	serviteur.		suspect
+1	serpent.		suspect
+1	récolte.		suspect
+1	préférable.		suspect
+1	caporal.		suspect
+1	corps.		suspect
+1	caverne.		suspect
+1	outil.		suspect
+1	sanie.		suspect
+1	berry.		suspect
+1	métallique.		suspect
+1	france.		suspect
+1	épaule.		suspect
+1	langue.		suspect
+1	rive. bourguig.		suspect
+1	provision.		suspect
+1	fortification.		suspect
+1	espag.		suspect
+1	offrir.		suspect
+1	débrouiller.		suspect
+1	auprès.		suspect
+1	tempe.		suspect
+1	tempérer.		suspect
+1	merveille.		suspect
+1	coude.		suspect
+1	bescherelle.		suspect
+1	langued.		suspect
+1	van.		suspect
+1	explication.		suspect
+1	à.		suspect
+1	bret.	br	recognized
+1	fille.		suspect
+1	mot.		suspect
+1	cornwall.		suspect
+1	voiture.		suspect
+1	reçoit. provenç.		suspect
+1	corruption.		suspect
+1	chose.		suspect
+1	corn-wall.		suspect
+1	plaira.		suspect
+1	irlandais.		suspect
+1	barque.		suspect
+1	s. m. catal.		suspect
+1	livre.		suspect
+1	latinisé.		suspect
+1	plus.		suspect
+1	bouille.		suspect
+1	plausible.		suspect
+1	napol.		suspect
+1	intermédiaire.		suspect
+1	masculin.		suspect
+1	venu.		suspect
+1	lomb.		suspect
+1	avant-toit.		suspect
+1	calcul.		suspect
+1	islandais	is	recognized
+1	corne.		suspect
+1	adverbial.		suspect
+1	aiguille.		suspect
+1	cognassier.		suspect
+1	sac.		suspect
+1	choléra.		suspect
+1	mineure.		suspect
+1	comp.		suspect
+1	val. bourguig.		suspect
+1	vulgaire.		suspect
+1	ami.		suspect
+1	nomin. plur.		suspect
+1	arabes. provenç.		suspect
+1	rendent.		suspect
+1	là.		suspect
+1	lit.		suspect
+1	vaisseau.		suspect
+1	sentir.		suspect
+1	piquer.		suspect
+1	siècle.		suspect
+1	paroles.		suspect
+1	foyer.		suspect
+1	conjecture.		suspect
+1	figue.		suspect
+1	franc-comt.		suspect
+1	gousses.		suspect
+1	porter.		suspect
+1	oindre.		suspect
+1	mince.		suspect
+1	remarque.		suspect
+1	gaîne.		suspect
+1	jardiniers.		suspect
+1	basbret.		suspect
+1	effets.		suspect
+1	suspens.		suspect
+1	coq.		suspect
+1	bouguig.		suspect
+1	favorable.		suspect
+1	lettre.		suspect
+1	néerl.	nl	recognized
+1	agréable.		suspect
+1	écrit.		suspect
+1	etc.		suspect
+1	va.		suspect
+1	latine.		suspect
+1	scandin.		suspect
+1	désert.		suspect
+1	hernie.		suspect
+1	trouver.		suspect
+1	jour.		suspect
+1	neige.		suspect
+1	flam.	nl	recognized
+1	anc. flam.		suspect
+1	honnête.		suspect
+1	mod.		suspect
+1	ivrogne.		suspect
+1	prison.		suspect
+1	bleu.		suspect
+1	déclinable.		suspect
+1	dire.		suspect
+1	discipline.		suspect
+1	proven.		suspect
+1	insolent.		suspect
+1	part.		non_language
+1	bas-allem.		suspect
+1	dedans.		suspect
+1	entrée.		suspect
+1	intérieurement.		suspect
+1	irriter.		suspect
+1	all. anc.		suspect
+1	ivoire.		suspect
+1	plus. bourg.		suspect
+1	anc. wall.		suspect
+1	solennels.		suspect
+1	jouer.		suspect
+1	jouter.		suspect
+1	l.	la	recognized
+1	droit.		suspect
+1	ordonner.		suspect
+1	labeur.		suspect
+1	lâche.		suspect
+1	correcte.		suspect
+1	formes.		suspect
+1	fleurs.		suspect
+1	affranchis.		suspect
+1	bavar.		suspect
+1	prix.		suspect
+1	angoum.		suspect
+1	étymologique.		suspect
+1	polon.		suspect
+1	anc. pers.		suspect
+1	loup-garou.		suspect
+1	germanique.		suspect
+1	adv.		suspect
+1	hain.		suspect
+1	mâcher.		suspect
+1	provenç. espagn. ital.		suspect
+1	gaulois		suspect
+1	flétrir.		suspect
+1	marchandise.		suspect
+1	perle.		suspect
+1	abattu.		suspect
+1	marmito.		suspect
+1	enfant.		suspect
+1	témoin.		suspect
+1	soin.		suspect
+1	faveur.		suspect
+1	épargner.		suspect
+1	mesurer.		suspect
+1	haut-all.		suspect
+1	ridicule.		suspect
+1	mordre.		suspect
+1	morve.		suspect
+1	angl. mod.		suspect
+1	changer.		suspect
+1	pers.	fa	recognized
+1	nord.		suspect
+1	engendrer.		suspect
+1	engendré.		suspect
+1	anc. h. all.		suspect
+1	rein.		suspect
+1	anc. esp.		suspect
+1	nourrice.		suspect
+1	pris.		suspect
+1	huit.		suspect
+1	ciselé.		suspect
+1	gage.		suspect
+1	temple.		suspect
+1	normand.		suspect
+1	palais.		suspect
+1	pèlerin.		suspect
+1	esp.	es	recognized
+1	champen.		suspect
+1	pédant.		suspect
+1	pepin.		suspect
+1	contredire.		suspect
+1	injure.		suspect
+1	breton	br	recognized
+1	pieds.		suspect
+1	large.		suspect
+1	anc. port.		suspect
+1	burettes.		suspect
+1	polit.		suspect
+1	s. n.		suspect
+1	gén.		non_language
+1	colle.		suspect
+1	théâtre.		suspect
+1	pied.		suspect
+1	anc. fr.	fro	recognized
+1	que.		suspect
+1	moquer.		suspect
+1	conjugaison.		suspect
+1	prendre.		suspect
+1	harassé. provenç.		suspect
+1	élégant.		suspect
+1	catalanes.		suspect
+1	probable. bas-lat.		suspect
+1	précepte.		suspect
+1	anc. adj.		suspect
+1	dix.		suspect
+1	gauche.		suspect
+1	forcené.		suspect
+1	subj.		suspect
+1	peu.		suspect
+1	maître.		suspect
+1	crinière.		suspect
+1	poit.		suspect
+1	formé.		suspect
+1	anc. subst.		suspect
+1	bois.		suspect
+1	observer.		suspect
+1	chemin.		suspect
+1	syntaxe.		suspect
+1	misérable.		suspect
+1	fem.		suspect
+1	étendre.		suspect
+1	anjou.		suspect
+1	borne.		suspect
+1	limite.		suspect
+1	sèche.		suspect
+1	rad.		non_language
+1	christ.		suspect
+1	venit.		suspect
+1	néerlandais	nl	recognized
+1	egypt.		suspect
+1	user.		suspect
+1	servir.		suspect
+1	possédez.		suspect
+1	vase.		suspect
+1	rapprocher.		suspect
+1	vanne.		suspect
+1	divers.		suspect
+1	broche.		suspect
+1	néerland.		suspect
+1	allemands.		suspect
+1	naissance.		suspect
+1	moy. haut-allem.		suspect
+1	vauvert.		suspect
+1	sancr.		suspect
+1	velveteen.		suspect
+1	locution.		suspect
+1	védiques.		suspect
+1	prép. lat.		suspect
+1	bas-iat.		suspect
+1	tirailler.		suspect
+1	veille.		suspect
+1	populaire.		suspect
+1	visiter.		suspect
+1	wallon.		suspect
+1	bas-norm.		suspect
+1	vrai.		suspect
+1	baguette.		suspect
+1	comp. sanscr.		suspect
