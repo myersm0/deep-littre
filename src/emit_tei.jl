@@ -7,7 +7,6 @@ const markup_substitutions = [
 	r"<semantique type=\"domaine\">(.*?)</semantique>"s => s"<usg type=\"domain\">\1</usg>",
 	r"<semantique type=\"indicateur\">(.*?)</semantique>"s => s"<usg type=\"sem\">\1</usg>",
 	r"<semantique>(.*?)</semantique>"s => s"<usg type=\"sem\">\1</usg>",
-	r"<a ref=\"([^\"]*)\">(.*?)</a>"s => s"<xr><ref target=\"#\1\">\2</ref></xr>",
 	r"<exemple>(.*?)</exemple>"s => s"<mentioned>\1</mentioned>",
 	r"<nature>(.*?)</nature>"s => s"<usg type=\"gram\">\1</usg>",
 ]
@@ -17,8 +16,41 @@ function markup_to_tei(markup::String)::String
 	for (pattern, replacement) in markup_substitutions
 		result = replace(result, pattern => replacement)
 	end
+	result = convert_cross_references(result)
+	result = lift_reference_labels(result)
 	result = convert_italics(result)
 	lowercase_usg_content(result)
+end
+
+# ── Cross-references ─────────────────────────────────────────────
+# Gannaz's <a ref="..."> carries the printed headword, not an emitted xml:id.
+# Routing it through make_id (preserving a trailing homograph index) lifts
+# target resolution from 56.1% to 79.7% of 14,931 references. The residue is
+# the ID-deduplication class, where a bare headword cannot choose between
+# chien_1 and chien_2; that needs a mapping table and is deferred with P2.
+
+const anchor_pattern = r"<a ref=\"([^\"]*)\">(.*?)</a>"s
+
+const reference_label_pattern =
+	r"\b((?:[Vv]oy(?:ez)?|[Cc]f|[Cc]omparez)\.?)\s*(<xr type=\"related\">)"
+
+function make_reference_id(reference::AbstractString)::String
+	base = String(first(split(reference, '#')))
+	matched = match(r"^(.*)\.(\d+)$", base)
+	matched === nothing && return make_id(base)
+	"$(make_id(String(matched.captures[1]))).$(matched.captures[2])"
+end
+
+function convert_cross_references(markup::AbstractString)::String
+	replace(markup, anchor_pattern => function (matched_text)
+		parts = match(anchor_pattern, matched_text)
+		target = escape_xml(make_reference_id(parts.captures[1]))
+		"<xr type=\"related\"><ref type=\"entry\" target=\"#$(target)\">$(parts.captures[2])</ref></xr>"
+	end)
+end
+
+function lift_reference_labels(markup::AbstractString)::String
+	replace(markup, reference_label_pattern => s"\2<lbl>\1</lbl>")
 end
 
 function lowercase_usg_content(s::AbstractString)::String
@@ -124,17 +156,48 @@ function split_label(tei_content::AbstractString)::Tuple{String, String}
 	(lowercase_text_nodes(strip_usg_tags(tei_content)), "")
 end
 
+const leading_usg_pattern = r"^<usg\b[^>]*type=\"([^\"]*)\"[^>]*>(.*?)</usg>[,;:\s]*"s
+const inline_usg_pattern = r"<usg\b[^>]*type=\"([^\"]*)\"[^>]*>(.*?)</usg>"s
+const routed_usg_types = Set(["sem", "register", "gram"])
+
+# Leading labels are structural siblings of <def>, so a grammatical reading
+# may become <gramGrp> here. Anything already carrying a schema-valid type
+# (domain) is passed through untouched.
+function route_label_markup(usg_type::AbstractString, printed::AbstractString)::Vector{String}
+	usg_type in routed_usg_types || return [usg_markup(UsgTarget(String(usg_type), ""), printed)]
+	[
+		target isa UsgTarget ? usg_markup(target, printed) : gram_markup(target)
+		for target in route_content(printed)
+	]
+end
+
 function split_def_usg(tei_content::AbstractString)::Tuple{Vector{String}, String}
 	usg_elements = String[]
 	remaining = tei_content
 	while true
-		m = match(r"^(<usg\b[^>]*>.*?</usg>)[,;:\s]*"s, remaining)
+		m = match(leading_usg_pattern, remaining)
 		m === nothing && break
-		push!(usg_elements, lowercase_text_nodes(m.captures[1]))
+		append!(usg_elements, route_label_markup(m.captures[1], lowercase_text_nodes(m.captures[2])))
 		remaining = strip(remaining[m.offset + ncodeunits(m.match):end])
 	end
 	(usg_elements, remaining)
 end
+
+# <def> admits only text, gLike, hiLike, ptrLike, segLike, gloss and xr, so a
+# <usg> surviving mid-prose stays a <usg> whatever its reading: retyping clears
+# the invalid-@type signature, while the position error is W3's def-extraction.
+function remap_inline_usg(tei_content::AbstractString)::String
+	replace(tei_content, inline_usg_pattern => function (matched_text)
+		parts = match(inline_usg_pattern, matched_text)
+		usg_type, printed = parts.captures[1], parts.captures[2]
+		usg_type in routed_usg_types || return matched_text
+		targets = route_content(printed)
+		length(targets) == 1 && return usg_only_markup(targets[1], printed)
+		join(usg_only_markup(target, printed) for target in targets)
+	end)
+end
+
+definition_markup(tei_content::AbstractString)::String = remap_inline_usg(tei_content)
 
 # ── Gram splitting (two-step: structural split, then classify) ───
 
@@ -235,6 +298,15 @@ end
 
 pad(level::Int) = "  " ^ level
 
+# An unparsed POS string keeps the single untyped-content <gram type="pos">
+# it has today: still schema-valid, just unsplit. 0.16% of 77,391 entry-level
+# strings take this path.
+function pos_group_markup(pos::AbstractString)::String
+	elements = parse_pos(pos)
+	elements === nothing || return gram_markup(elements)
+	"<gramGrp><gram type=\"pos\">$(escape_xml(String(pos)))</gram></gramGrp>"
+end
+
 # ── Citation emission ────────────────────────────────────────────
 
 function emit_citation(io::IO, cit::Citation, level::Int)
@@ -284,13 +356,15 @@ function emit_label_sense(io::IO, label::String, usg_type::String, def_text::Str
 	p = pad(level)
 	label = strip_usg_tags(label)
 	println(io, "$(p)<sense$(id_attr(sense_id))$(extra_attrs)>")
-	println(io, "$(p)  <usg type=\"$(usg_type)\">$(label)</usg>")
+	for element in route_label_markup(usg_type, label)
+		println(io, "$(p)  $(element)")
+	end
 	if !isempty(def_text)
 		usg_els, clean_def = split_def_usg(def_text)
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(clean_def)</def>")
+		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
 	end
 	emit_citations(io, citations, level + 1)
 	emit_children(io, children, level + 1, sense_id)
@@ -305,7 +379,7 @@ function emit_default_sense(io::IO, indent::Indent, level::Int, sense_id::String
 	for el in usg_els
 		println(io, "$(p)  $(el)")
 	end
-	!isempty(clean_def) && println(io, "$(p)  <def>$(clean_def)</def>")
+	!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
 	emit_citations(io, indent.citations, level + 1)
 	emit_children(io, indent.children, level + 1, sense_id)
 	println(io, "$(p)</sense>")
@@ -345,9 +419,9 @@ function emit_indent(io::IO, indent::Indent, ::Locution, level::Int, sense_id::S
 	content = markup_to_tei(indent.content)
 	println(io, "$(p)<re type=\"locution\"$(id_attr(sense_id))>")
 	if !isempty(indent.canonical_form)
-		println(io, "$(p)  <form><orth>$(escape_xml(indent.canonical_form))</orth></form>")
+		println(io, "$(p)  <form type=\"lemma\"><orth>$(escape_xml(indent.canonical_form))</orth></form>")
 	end
-	println(io, "$(p)  <def>$(content)</def>")
+	println(io, "$(p)  <def>$(definition_markup(content))</def>")
 	emit_citations(io, indent.citations, level + 1)
 	println(io, "$(p)</re>")
 end
@@ -356,7 +430,7 @@ function emit_indent(io::IO, indent::Indent, ::Proverb, level::Int, sense_id::St
 	p = pad(level)
 	content = markup_to_tei(indent.content)
 	println(io, "$(p)<re type=\"proverbe\"$(id_attr(sense_id))>")
-	println(io, "$(p)  <def>$(content)</def>")
+	println(io, "$(p)  <def>$(definition_markup(content))</def>")
 	emit_citations(io, indent.citations, level + 1)
 	println(io, "$(p)</re>")
 end
@@ -383,29 +457,35 @@ function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTrans
 			emit_label_sense(io, label, "gram", def_text,
 				indent.citations, indent.children, level; sense_id)
 		else
-			println(io, "$(pad(level))<usg type=\"gram\">$(label)</usg>")
+			for element in route_label_markup("gram", label)
+				println(io, "$(pad(level))$(element)")
+			end
 		end
 		return
 	end
 
 	has_body = !isempty(gs.def_text) || !isempty(indent.citations) || !isempty(indent.children)
 	if !has_body && gs.pre_kind == :none
-		println(io, "$(pad(level))<usg type=\"gram\">$(gs.label_text)</usg>")
+		for element in route_label_markup("gram", gs.label_text)
+			println(io, "$(pad(level))$(element)")
+		end
 		return
 	end
 
 	p = pad(level)
 	println(io, "$(p)<sense$(id_attr(sense_id))>")
 	if gs.pre_kind in (:reflexive_form, :locution_form)
-		println(io, "$(p)  <form><orth>$(escape_xml(strip_tags(gs.pre_text)))</orth></form>")
+		println(io, "$(p)  <form type=\"lemma\"><orth>$(escape_xml(strip_tags(gs.pre_text)))</orth></form>")
 	end
-	println(io, "$(p)  <usg type=\"gram\">$(gs.label_text)</usg>")
+	for element in route_label_markup("gram", gs.label_text)
+		println(io, "$(p)  $(element)")
+	end
 	if !isempty(gs.def_text)
 		usg_els, clean_def = split_def_usg(gs.def_text)
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(clean_def)</def>")
+		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
 	end
 	emit_citations(io, indent.citations, level + 1)
 	emit_children(io, indent.children, level + 1, sense_id)
@@ -432,7 +512,7 @@ function emit_body_element(io::IO, sense::Sense, level::Int, sense_id::String)
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(clean_def)</def>")
+		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
 	end
 
 	emit_citations(io, sense.citations, level + 1)
@@ -453,12 +533,14 @@ function emit_body_element(io::IO, group::TransitionGroup, level::Int, sense_id:
 	p = pad(level)
 	if group.kind == :strong
 		println(io, "$(p)<entry$(id_attr(sense_id)) xml:lang=\"$(object_language)\" type=\"grammaticalVariant\">")
-		println(io, "$(p)  <form><orth>$(escape_xml(group.form))</orth></form>")
-		println(io, "$(p)  <gramGrp><gram type=\"pos\">$(escape_xml(group.pos))</gram></gramGrp>")
+		println(io, "$(p)  <form type=\"lemma\"><orth>$(escape_xml(group.form))</orth></form>")
+		println(io, "$(p)  $(pos_group_markup(group.pos))")
 	else
 		label = lowercase_text_nodes(markup_to_tei(group.transition_content))
 		println(io, "$(p)<sense$(id_attr(sense_id))>")
-		println(io, "$(p)  <usg type=\"gram\">$(label)</usg>")
+		for element in route_label_markup("gram", label)
+			println(io, "$(p)  $(element)")
+		end
 	end
 
 	for (i, sub) in enumerate(group.sub_senses)
@@ -503,6 +585,47 @@ function emit_rubrique(io::IO, rub::Rubrique, level::Int)
 	println(io, "$(p)$(wrapper[2])")
 end
 
+# ── Orthography and pronunciation ────────────────────────────────
+
+function orth_markup(headword::AbstractString)::String
+	printed = escape_xml(String(headword))
+	"<orth norm=\"$(escape_xml(lowercase(String(headword))))\">$(printed)</orth>"
+end
+
+# Littré's <pron> is often prescriptive commentary rather than a transcription.
+# The discriminator is deliberately conservative — an uncertain case keeps
+# <pron> — and every relocation is written to the side-channel report, which is
+# the pure-emitter analogue of W4's suspect-token channel. Flags 5.2% of 77,943.
+const pronunciation_prose_markers =
+	r"(?:prononc|\s(?:disent|dit|est|sont|on|il|qui|que|mais|selon|certains|toujours|jamais)\s|quelques|plupart|suivant|syllabe|lorsque|aujourd)"i
+
+function is_pronunciation_prose(pronunciation::AbstractString)::Bool
+	length(pronunciation) > 60 && return true
+	occursin(r"\.\s", pronunciation) && return true
+	occursin(';', pronunciation) && length(pronunciation) > 25 && return true
+	occursin(pronunciation_prose_markers, pronunciation)
+end
+
+const pronunciation_report_path =
+	joinpath(@__DIR__, "..", "test", "reports", "pron_prose_flags.tsv")
+
+const pronunciation_flags = Tuple{String, String, String}[]
+
+function record_pronunciation_flag(entry::Entry)
+	push!(pronunciation_flags, (entry.id[], entry.headword, entry.pronunciation))
+end
+
+function write_pronunciation_report(path::AbstractString = pronunciation_report_path)
+	mkpath(dirname(path))
+	open(path, "w") do io
+		println(io, "entry_id\theadword\tpronunciation")
+		for (id, headword, pronunciation) in pronunciation_flags
+			println(io, "$(id)\t$(headword)\t$(replace(pronunciation, '\t' => ' '))")
+		end
+	end
+	@info "Wrote $(length(pronunciation_flags)) pronunciation relocations to $path"
+end
+
 # ── Entry emission ───────────────────────────────────────────────
 
 function emit_entry(io::IO, entry::Entry, level::Int)
@@ -514,11 +637,18 @@ function emit_entry(io::IO, entry::Entry, level::Int)
 	println(io, "$(p)<entry $(attrs)>")
 
 	println(io, "$(p)  <form type=\"lemma\">")
-	println(io, "$(p)    <orth>$(escape_xml(entry.headword))</orth>")
-	!isempty(entry.pronunciation) && println(io, "$(p)    <pron>$(escape_xml(entry.pronunciation))</pron>")
+	println(io, "$(p)    $(orth_markup(entry.headword))")
+	prose_pronunciation = !isempty(entry.pronunciation) && is_pronunciation_prose(entry.pronunciation)
+	if !isempty(entry.pronunciation) && !prose_pronunciation
+		println(io, "$(p)    <pron>$(escape_xml(entry.pronunciation))</pron>")
+	end
 	println(io, "$(p)  </form>")
+	if prose_pronunciation
+		println(io, "$(p)  <note type=\"pronunciation\">$(escape_xml(entry.pronunciation))</note>")
+		record_pronunciation_flag(entry)
+	end
 
-	!isempty(entry.pos) && println(io, "$(p)  <gramGrp><gram type=\"pos\">$(escape_xml(entry.pos))</gram></gramGrp>")
+	!isempty(entry.pos) && println(io, "$(p)  $(pos_group_markup(entry.pos))")
 
 	for (i, el) in enumerate(entry.body)
 		sense_id = "$(xml_id)_s$(i)"
@@ -620,6 +750,7 @@ const tei_footer = """</body>
 """
 
 function emit_tei(entries::Vector{Entry}, output_path::String)
+	empty!(pronunciation_flags)
 	open(output_path, "w") do io
 		print(io, tei_header)
 		for entry in entries
@@ -627,5 +758,6 @@ function emit_tei(entries::Vector{Entry}, output_path::String)
 		end
 		print(io, tei_footer)
 	end
+	write_pronunciation_report()
 	@info "Wrote $(length(entries)) entries to $output_path"
 end

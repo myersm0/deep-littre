@@ -31,6 +31,12 @@ export enrich!, resolve_all_authors!, classify_all!, extract_all_locutions!,
 include("scope.jl")
 export scope_all!
 
+include("norms.jl")
+export GramElement, UsgTarget, NormTables, load_norm_tables,
+	parse_pos, route_atom, route_content, route_usg_atom,
+	split_atoms, normalize_atom, gram_markup, usg_markup,
+	century_range, century_date_markup
+
 include("emit_tei.jl")
 export emit_tei
 
