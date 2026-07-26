@@ -195,6 +195,14 @@ function usg_markup(target::UsgTarget, printed::AbstractString)::String
 	"<usg type=\"$(target.kind)\"$(norm)>$(printed)</usg>"
 end
 
+# Positions whose content model admits <usg> but not <gramGrp> (etym, and any
+# residual mid-prose survivor) take a usg with a valid type; a gram reading
+# degrades to hint rather than changing element type.
+function usg_only_markup(target::AtomTarget, printed::AbstractString)::String
+	target isa UsgTarget && return usg_markup(target, printed)
+	usg_markup(UsgTarget("hint", ""), printed)
+end
+
 # ── Century dates ────────────────────────────────────────────────
 
 const roman_centuries = Dict(
@@ -216,5 +224,7 @@ end
 function century_date_markup(text::AbstractString)::Union{Nothing, String}
 	range = century_range(text)
 	range === nothing && return nothing
-	"<date notBefore=\"$(range[1])\" notAfter=\"$(range[2])\">$(escape_xml(strip(text)))</date>"
+	not_before = lpad(range[1], 4, '0')
+	not_after = lpad(range[2], 4, '0')
+	"<date notBefore=\"$(not_before)\" notAfter=\"$(not_after)\">$(escape_xml(strip(text)))</date>"
 end

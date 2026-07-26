@@ -27,12 +27,27 @@ end
 		"Voy. <lbl>Voy.</lbl><ref type=\"entry\" target=\"#a\">A</ref>"
 end
 
-@testset "citation typing is a route parameter" begin
+@testset "citation typing and ana routing" begin
 	cit = Citation(text = "Un corps tronqué de teste", author = "RONS.", reference = "675")
 	@test occursin("<cit type=\"example\">", render(dl.emit_citation, cit, 0))
-	bare = render((io, c, l) -> dl.emit_citation(io, c, l; cit_type = ""), cit, 0)
-	@test occursin(r"<cit>"m, bare)
-	@test !occursin("type=\"example\"", bare)
+	attested = render((io, c, l) -> dl.emit_citation(io, c, l; ana = "attestation"), cit, 0)
+	@test occursin("<cit type=\"example\" ana=\"attestation\">", attested)
+	hidden = Citation(text = "t", hide = "oui")
+	both = render((io, c, l) -> dl.emit_citation(io, c, l; ana = "attestation"), hidden, 0)
+	@test occursin("ana=\"attestation hidden\"", both)
+end
+
+@testset "content finishers" begin
+	@test dl.flatten_phrase_wrappers("<mentioned>veloi</mentioned>") ==
+		"<hi rend=\"italic\">veloi</hi>"
+	@test dl.flatten_phrase_wrappers("<foreign xml:lang=\"la\">volere</foreign>") ==
+		"<hi rend=\"italic\" xml:lang=\"la\">volere</hi>"
+	@test dl.flatten_phrase_wrappers("<i class=\"botanique\">rosa</i>") ==
+		"<hi rend=\"italic\">rosa</hi>"
+	@test dl.note_markup("Ce mot <semantique>fig.</semantique> et <nature>absolument</nature>.") ==
+		"Ce mot fig. et absolument."
+	routed = dl.etym_markup("du lat. fictif <semantique>fig.</semantique>")
+	@test occursin("<usg type=\"meaningType\" norm=\"figurative\">fig.</usg>", routed)
 end
 
 @testset "inline usg extraction" begin
@@ -127,15 +142,18 @@ end
 
 	out = render((io,) -> dl.emit_rubriques(io, [remarque, historique, etymologie], 1))
 	@test occursin("<note type=\"remarque\">", out)
-	@test occursin("<dictScrap>", out)
+	@test !occursin("dictScrap", out)
 	@test !occursin("<note type=\"historique\">", out)
 	@test count("<etym>", out) == 1
-	@test occursin("<date notBefore=\"1501\" notAfter=\"1600\">XVIe s.</date>", out)
-	# attestations bare, remarque example typed
-	@test count("<cit>", out) == 1
+	@test occursin("<lbl>XVIe s.</lbl>", out)
+	@test !occursin("<date", out)
+	# attestation reading on ana; the remarque citation is a plain example
+	@test count("ana=\"attestation\"", out) == 1
 	@test count("<cit type=\"example\">", out) == 1
+	# the remarque citation emits as a sibling after its note
+	@test findfirst("</note>", out).start < findfirst("Exemple cité", out).start
 	# account precedes attestations regardless of rubrique order
-	@test findfirst("Diminutif", out).start < findfirst("notBefore", out).start
+	@test findfirst("Diminutif", out).start < findfirst("<lbl>XVIe s.</lbl>", out).start
 	@test !occursin("<p>", out)
 end
 

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="littre" type="lex-0">
+<teiHeader>
+  <fileDesc>
+    <titleStmt>
+      <title type="full">Dictionnaire de la langue française</title>
+      <title type="abbr">Littré</title>
+      <author>
+        <persName><forename>Émile</forename><surname>Littré</surname></persName>
+      </author>
+      <editor role="digital">
+        <persName><forename>François</forename><surname>Gannaz</surname></persName>
+      </editor>
+      <editor role="enrichment">
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </editor>
+    </titleStmt>
+    <editionStmt>
+      <edition>TEI Lex-0 edition</edition>
+    </editionStmt>
+    <publicationStmt>
+      <publisher>
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </publisher>
+      <availability status="free">
+        <licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</licence>
+      </availability>
+    </publicationStmt>
+    <sourceDesc>
+      <listBibl type="dictionaries">
+        <biblStruct xml:id="littre-print">
+          <monogr>
+            <author>
+              <persName><forename>Émile</forename><surname>Littré</surname></persName>
+            </author>
+            <title level="m">Dictionnaire de la langue française</title>
+            <imprint>
+              <publisher>Hachette</publisher>
+              <pubPlace>Paris</pubPlace>
+              <date notBefore="1872" notAfter="1877">1872–1877</date>
+            </imprint>
+          </monogr>
+        </biblStruct>
+      </listBibl>
+    </sourceDesc>
+  </fileDesc>
+  <profileDesc>
+    <langUsage>
+      <language ident="fr-x-lit19c" role="objectLanguage">
+        <name xml:lang="en">19th-century literary French</name>
+        <name xml:lang="fr">Français littéraire du XIXᵉ siècle</name>
+        <date notBefore="1801" notAfter="1900"/>
+      </language>
+      <language ident="fr" role="workingLanguage">
+        <name xml:lang="en">French</name>
+        <name xml:lang="fr">Français</name>
+      </language>
+    </langUsage>
+  </profileDesc>
+</teiHeader>
+<text>
+<body>
+  <!-- a: @type on <note> -->
+  <entry xml:id="probe_a" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="a">A</orth></form>
+    <sense xml:id="probe_a_s1"><def>Définition.</def></sense>
+    <note type="remarque">Commentaire.</note>
+  </entry>
+  <!-- b: untyped <note> control -->
+  <entry xml:id="probe_b" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="b">B</orth></form>
+    <sense xml:id="probe_b_s1"><def>Définition.</def></sense>
+    <note>Commentaire.</note>
+  </entry>
+  <!-- c: @type on <sense> -->
+  <entry xml:id="probe_c" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="c">C</orth></form>
+    <sense xml:id="probe_c_s1" type="figuré"><def>Définition.</def></sense>
+  </entry>
+  <!-- d: @ana on <sense> control -->
+  <entry xml:id="probe_d" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="d2">D</orth></form>
+    <sense xml:id="probe_d_s1" ana="figurative"><def>Définition.</def></sense>
+  </entry>
+  <!-- e: cit type="attestation" inside etym -->
+  <entry xml:id="probe_e" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="e2">E</orth></form>
+    <sense xml:id="probe_e_s1"><def>Définition.</def></sense>
+    <etym>Prose étymologique.
+      <cit type="attestation"><quote>Attestation ancienne</quote><bibl><author>RONS.</author><biblScope>675</biblScope></bibl></cit>
+    </etym>
+  </entry>
+  <!-- f: cit type="example" inside etym, control -->
+  <entry xml:id="probe_f" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="f2">F</orth></form>
+    <sense xml:id="probe_f_s1"><def>Définition.</def></sense>
+    <etym>Prose étymologique.
+      <cit type="example"><quote>Attestation ancienne</quote><bibl><author>RONS.</author><biblScope>675</biblScope></bibl></cit>
+    </etym>
+  </entry>
+  <!-- g: date inside etym (expected invalid; confirms the 43,684 signature) -->
+  <entry xml:id="probe_g" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="g2">G</orth></form>
+    <sense xml:id="probe_g_s1"><def>Définition.</def></sense>
+    <etym><date notBefore="1501" notAfter="1600">XVIe s.</date></etym>
+  </entry>
+  <!-- h: seg type="desc" century marker inside etym -->
+  <entry xml:id="probe_h" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="h2">H</orth></form>
+    <sense xml:id="probe_h_s1"><def>Définition.</def></sense>
+    <etym><seg type="desc">XVIe s.</seg></etym>
+  </entry>
+  <!-- i: lbl century marker inside etym -->
+  <entry xml:id="probe_i" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="i2">I</orth></form>
+    <sense xml:id="probe_i_s1"><def>Définition.</def></sense>
+    <etym><lbl>XVIe s.</lbl></etym>
+  </entry>
+  <!-- j: dictScrap with cit inside sense -->
+  <entry xml:id="probe_j" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="j2">J</orth></form>
+    <sense xml:id="probe_j_s1">
+      <def>Définition.</def>
+      <dictScrap><cit type="example"><quote>Exemple cité</quote></cit></dictScrap>
+    </sense>
+  </entry>
+  <!-- k: cit as a direct child of entry -->
+  <entry xml:id="probe_k" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="k2">K</orth></form>
+    <sense xml:id="probe_k_s1"><def>Définition.</def></sense>
+    <note>Commentaire.</note>
+    <cit type="example"><quote>Exemple cité</quote><bibl><author>MOL.</author></bibl></cit>
+  </entry>
+  <!-- l: hi rend="italic" inside untyped note -->
+  <entry xml:id="probe_l" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="l2">L</orth></form>
+    <sense xml:id="probe_l_s1"><def>Définition.</def></sense>
+    <note>Texte <hi rend="italic">italique</hi> dans la note.</note>
+  </entry>
+  <!-- m: xr with lbl and target-less ref inside untyped note -->
+  <entry xml:id="probe_m" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="m2">M</orth></form>
+    <sense xml:id="probe_m_s1"><def>Définition.</def></sense>
+    <note>Voy. <xr type="related"><lbl>Voy.</lbl><ref type="entry">AGAME</ref></xr>.</note>
+  </entry>
+  <!-- n: usg type="hint" inside etym -->
+  <entry xml:id="probe_n" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="n2">N</orth></form>
+    <sense xml:id="probe_n_s1"><def>Définition.</def></sense>
+    <etym><usg type="hint">fictif</usg></etym>
+  </entry>
+  <!-- o: bare cit inside dictScrap inside sense (attestation home if etym cits must be typed) -->
+  <entry xml:id="probe_o" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="o2">O</orth></form>
+    <sense xml:id="probe_o_s1">
+      <def>Définition.</def>
+      <dictScrap><cit><quote>Attestation</quote></cit></dictScrap>
+    </sense>
+  </entry>
+  <!-- p: hi rend="italic" inside a synonymy xr (synonyme prose italics) -->
+  <entry xml:id="probe_p" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="p2">P</orth></form>
+    <sense xml:id="probe_p_s1"><def>Définition.</def></sense>
+    <xr type="synonymy">Comparer <hi rend="italic">mot</hi> avec <ref type="entry">AUTRE</ref>.</xr>
+  </entry>
+  <!-- q: date inside bibl inside an etym citation (machine-readable century path) -->
+  <entry xml:id="probe_q" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="q2">Q</orth></form>
+    <sense xml:id="probe_q_s1"><def>Définition.</def></sense>
+    <etym>Prose.
+      <cit type="example" ana="attestation"><quote>Attestation</quote><bibl><author>RONS.</author><biblScope>675</biblScope><date notBefore="1501" notAfter="1600">XVIe s.</date></bibl></cit>
+    </etym>
+  </entry>
+  <!-- r: ana on note (fallback carrier if note @type is the banned attribute) -->
+  <entry xml:id="probe_r" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="r2">R</orth></form>
+    <sense xml:id="probe_r_s1"><def>Définition.</def></sense>
+    <note ana="remarque">Commentaire.</note>
+  </entry>
+</body>
+</text>
+</TEI>

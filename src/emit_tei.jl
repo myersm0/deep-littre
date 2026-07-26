@@ -352,19 +352,22 @@ end
 
 # ── Citation emission ────────────────────────────────────────────
 
-# cit_type is a property of the route, not a global: citations inside <etym>
-# are diachronic attestations and emit bare, while synchronic usage examples
-# (senses, remarque/supplément <dictScrap>) keep type="example". An attestation
-# typed "example" would assert a synchronic function it does not have; bare
-# emission leaves the additive upgrade path to type="attestation" open.
-function emit_citation(io::IO, cit::Citation, level::Int; cit_type::String = "example")
+# The RNG closes cit/@type over {cognate, cognateSet, etymon, example,
+# translation, translationEquivalent}; bare cits and type="attestation" are
+# both rejected. The diachronic/synchronic distinction therefore rides on
+# @ana instead: attestations inside <etym> emit type="example"
+# ana="attestation", synchronic usage examples plain type="example". ana is
+# att.global and composes with the existing "hidden" marker.
+function emit_citation(io::IO, cit::Citation, level::Int;
+		cit_type::String = "example", ana::String = "")
 	p = pad(level)
 	author = isempty(cit.resolved_author) ? cit.author : cit.resolved_author
 	text = markup_to_tei(cit.text)
-	hidden = isempty(cit.hide) ? "" : " ana=\"hidden\""
+	ana_values = filter(!isempty, [ana, isempty(cit.hide) ? "" : "hidden"])
+	ana_attr = isempty(ana_values) ? "" : " ana=\"$(join(ana_values, ' '))\""
 	type_attr = isempty(cit_type) ? "" : " type=\"$(cit_type)\""
 
-	println(io, "$(p)<cit$(type_attr)$(hidden)>")
+	println(io, "$(p)<cit$(type_attr)$(ana_attr)>")
 	println(io, "$(p)  <quote>$(text)</quote>")
 	if !isempty(author) || !isempty(cit.reference)
 		println(io, "$(p)  <bibl>")
@@ -375,9 +378,10 @@ function emit_citation(io::IO, cit::Citation, level::Int; cit_type::String = "ex
 	println(io, "$(p)</cit>")
 end
 
-function emit_citations(io::IO, citations::Vector{Citation}, level::Int; cit_type::String = "example")
+function emit_citations(io::IO, citations::Vector{Citation}, level::Int;
+		cit_type::String = "example", ana::String = "")
 	for cit in citations
-		emit_citation(io, cit, level; cit_type)
+		emit_citation(io, cit, level; cit_type, ana)
 	end
 end
 
@@ -441,7 +445,7 @@ function emit_indent(io::IO, indent::Indent, ::Figurative, level::Int, sense_id:
 	label, def_text = split_label(content)
 	emit_label_sense(io, label, "sem", def_text,
 		indent.citations, indent.children, level;
-		sense_id, extra_attrs = " type=\"figuré\"")
+		sense_id, extra_attrs = " ana=\"figurative\"")
 end
 
 function emit_indent(io::IO, indent::Indent, ::DomainLabel, level::Int, sense_id::String)
@@ -694,25 +698,60 @@ end
 # ── Rubrique emission (dispatched on RubriqueKind) ───────────────
 # Bare text is legal in both <etym> and <note>; the former <p> wrapper was
 # never load-bearing and produced ~41% of the corpus's validation errors.
+# dictScrap is admitted nowhere in the RNG (probed against note, entry, and
+# sense), while <cit> is a valid direct child of entry, sense, and etym — so
+# rubrique citations emit as siblings after their note rather than nested.
 
-function emit_note_segment(io::IO, content::String, citations::Vector{Citation}, level::Int)
-	p = pad(level)
-	!isempty(content) && println(io, "$(p)  $(markup_to_tei(content))")
-	if !isempty(citations)
-		println(io, "$(p)  <dictScrap>")
-		emit_citations(io, citations, level + 2)
-		println(io, "$(p)  </dictScrap>")
-	end
+# The phrase-level wrappers (mentioned, foreign, verbatim <i>) are absent from
+# the RNG content models of <note> and <etym>. <hi rend="italic"> is admitted
+# in both and preserves the print fact and any language tag; W4's
+# etymon/cognate cit construction reads the model layer, not this output, so
+# the flattening does not obstruct it.
+function flatten_phrase_wrappers(s::AbstractString)::String
+	s = replace(s, r"<foreign xml:lang=\"([^\"]+)\">" => s"<hi rend=\"italic\" xml:lang=\"\1\">")
+	s = replace(s, "<mentioned>" => "<hi rend=\"italic\">")
+	s = replace(s, r"<i\b[^>]*>" => "<hi rend=\"italic\">")
+	replace(s, r"</(?:foreign|mentioned|i)>" => "</hi>")
+end
+
+# <usg> is valid inside <etym> but its type must come from the closed
+# vocabulary, so residual routed types (sem/register/gram) that no sense-level
+# pass touched are routed here; gram readings degrade to hint.
+function route_residual_usg(s::AbstractString)::String
+	replace(s, inline_usg_pattern => function (matched_text)
+		parts = match(inline_usg_pattern, matched_text)
+		usg_type, printed = parts.captures[1], parts.captures[2]
+		usg_type in routed_usg_types || return matched_text
+		join(
+			usg_only_markup(target, printed)
+			for target in route_content(lowercase_text_nodes(printed))
+		)
+	end)
+end
+
+etym_markup(content::String)::String =
+	route_residual_usg(flatten_phrase_wrappers(markup_to_tei(content)))
+
+# <note> admits only text and the small phrase set (c g gloss hi pc ref seg
+# xr): usg and gram markup flatten to their printed text.
+function note_markup(content::String)::String
+	s = flatten_phrase_wrappers(markup_to_tei(content))
+	s = strip_usg_tags(s)
+	replace(s, r"</?gram(?:Grp)?\b[^>]*>" => "")
 end
 
 function emit_note_rubrique(io::IO, rub::Rubrique, level::Int, note_type::String)
 	p = pad(level)
 	println(io, "$(p)<note type=\"$(note_type)\">")
-	emit_note_segment(io, rub.content, rub.citations, level)
+	!isempty(rub.content) && println(io, "$(p)  $(note_markup(rub.content))")
 	for indent in rub.indents
-		emit_note_segment(io, indent.content, indent.citations, level)
+		!isempty(indent.content) && println(io, "$(p)  $(note_markup(indent.content))")
 	end
 	println(io, "$(p)</note>")
+	emit_citations(io, rub.citations, level)
+	for indent in rub.indents
+		emit_citations(io, indent.citations, level)
+	end
 end
 
 emit_rubrique(io::IO, rub::Rubrique, ::Remarque, level::Int) =
@@ -724,36 +763,40 @@ emit_rubrique(io::IO, rub::Rubrique, ::Proverbes, level::Int) =
 
 # Synonyme rubriques are comparative prose whose cross-reference links become
 # bare <ref> children of the synonymy <xr>. Citations cannot live inside <xr>;
-# they follow in a <dictScrap> sibling and are flagged for review.
+# they follow as siblings and are flagged for review.
 function emit_rubrique(io::IO, rub::Rubrique, ::Synonyme, level::Int)
 	p = pad(level)
 	parts = String[]
-	!isempty(rub.content) && push!(parts, markup_to_tei(rub.content))
+	!isempty(rub.content) && push!(parts, note_markup(rub.content))
 	for indent in rub.indents
-		!isempty(indent.content) && push!(parts, markup_to_tei(indent.content))
+		!isempty(indent.content) && push!(parts, note_markup(indent.content))
 	end
 	body = strip_nested_xr(join(parts, " "))
 	println(io, "$(p)<xr type=\"synonymy\">$(body)</xr>")
-	citations = vcat(rub.citations, Citation[c for indent in rub.indents for c in indent.citations])
-	if !isempty(citations)
-		println(io, "$(p)<dictScrap>")
-		emit_citations(io, citations, level + 1)
-		println(io, "$(p)</dictScrap>")
+	emit_citations(io, rub.citations, level)
+	for indent in rub.indents
+		emit_citations(io, indent.citations, level)
 	end
 end
 
-# Historique folds into <etym>: century markers become <date>, attestation
-# citations emit bare (see emit_citation). try_date is confined to historique
-# segments so an etymological account opening with a century is never swallowed
-# whole into a <date> element.
+# Historique folds into <etym>: century markers become <lbl> (the RNG admits
+# neither <date> in <etym> nor type="attestation" on <cit>, so the machine-
+# readable date range and the attestation reading ride elsewhere — the lbl
+# text stays parseable by century_range, and the citations carry
+# ana="attestation"). try_lbl is confined to historique segments so an
+# etymological account opening with a century is never swallowed into a label.
 function emit_etym_segment(io::IO, content::String, citations::Vector{Citation},
-		level::Int; try_date::Bool)
+		level::Int; try_lbl::Bool)
 	p = pad(level)
 	if !isempty(content)
-		dated = try_date ? century_date_markup(strip_tags(content)) : nothing
-		println(io, "$(p)  $(dated === nothing ? markup_to_tei(content) : dated)")
+		plain = strip(strip_tags(content))
+		if try_lbl && century_range(plain) !== nothing
+			println(io, "$(p)  <lbl>$(escape_xml(plain))</lbl>")
+		else
+			println(io, "$(p)  $(etym_markup(content))")
+		end
 	end
-	emit_citations(io, citations, level + 1; cit_type = "")
+	emit_citations(io, citations, level + 1; ana = "attestation")
 end
 
 # Ordering convention: etymological account first, historical attestations
@@ -763,15 +806,15 @@ function emit_combined_etym(io::IO, etymologies::Vector{Rubrique},
 	p = pad(level)
 	println(io, "$(p)<etym>")
 	for rub in etymologies
-		emit_etym_segment(io, rub.content, rub.citations, level; try_date = false)
+		emit_etym_segment(io, rub.content, rub.citations, level; try_lbl = false)
 		for indent in rub.indents
-			emit_etym_segment(io, indent.content, indent.citations, level; try_date = false)
+			emit_etym_segment(io, indent.content, indent.citations, level; try_lbl = false)
 		end
 	end
 	for rub in historiques
-		emit_etym_segment(io, rub.content, rub.citations, level; try_date = true)
+		emit_etym_segment(io, rub.content, rub.citations, level; try_lbl = true)
 		for indent in rub.indents
-			emit_etym_segment(io, indent.content, indent.citations, level; try_date = true)
+			emit_etym_segment(io, indent.content, indent.citations, level; try_lbl = true)
 		end
 	end
 	println(io, "$(p)</etym>")

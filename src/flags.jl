@@ -279,7 +279,7 @@ function flag_synonyme_citations!(flags::Vector{ReviewFlag}, entries::Vector{Ent
 				headword = entry.headword,
 				phase = "structural",
 				flag_type = "synonyme_citations",
-				reason = "$(n) citations emitted in a dictScrap after the synonymy xr",
+				reason = "$(n) citations emitted as siblings after the synonymy xr",
 				context = Dict{String, Any}("num_citations" => n),
 			))
 		end

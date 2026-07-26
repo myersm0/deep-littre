@@ -77,7 +77,7 @@ Actual `sense_type` values present in this database:
 - `cross_reference`
 - `domain`
 - `figurative`
-- `grammatical_variant`
+- `homonymic_entry` (named `grammatical_variant` before v0.2.0; renamed to mirror the TEI `type="homonymicEntry"` migration — breaking for downstream queries)
 - `locution`
 - `proverb`
 - `register`
@@ -344,7 +344,7 @@ SELECT e.headword,
        s.content_plain
 FROM senses s
 JOIN entries e ON e.entry_id = s.entry_id
-WHERE s.sense_type IN ('transition_group', 'grammatical_variant', 'usage_group')
+WHERE s.sense_type IN ('transition_group', 'homonymic_entry', 'usage_group')
 ORDER BY e.headword, s.sense_id;
 ```
 

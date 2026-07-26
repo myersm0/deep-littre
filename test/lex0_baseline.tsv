@@ -1,24 +1,9 @@
-total	78599
-valid	45725
-invalid	32874
+total	18
+valid	13
+invalid	5
 # ranked error signatures
-100263	element "cit" missing required attribute "type"
-43684	element "date" not allowed here; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
-22971	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
-17175	element "foreign" not allowed anywhere; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
-10714	attribute "type" not allowed here; expected attribute "ana", "cert", "change", "copyOf", "corresp", "datcat", "exclude", "expand", "facs", "location", "mergedIn", "n", "next", "norm", "opt", "orig", "prev", "rend", "rendition", "resp", "sameAs", "select", "source", "split", "style", "synch", "targetDatcat", "value", "valueDatcat", "xml:base" or "xml:lang"
-8397	element "dictScrap" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-3477	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-1298	text not allowed here; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
-442	value of attribute "type" is invalid; must be equal to "attitude", "domain", "frequency", "geographic", "hint", "meaningType", "normativity", "socioCultural", "temporal" or "textType"
-319	element "usg" not allowed here; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-304	element "dictScrap" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "cit", "entry", "etym", "figure", "form", "gramGrp", "lbl", "listBibl", "metamark", "note", "num", "pc", "ref", "sense", "usg" or "xr"
-298	element "foreign" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-207	value of attribute "notBefore" is invalid; must be a year, must be an ISO time, must be an ISO day of the month (of the form ---DD), must be an ISO date and time, must be an ISO date, must be an ISO year and month, must be an ISO month (of the form --MM) or must be an ISO month and day (of the form --MM-DD)
-56	value of attribute "notAfter" is invalid; must be a year, must be an ISO time, must be an ISO day of the month (of the form ---DD), must be an ISO date and time, must be an ISO date, must be an ISO year and month, must be an ISO month (of the form --MM) or must be an ISO month and day (of the form --MM-DD)
-11	element "i" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-9	element "mentioned" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
-7	element "foreign" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
-4	element "xr" not allowed here; expected the element end-tag, text or element "c", "figure", "g", "gloss", "hi", "lang", "metamark", "note", "pc", "ref" or "seg"
-1	ID "d" has already been defined
-1	first occurrence of ID "d"
+3	element "dictScrap" not allowed anywhere; expected the element end-tag or element "c", "cit", "def", "entry", "etym", "figure", "form", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "metamark", "note", "num", "pc", "ref", "seg", "sense", "usg" or "xr"
+3	text not allowed here; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
+2	element "cit" missing required attribute "type"
+1	element "date" not allowed here; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
+1	value of attribute "type" is invalid; must be equal to "cognate", "cognateSet", "etymon", "example", "translation" or "translationEquivalent"
