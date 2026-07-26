@@ -363,6 +363,7 @@ function extract_locution!(indent::Indent)
 	m = match(exemple_pattern, indent.content)
 	if m !== nothing
 		indent.canonical_form = strip(m.captures[1])
+		indent.canonical_form_source = :exemple
 		return :extracted
 	end
 
@@ -375,7 +376,65 @@ function extract_locution!(indent::Indent)
 		return :skip
 	end
 	indent.canonical_form = form
+	indent.canonical_form_source = :prose
 	:extracted
+end
+
+# ── Extract proverb forms ────────────────────────────────────────
+# Proverb indents migrate to relatedEntry in TEI and need a lemma form. The
+# form is the proverb text up to the gloss introducer; splitting at a bare
+# comma would truncate proverbs with internal commas, so only explicit
+# introducers cut. A proverb with no gloss is self-glossing: the whole text is
+# the form and the def repeats it, which is odd but honest to the print.
+
+const proverb_lead_pattern = r"^\s*prov(?:erbe|erbialement)?\.?\s*[:.]?\s*"i
+const proverb_gloss_introducer = r",?\s*(?:c\.-à-d\.|c'est-à-dire|se dit|pour dire|signifie)"i
+
+function extract_proverb_form!(indent::Indent)::Bool
+	role_of(indent) isa Proverb || return false
+	isempty(indent.canonical_form) || return false
+	body = replace(strip_tags(indent.content), proverb_lead_pattern => ""; count = 1)
+	m = match(proverb_gloss_introducer, body)
+	form = m === nothing ? body : body[1:prevind(body, m.offset)]
+	form = String(strip(rstrip(strip(form), ['.', ',', ';', ':'])))
+	isempty(form) && return false
+	indent.canonical_form = form
+	indent.canonical_form_source = :prose
+	true
+end
+
+function extract_all_proverb_forms!(entries::Vector{Entry})
+	extracted = 0
+	for entry in entries
+		each_indent(entry) do indent
+			extract_proverb_form!(indent) && (extracted += 1)
+		end
+	end
+	@info "Extracted proverb forms: $extracted"
+end
+
+# ── Metonymic-gloss discriminator ────────────────────────────────
+# Review-flag predicate over locution-classified indents: a gloss opening with
+# a definite article reads as a noun phrase naming what the headword denotes (a
+# metonymic sub-sense) rather than defining a fixed expression. The bare
+# article test cannot distinguish article+noun from clitic pronoun+verb ("le
+# traiter d'ignorant"), so matches route to review_queue rather than
+# restructuring; the hand-labeled population is uniform today.
+
+const metonymic_gloss_pattern = r"^(?:(?:les|la|le)\s+|l')\p{L}"i
+
+function locution_gloss(indent::Indent)::String
+	plain = replace(strip_tags(indent.content), proverb_lead_pattern => ""; count = 1)
+	form = indent.canonical_form
+	if !isempty(form) && startswith(lowercase(plain), lowercase(form))
+		plain = lstrip(chop(plain; head = length(form), tail = 0), [' ', ',', '.', ';', ':'])
+	end
+	String(strip(plain))
+end
+
+function is_metonymic_gloss(indent::Indent)::Bool
+	role_of(indent) isa Locution || return false
+	occursin(metonymic_gloss_pattern, locution_gloss(indent))
 end
 
 function extract_all_locutions!(entries::Vector{Entry})
@@ -414,4 +473,5 @@ function enrich!(entries::Vector{Entry}; verdicts_path::Union{Nothing, String} =
 
 	@info "Phase 4: Extract locutions"
 	extract_all_locutions!(entries)
+	extract_all_proverb_forms!(entries)
 end

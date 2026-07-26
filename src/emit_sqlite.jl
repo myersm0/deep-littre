@@ -196,7 +196,7 @@ end
 function insert_body_element!(db::SQLite.DB, entry_id::String,
 		parent_sense_id::Union{Nothing, Int}, group::TransitionGroup, depth::Int, xml_id::String)
 	plain = strip_tags(group.transition_content)
-	stype = group.kind == :strong ? "grammatical_variant" : "usage_group"
+	stype = group.kind == :strong ? "homonymic_entry" : "usage_group"
 	transition_type = string(group.kind)
 	SQLite.execute(db,
 		"INSERT INTO senses (entry_id, parent_sense_id, xml_id, sense_type, content_plain, content_markup, depth, transition_type, transition_form, transition_pos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

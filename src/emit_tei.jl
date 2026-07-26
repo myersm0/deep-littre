@@ -95,9 +95,10 @@ function convert_italics(s::AbstractString)::String
 	buffer = IOBuffer()
 	stack = Symbol[]
 	for token in split_preserving(s, r"<[^>]+>")
-		if token == "<i lang=\"la\">"
+		language = match(r"^<i\s+lang=\"([^\"]+)\"\s*>$", token)
+		if language !== nothing
 			push!(stack, :foreign)
-			print(buffer, "<foreign xml:lang=\"la\">")
+			print(buffer, "<foreign xml:lang=\"$(language.captures[1])\">")
 		elseif token == "<i>"
 			push!(stack, :mentioned)
 			print(buffer, "<mentioned>")
@@ -183,21 +184,64 @@ function split_def_usg(tei_content::AbstractString)::Tuple{Vector{String}, Strin
 	(usg_elements, remaining)
 end
 
-# <def> admits only text, gLike, hiLike, ptrLike, segLike, gloss and xr, so a
-# <usg> surviving mid-prose stays a <usg> whatever its reading: retyping clears
-# the invalid-@type signature, while the position error is W3's def-extraction.
-function remap_inline_usg(tei_content::AbstractString)::String
-	replace(tei_content, inline_usg_pattern => function (matched_text)
-		parts = match(inline_usg_pattern, matched_text)
-		usg_type, printed = parts.captures[1], parts.captures[2]
-		usg_type in routed_usg_types || return matched_text
-		targets = route_content(printed)
-		length(targets) == 1 && return usg_only_markup(targets[1], printed)
-		join(usg_only_markup(target, printed) for target in targets)
-	end)
+# <def> admits only text, gLike, hiLike, ptrLike, segLike, gloss and xr, so no
+# <usg> may survive inside it in any position. Every inline <usg> is hoisted to
+# a sense-level sibling after the <def>, where a grammatical reading may become
+# <gramGrp>. Position classes: def_end (label trails the whole def, scope
+# unambiguous), single_clause (no clause break anywhere, scope unambiguous),
+# uncertain (mid-text in multi-clause prose — hoisted anyway, since the gate
+# requires validity and an over-scoped label is recoverable while a lost one is
+# not). Every hoist is written to the report file as the audit trail.
+const def_usg_report_path =
+	joinpath(@__DIR__, "..", "test", "reports", "def_usg_hoists.tsv")
+
+const def_usg_records = NTuple{5, String}[]
+
+function usg_position(before::AbstractString, after::AbstractString)::String
+	isempty(replace(after, r"[\s,;:.()]" => "")) && return "def_end"
+	clause_break = r"[;.]\s"
+	(occursin(clause_break, before) || occursin(clause_break, after)) && return "uncertain"
+	"single_clause"
 end
 
-definition_markup(tei_content::AbstractString)::String = remap_inline_usg(tei_content)
+function extract_inline_usg(tei_content::AbstractString, context_id::String)::Tuple{Vector{String}, String}
+	hoisted = String[]
+	cleaned = String(tei_content)
+	while true
+		m = match(inline_usg_pattern, cleaned)
+		m === nothing && break
+		usg_type, printed = m.captures[1], m.captures[2]
+		before = cleaned[1:prevind(cleaned, m.offset)]
+		after = cleaned[m.offset + ncodeunits(m.match):end]
+		append!(hoisted, route_label_markup(usg_type, lowercase_text_nodes(printed)))
+		push!(def_usg_records, (context_id, usg_position(before, after),
+			String(usg_type), strip_tags(printed), first(strip_tags(cleaned), 120)))
+		cleaned = string(rstrip(before), " ", lstrip(after, [' ', ',', ';', ':']))
+		cleaned = replace(cleaned, r"\s{2,}" => " ")
+	end
+	cleaned = String(strip(replace(cleaned, r"\s+([.,])" => s"\1")))
+	(hoisted, cleaned)
+end
+
+function emit_definition(io::IO, tei_content::AbstractString, level::Int, context_id::String)
+	hoisted, cleaned = extract_inline_usg(tei_content, context_id)
+	p = pad(level)
+	!isempty(cleaned) && println(io, "$(p)<def>$(cleaned)</def>")
+	for element in hoisted
+		println(io, "$(p)$(element)")
+	end
+end
+
+function write_def_usg_report(path::AbstractString = def_usg_report_path)
+	mkpath(dirname(path))
+	open(path, "w") do io
+		println(io, "context_id\tposition\tusg_type\tlabel\tdef_excerpt")
+		for record in def_usg_records
+			println(io, join((replace(field, '\t' => ' ') for field in record), '\t'))
+		end
+	end
+	@info "Wrote $(length(def_usg_records)) def-usg hoists to $path"
+end
 
 # ── Gram splitting (two-step: structural split, then classify) ───
 
@@ -289,8 +333,7 @@ end
 
 # relatedEntry ids: positional sense id + a slug of the canonical form
 # (e.g. cabinet_s4.1.tenir_cabinet). Falls back to the positional id when no
-# form is available. Not yet wired into emission; consumed by W3's <re
-# type="locution"> → <entry type="relatedEntry"> migration.
+# form is available.
 function related_entry_id(positional_id::AbstractString, canonical_form::AbstractString)::String
 	slug = slugify(canonical_form)
 	isempty(slug) ? String(positional_id) : "$(positional_id).$(slug)"
@@ -309,13 +352,19 @@ end
 
 # ── Citation emission ────────────────────────────────────────────
 
-function emit_citation(io::IO, cit::Citation, level::Int)
+# cit_type is a property of the route, not a global: citations inside <etym>
+# are diachronic attestations and emit bare, while synchronic usage examples
+# (senses, remarque/supplément <dictScrap>) keep type="example". An attestation
+# typed "example" would assert a synchronic function it does not have; bare
+# emission leaves the additive upgrade path to type="attestation" open.
+function emit_citation(io::IO, cit::Citation, level::Int; cit_type::String = "example")
 	p = pad(level)
 	author = isempty(cit.resolved_author) ? cit.author : cit.resolved_author
 	text = markup_to_tei(cit.text)
 	hidden = isempty(cit.hide) ? "" : " ana=\"hidden\""
+	type_attr = isempty(cit_type) ? "" : " type=\"$(cit_type)\""
 
-	println(io, "$(p)<cit type=\"example\"$(hidden)>")
+	println(io, "$(p)<cit$(type_attr)$(hidden)>")
 	println(io, "$(p)  <quote>$(text)</quote>")
 	if !isempty(author) || !isempty(cit.reference)
 		println(io, "$(p)  <bibl>")
@@ -326,9 +375,9 @@ function emit_citation(io::IO, cit::Citation, level::Int)
 	println(io, "$(p)</cit>")
 end
 
-function emit_citations(io::IO, citations::Vector{Citation}, level::Int)
+function emit_citations(io::IO, citations::Vector{Citation}, level::Int; cit_type::String = "example")
 	for cit in citations
-		emit_citation(io, cit, level)
+		emit_citation(io, cit, level; cit_type)
 	end
 end
 
@@ -364,7 +413,7 @@ function emit_label_sense(io::IO, label::String, usg_type::String, def_text::Str
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
+		!isempty(clean_def) && emit_definition(io, clean_def, level + 1, sense_id)
 	end
 	emit_citations(io, citations, level + 1)
 	emit_children(io, children, level + 1, sense_id)
@@ -379,7 +428,7 @@ function emit_default_sense(io::IO, indent::Indent, level::Int, sense_id::String
 	for el in usg_els
 		println(io, "$(p)  $(el)")
 	end
-	!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
+	!isempty(clean_def) && emit_definition(io, clean_def, level + 1, sense_id)
 	emit_citations(io, indent.citations, level + 1)
 	emit_children(io, indent.children, level + 1, sense_id)
 	println(io, "$(p)</sense>")
@@ -414,31 +463,120 @@ function emit_indent(io::IO, indent::Indent, ::RegisterLabel, level::Int, sense_
 		indent.citations, indent.children, level; sense_id)
 end
 
-function emit_indent(io::IO, indent::Indent, ::Locution, level::Int, sense_id::String)
-	p = pad(level)
-	content = markup_to_tei(indent.content)
-	println(io, "$(p)<re type=\"locution\"$(id_attr(sense_id))>")
-	if !isempty(indent.canonical_form)
-		println(io, "$(p)  <form type=\"lemma\"><orth>$(escape_xml(indent.canonical_form))</orth></form>")
-	end
-	println(io, "$(p)  <def>$(definition_markup(content))</def>")
-	emit_citations(io, indent.citations, level + 1)
-	println(io, "$(p)</re>")
+# ── relatedEntry migration (former <re>; the element is absent from Lex-0) ──
+
+# Whitespace- and punctuation-insensitive comparison key for <mentioned> dedup.
+function normalized_phrase(s::AbstractString)::String
+	nfkd = Unicode.normalize(lowercase(strip_tags(s)), :NFKD)
+	filter(c -> isascii(c) && (isletter(c) || isdigit(c)), nfkd)
 end
 
-function emit_indent(io::IO, indent::Indent, ::Proverb, level::Int, sense_id::String)
+# <mentioned> inside a locution def is a print artefact: content echoing the
+# canonical form or duplicating a sibling citation is discarded; novel example
+# phrases are lifted to their own <cit type="example"> outside the <def>.
+function process_mentioned(tei_content::AbstractString, form::AbstractString,
+		citations::Vector{Citation})::Tuple{String, Vector{String}}
+	known = Set{String}([normalized_phrase(form)])
+	for cit in citations
+		push!(known, normalized_phrase(cit.text))
+	end
+	lifted = String[]
+	cleaned = String(tei_content)
+	while true
+		m = match(r"<mentioned>(.*?)</mentioned>"s, cleaned)
+		m === nothing && break
+		phrase = String(strip(m.captures[1]))
+		normalized_phrase(phrase) in known || push!(lifted, phrase)
+		before = cleaned[1:prevind(cleaned, m.offset)]
+		after = cleaned[m.offset + ncodeunits(m.match):end]
+		cleaned = string(rstrip(before), " ", lstrip(after))
+	end
+	cleaned = replace(replace(cleaned, r"\s{2,}" => " "), r"\s+([.,])" => s"\1")
+	cleaned = replace(cleaned, r"\.(\s*\.)+" => ".")
+	cleaned = replace(cleaned, r"^[\s,;:]+" => "")
+	(String(strip(cleaned)), lifted)
+end
+
+const printed_proverb_marker = r"^\s*(Prov\.|Proverbe\b\.?|Proverbialement\b\.?)\s*"
+
+function split_proverb_marker(tei_content::AbstractString)::Tuple{String, String}
+	m = match(printed_proverb_marker, tei_content)
+	m === nothing && return ("", String(tei_content))
+	(String(m.captures[1]), String(tei_content[m.offset + ncodeunits(m.match):end]))
+end
+
+# Provenance-aware orth (Ch. 3 §3.6): a form printed as such in the source
+# (Gannaz <exemple>) keeps text content; a form editorially extracted from
+# prose is reconstructed and carries the value attribute with no text.
+function related_orth_markup(indent::Indent)::String
+	indent.canonical_form_source == :exemple ?
+		"<orth>$(escape_xml(indent.canonical_form))</orth>" :
+		"<orth value=\"$(escape_xml(indent.canonical_form))\"/>"
+end
+
+# A prose-derived form is a literal prefix of the def by construction; the
+# echo is stripped so the def carries only the gloss. When nothing survives
+# the strip, the item is a self-glossing proverb: the full def is kept
+# (duplicated with the form — odd but honest to the print) and marked
+# proverbial via an attribute-only usg, per the pass-3 adjudication.
+function strip_form_prefix(def_content::AbstractString, form::AbstractString)::String
+	isempty(form) && return String(def_content)
+	startswith(lowercase(def_content), lowercase(form)) || return String(def_content)
+	String(replace(chop(def_content; head = length(form), tail = 0), r"^[\s,;:.]+" => ""))
+end
+
+function emit_related_entry(io::IO, indent::Indent, level::Int, sense_id::String)
 	p = pad(level)
-	content = markup_to_tei(indent.content)
-	println(io, "$(p)<re type=\"proverbe\"$(id_attr(sense_id))>")
-	println(io, "$(p)  <def>$(definition_markup(content))</def>")
-	emit_citations(io, indent.citations, level + 1)
-	println(io, "$(p)</re>")
+	entry_id = related_entry_id(sense_id, indent.canonical_form)
+	marker, body = split_proverb_marker(markup_to_tei(indent.content))
+	def_content, lifted = process_mentioned(body, indent.canonical_form, indent.citations)
+	remainder = strip_form_prefix(def_content, indent.canonical_form)
+	self_glossing = isempty(normalized_phrase(remainder))
+	self_glossing || (def_content = remainder)
+	inner_id = "$(entry_id).1"
+
+	println(io, "$(p)<entry xml:id=\"$(escape_xml(entry_id))\" xml:lang=\"$(object_language)\" type=\"relatedEntry\">")
+	println(io, "$(p)  <form type=\"lemma\">$(related_orth_markup(indent))</form>")
+	println(io, "$(p)  <sense xml:id=\"$(escape_xml(inner_id))\">")
+	if !isempty(marker)
+		println(io, "$(p)    $(usg_markup(UsgTarget("meaningType", "proverbial"), marker))")
+	elseif self_glossing
+		println(io, "$(p)    <usg type=\"meaningType\" norm=\"proverbial\"/>")
+	end
+	!isempty(def_content) && emit_definition(io, def_content, level + 2, inner_id)
+	for phrase in lifted
+		println(io, "$(p)    <cit type=\"example\">")
+		println(io, "$(p)      <quote>$(phrase)</quote>")
+		println(io, "$(p)    </cit>")
+	end
+	emit_citations(io, indent.citations, level + 2)
+	emit_children(io, indent.children, level + 2, inner_id)
+	println(io, "$(p)  </sense>")
+	println(io, "$(p)</entry>")
+end
+
+# A locution or proverb without an extractable form cannot satisfy the nested
+# entry's mandatory <form type="lemma">; it falls back to a plain sense. The
+# population is already flagged upstream as skipped_locution.
+function emit_indent(io::IO, indent::Indent, ::Union{Locution, Proverb}, level::Int, sense_id::String)
+	if isempty(indent.canonical_form)
+		emit_default_sense(io, indent, level, sense_id)
+	else
+		emit_related_entry(io, indent, level, sense_id)
+	end
+end
+
+# The wrapper is the <xr> itself; markup conversion has already produced inner
+# <xr type="related"> wrappers around each <a ref>, which would nest illegally,
+# so they dissolve into bare <lbl>/<ref> children of the outer element.
+function strip_nested_xr(s::AbstractString)::String
+	replace(replace(s, "<xr type=\"related\">" => ""), "</xr>" => "")
 end
 
 function emit_indent(io::IO, indent::Indent, ::CrossReference, level::Int, sense_id::String)
 	p = pad(level)
-	content = markup_to_tei(indent.content)
-	println(io, "$(p)<note type=\"xref\"$(id_attr(sense_id))>$(content)</note>")
+	content = strip_nested_xr(markup_to_tei(indent.content))
+	println(io, "$(p)<xr type=\"related\"$(id_attr(sense_id))>$(content)</xr>")
 end
 
 function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTransition}, level::Int, sense_id::String)
@@ -485,7 +623,7 @@ function emit_indent(io::IO, indent::Indent, role::Union{NatureLabel, VoiceTrans
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
+		!isempty(clean_def) && emit_definition(io, clean_def, level + 1, sense_id)
 	end
 	emit_citations(io, indent.citations, level + 1)
 	emit_children(io, indent.children, level + 1, sense_id)
@@ -512,7 +650,7 @@ function emit_body_element(io::IO, sense::Sense, level::Int, sense_id::String)
 		for el in usg_els
 			println(io, "$(p)  $(el)")
 		end
-		!isempty(clean_def) && println(io, "$(p)  <def>$(definition_markup(clean_def))</def>")
+		!isempty(clean_def) && emit_definition(io, clean_def, level + 1, sense_id)
 	end
 
 	emit_citations(io, sense.citations, level + 1)
@@ -522,9 +660,7 @@ function emit_body_element(io::IO, sense::Sense, level::Int, sense_id::String)
 		emit_indent(io, indent, level + 1, child_id)
 	end
 
-	for rub in sense.rubriques
-		emit_rubrique(io, rub, level + 1)
-	end
+	emit_rubriques(io, sense.rubriques, level + 1)
 
 	println(io, "$(p)</sense>")
 end
@@ -532,7 +668,7 @@ end
 function emit_body_element(io::IO, group::TransitionGroup, level::Int, sense_id::String)
 	p = pad(level)
 	if group.kind == :strong
-		println(io, "$(p)<entry$(id_attr(sense_id)) xml:lang=\"$(object_language)\" type=\"grammaticalVariant\">")
+		println(io, "$(p)<entry$(id_attr(sense_id)) xml:lang=\"$(object_language)\" type=\"homonymicEntry\">")
 		println(io, "$(p)  <form type=\"lemma\"><orth>$(escape_xml(group.form))</orth></form>")
 		println(io, "$(p)  $(pos_group_markup(group.pos))")
 	else
@@ -556,33 +692,103 @@ function emit_body_element(io::IO, group::TransitionGroup, level::Int, sense_id:
 end
 
 # ── Rubrique emission (dispatched on RubriqueKind) ───────────────
+# Bare text is legal in both <etym> and <note>; the former <p> wrapper was
+# never load-bearing and produced ~41% of the corpus's validation errors.
 
-function emit_rubrique_body(io::IO, rub::Rubrique, level::Int)
+function emit_note_segment(io::IO, content::String, citations::Vector{Citation}, level::Int)
 	p = pad(level)
-	!isempty(rub.content) && println(io, "$(p)  <p>$(markup_to_tei(rub.content))</p>")
-	emit_citations(io, rub.citations, level + 1)
-	for indent in rub.indents
-		println(io, "$(p)  <p>$(markup_to_tei(indent.content))</p>")
-		emit_citations(io, indent.citations, level + 1)
+	!isempty(content) && println(io, "$(p)  $(markup_to_tei(content))")
+	if !isempty(citations)
+		println(io, "$(p)  <dictScrap>")
+		emit_citations(io, citations, level + 2)
+		println(io, "$(p)  </dictScrap>")
 	end
 end
 
-const rubrique_wrappers = Dict{Type, Tuple{String, String}}(
-	Historique => ("<note type=\"historique\">", "</note>"),
-	Remarque => ("<note type=\"remarque\">", "</note>"),
-	Supplement => ("<note type=\"supplément\">", "</note>"),
-	Etymologie => ("<etym>", "</etym>"),
-	Synonyme => ("<re type=\"synonyme\">", "</re>"),
-	Proverbes => ("<re type=\"proverbes\">", "</re>"),
-)
-
-function emit_rubrique(io::IO, rub::Rubrique, level::Int)
-	wrapper = get(rubrique_wrappers, typeof(rub.kind), nothing)
-	wrapper === nothing && return
+function emit_note_rubrique(io::IO, rub::Rubrique, level::Int, note_type::String)
 	p = pad(level)
-	println(io, "$(p)$(wrapper[1])")
-	emit_rubrique_body(io, rub, level)
-	println(io, "$(p)$(wrapper[2])")
+	println(io, "$(p)<note type=\"$(note_type)\">")
+	emit_note_segment(io, rub.content, rub.citations, level)
+	for indent in rub.indents
+		emit_note_segment(io, indent.content, indent.citations, level)
+	end
+	println(io, "$(p)</note>")
+end
+
+emit_rubrique(io::IO, rub::Rubrique, ::Remarque, level::Int) =
+	emit_note_rubrique(io, rub, level, "remarque")
+emit_rubrique(io::IO, rub::Rubrique, ::Supplement, level::Int) =
+	emit_note_rubrique(io, rub, level, "supplément")
+emit_rubrique(io::IO, rub::Rubrique, ::Proverbes, level::Int) =
+	emit_note_rubrique(io, rub, level, "proverbes")
+
+# Synonyme rubriques are comparative prose whose cross-reference links become
+# bare <ref> children of the synonymy <xr>. Citations cannot live inside <xr>;
+# they follow in a <dictScrap> sibling and are flagged for review.
+function emit_rubrique(io::IO, rub::Rubrique, ::Synonyme, level::Int)
+	p = pad(level)
+	parts = String[]
+	!isempty(rub.content) && push!(parts, markup_to_tei(rub.content))
+	for indent in rub.indents
+		!isempty(indent.content) && push!(parts, markup_to_tei(indent.content))
+	end
+	body = strip_nested_xr(join(parts, " "))
+	println(io, "$(p)<xr type=\"synonymy\">$(body)</xr>")
+	citations = vcat(rub.citations, Citation[c for indent in rub.indents for c in indent.citations])
+	if !isempty(citations)
+		println(io, "$(p)<dictScrap>")
+		emit_citations(io, citations, level + 1)
+		println(io, "$(p)</dictScrap>")
+	end
+end
+
+# Historique folds into <etym>: century markers become <date>, attestation
+# citations emit bare (see emit_citation). try_date is confined to historique
+# segments so an etymological account opening with a century is never swallowed
+# whole into a <date> element.
+function emit_etym_segment(io::IO, content::String, citations::Vector{Citation},
+		level::Int; try_date::Bool)
+	p = pad(level)
+	if !isempty(content)
+		dated = try_date ? century_date_markup(strip_tags(content)) : nothing
+		println(io, "$(p)  $(dated === nothing ? markup_to_tei(content) : dated)")
+	end
+	emit_citations(io, citations, level + 1; cit_type = "")
+end
+
+# Ordering convention: etymological account first, historical attestations
+# second, within one flat <etym>.
+function emit_combined_etym(io::IO, etymologies::Vector{Rubrique},
+		historiques::Vector{Rubrique}, level::Int)
+	p = pad(level)
+	println(io, "$(p)<etym>")
+	for rub in etymologies
+		emit_etym_segment(io, rub.content, rub.citations, level; try_date = false)
+		for indent in rub.indents
+			emit_etym_segment(io, indent.content, indent.citations, level; try_date = false)
+		end
+	end
+	for rub in historiques
+		emit_etym_segment(io, rub.content, rub.citations, level; try_date = true)
+		for indent in rub.indents
+			emit_etym_segment(io, indent.content, indent.citations, level; try_date = true)
+		end
+	end
+	println(io, "$(p)</etym>")
+end
+
+function emit_rubriques(io::IO, rubriques::Vector{Rubrique}, level::Int)
+	etymologies = Rubrique[r for r in rubriques if r.kind isa Etymologie]
+	historiques = Rubrique[r for r in rubriques if r.kind isa Historique]
+	folded = false
+	for rub in rubriques
+		if rub.kind isa Etymologie || rub.kind isa Historique
+			folded || emit_combined_etym(io, etymologies, historiques, level)
+			folded = true
+		else
+			emit_rubrique(io, rub, rub.kind, level)
+		end
+	end
 end
 
 # ── Orthography and pronunciation ────────────────────────────────
@@ -655,9 +861,7 @@ function emit_entry(io::IO, entry::Entry, level::Int)
 		emit_body_element(io, el, level + 1, sense_id)
 	end
 
-	for rub in entry.rubriques
-		emit_rubrique(io, rub, level + 1)
-	end
+	emit_rubriques(io, entry.rubriques, level + 1)
 
 	println(io, "$(p)</entry>")
 end
@@ -751,6 +955,7 @@ const tei_footer = """</body>
 
 function emit_tei(entries::Vector{Entry}, output_path::String)
 	empty!(pronunciation_flags)
+	empty!(def_usg_records)
 	open(output_path, "w") do io
 		print(io, tei_header)
 		for entry in entries
@@ -759,5 +964,6 @@ function emit_tei(entries::Vector{Entry}, output_path::String)
 		print(io, tei_footer)
 	end
 	write_pronunciation_report()
+	write_def_usg_report()
 	@info "Wrote $(length(entries)) entries to $output_path"
 end

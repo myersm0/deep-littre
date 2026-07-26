@@ -26,7 +26,7 @@ export parse_all, parse_file, strip_tags
 
 include("enrich.jl")
 export enrich!, resolve_all_authors!, classify_all!, extract_all_locutions!,
-	load_verdicts, VerdictDict
+	extract_all_proverb_forms!, load_verdicts, VerdictDict
 
 include("scope.jl")
 export scope_all!

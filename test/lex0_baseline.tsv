@@ -1,30 +1,24 @@
 total	78599
-valid	22935
-invalid	55664
+valid	45725
+invalid	32874
 # ranked error signatures
-103919	element "cit" not allowed here; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-55845	element "p" not allowed here; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-52219	element "p" not allowed here; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
-23752	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-12694	element "foreign" not allowed anywhere; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
+100263	element "cit" missing required attribute "type"
+43684	element "date" not allowed here; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
+22971	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
+17175	element "foreign" not allowed anywhere; expected the element end-tag, text or element "bibl", "biblStruct", "c", "cit", "def", "desc", "etym", "figure", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg", "usg" or "xr"
 10714	attribute "type" not allowed here; expected attribute "ana", "cert", "change", "copyOf", "corresp", "datcat", "exclude", "expand", "facs", "location", "mergedIn", "n", "next", "norm", "opt", "orig", "prev", "rend", "rendition", "resp", "sameAs", "select", "source", "split", "style", "synch", "targetDatcat", "value", "valueDatcat", "xml:base" or "xml:lang"
-9852	element "xr" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-4625	element "i" not allowed anywhere; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-4611	element "mentioned" not allowed anywhere; expected text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-3254	element "re" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "cit", "entry", "etym", "figure", "form", "gramGrp", "lbl", "listBibl", "metamark", "note", "num", "pc", "ref", "sense", "usg" or "xr"
-2888	element "usg" not allowed here; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-935	element "re" not allowed anywhere; expected the element end-tag or element "c", "cit", "def", "entry", "etym", "figure", "form", "g", "gloss", "gramGrp", "hi", "lang", "lbl", "metamark", "note", "num", "pc", "ref", "seg", "sense", "usg" or "xr"
-486	element "usg" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-448	value of attribute "type" is invalid; must be equal to "attitude", "domain", "frequency", "geographic", "hint", "meaningType", "normativity", "socioCultural", "temporal" or "textType"
-439	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-310	element "mentioned" not allowed anywhere; expected text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-147	element "xr" not allowed here; expected text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-132	element "foreign" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-29	element "i" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-11	element "foreign" not allowed anywhere; expected text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
-9	element "usg" not allowed here; expected text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-7	element "usg" not allowed here; expected text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
+8397	element "dictScrap" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
+3477	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
+1298	text not allowed here; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
+442	value of attribute "type" is invalid; must be equal to "attitude", "domain", "frequency", "geographic", "hint", "meaningType", "normativity", "socioCultural", "temporal" or "textType"
+319	element "usg" not allowed here; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
+304	element "dictScrap" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "cit", "entry", "etym", "figure", "form", "gramGrp", "lbl", "listBibl", "metamark", "note", "num", "pc", "ref", "sense", "usg" or "xr"
+298	element "foreign" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
+207	value of attribute "notBefore" is invalid; must be a year, must be an ISO time, must be an ISO day of the month (of the form ---DD), must be an ISO date and time, must be an ISO date, must be an ISO year and month, must be an ISO month (of the form --MM) or must be an ISO month and day (of the form --MM-DD)
+56	value of attribute "notAfter" is invalid; must be a year, must be an ISO time, must be an ISO day of the month (of the form ---DD), must be an ISO date and time, must be an ISO date, must be an ISO year and month, must be an ISO month (of the form --MM) or must be an ISO month and day (of the form --MM-DD)
+11	element "i" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
+9	element "mentioned" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
+7	element "foreign" not allowed anywhere; expected the element end-tag or element "bibl", "biblStruct", "c", "cit", "figure", "g", "gloss", "hi", "lang", "lbl", "listBibl", "metamark", "note", "pc", "quote", "ref", "seg" or "usg"
 4	element "xr" not allowed here; expected the element end-tag, text or element "c", "figure", "g", "gloss", "hi", "lang", "metamark", "note", "pc", "ref" or "seg"
 1	ID "d" has already been defined
-1	element "usg" not allowed here; expected the element end-tag, text or element "c", "figure", "g", "gloss", "hi", "lang", "metamark", "note", "pc", "ref" or "seg"
 1	first occurrence of ID "d"

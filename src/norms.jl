@@ -195,13 +195,6 @@ function usg_markup(target::UsgTarget, printed::AbstractString)::String
 	"<usg type=\"$(target.kind)\"$(norm)>$(printed)</usg>"
 end
 
-# Inline positions (inside <def>) cannot carry <gramGrp>, so a gram reading
-# there degrades to hint rather than changing element type mid-prose.
-function usg_only_markup(target::AtomTarget, printed::AbstractString)::String
-	target isa UsgTarget && return usg_markup(target, printed)
-	usg_markup(UsgTarget("hint", ""), printed)
-end
-
 # ── Century dates ────────────────────────────────────────────────
 
 const roman_centuries = Dict(
