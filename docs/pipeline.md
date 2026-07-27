@@ -1,8 +1,16 @@
 # Pipeline behavior
 
-This document specifies the observable behavior of each pipeline phase.
+This document specifies the observable behavior of each pipeline phase, current as of v0.2.0 (the TEI Lex-0 conformance release).
 
 Entry point: `run_pipeline.jl` calls `parse_all` → `enrich!` → `scope_all!` → `collect_flags` → `emit_tei` / `emit_sqlite`.
+
+## Architecture: two emitters, one model
+
+The TEI emitter and the SQLite emitter are two independent interpreters of the shared model (`Vector{Entry}`), and `collect_flags` (`flags.jl`) is a separate model-only pass. A decision made inline in either emitter is invisible to the other and has no channel into `review_queue`. This yields the project's **transform placement principle**: any transform that must route uncertain cases to review, or that changes what SQLite's `sense_type`/`role` ought to be, belongs in the model layer (`model.jl`/`enrich.jl`/`scope.jl`), where both emitters and the flag pass see it; transforms that are pure serialization concerns live in `emit_tei.jl`.
+
+Shared data — the language table (`data/etym_language_table.toml`), the usg norm tables (`data/usg_register_norms.toml`, `data/usg_gram_norms.toml`), and the POS abbreviation table — lives in committed TOML files readable by both layers, never inline in an emitter. The shared routing layer (`src/norms.jl`) returns typed atoms and lets callers place them: a single source label like `absolument et familièrement` yields a `<gram type="construction">` for a `<gramGrp>` and a separate `<usg type="socioCultural">`. All label routing goes through this router; parallel routing paths are a defect.
+
+Where a position-sensitive detection feeds both a review flag and an emission decision (the etymology suspect channel), the detection logic exists exactly once, called on the same model-layer string by both consumers, so corpus counts and flag counts agree by construction.
 
 ## Phase 1: Parse
 
@@ -27,6 +35,8 @@ Applied to raw text after patches, before XML parsing:
 ### 1c. Indent line tracking
 
 XML.jl does not expose source line numbers. The pipeline pre-scans the raw text for `<indent` opening tags and records their line numbers in document order. During DOM traversal, each `parse_indent` call consumes the next line number from this queue. The scan and the DOM parse both visit indents in document order, so the two stay in sync.
+
+Note: the pipeline pins XML.jl to the 0.3.x line (`Project.toml` compat). XML.jl 0.4.0 is a breaking rewrite that preserves whitespace text nodes, silently changing `doc[end]` root-node access and causing every source file to parse to zero entries.
 
 ### 1d. Content extraction
 
@@ -99,7 +109,6 @@ For any ID that appears more than once, all occurrences receive a `_N` suffix in
 
 Deduplication mutates `entry.id` (a `Ref{String}`) in place.
 
-
 ## Phase 2: Author resolution
 
 **Input/output**: mutates `Citation.resolved_author` in place across all entries.
@@ -115,7 +124,6 @@ A running `last_author` variable (initially empty) tracks the most recent named 
 Author resolution is scoped to each entry independently. The `last_author` resets at entry boundaries.
 
 **Edge case**: an `"ID."` citation with no preceding named author in the same entry gets `resolved_author = ""`.
-
 
 ## Phase 3: Indent classification
 
@@ -169,21 +177,20 @@ The label-only rules are deliberately distinct from the prose-following rules: b
 
 Tried in this order; first match wins. Indents matching no pattern are classified as `Unclassified` (method: `Heuristic`).
 
+## Phase 4: Locution and proverb form extraction
 
-## Phase 4: Locution extraction
+**Input/output**: mutates `Indent.canonical_form` and `Indent.canonical_form_source`, and may reclassify some indents.
 
-**Input/output**: mutates `Indent.canonical_form` and may reclassify some indents.
+For indents classified as `Locution`:
 
-Only processes indents currently classified as `Locution`. For each:
+1. **Reflexive reclassification**: if plain text matches `^S'[A-Z...]..., v. réfl`, reclassify to `VoiceTransition`. No canonical form extracted.
+2. **Exemple extraction**: if the raw content contains `<exemple>...</exemple>`, the inner text becomes the canonical form (`canonical_form_source = :exemple` — the form was printed as such in the source).
+3. **Comma splitting**: if the plain text contains a comma, take the text before the first comma (stripped). If this exceeds 60 characters, skip. (`canonical_form_source = :prose` — editorially extracted.)
+4. **Fallback**: if none of the above produce a form, the indent keeps `canonical_form=""` and `:none`. This is flagged in the review queue.
 
-1. **Reflexive reclassification**: if plain text matches `^S'[A-Z...]..., v. réfl`, reclassify to `VoiceTransition` (Heuristic, 0.9). No canonical form extracted.
+For indents classified as `Proverb`, form extraction splits at explicit gloss introducers (`c.-à-d.`, `c'est-à-dire`, `se dit`, `pour dire`, `signifie`) and never at bare commas, since proverbs carry internal commas; with no introducer, the whole text is the form. A definition that survives extraction as nothing but the form marks a self-glossing proverb (the definition is retained).
 
-2. **Exemple extraction**: if the raw content contains `<exemple>...</exemple>`, the inner text becomes the canonical form.
-
-3. **Comma splitting**: if the plain text contains a comma, take the text before the first comma (stripped). If this exceeds 60 characters, skip.
-
-4. **Fallback**: if none of the above produce a form, the indent keeps `canonical_form=""`. This will be flagged in the review queue.
-
+The `canonical_form_source` provenance is carried into TEI emission: `:exemple` forms emit as `<orth>` text content; `:prose` forms emit as `<orth value="…"/>` (reconstructed-form syntax, case preserved as extracted).
 
 ## Phase 5: Scope resolution
 
@@ -208,123 +215,96 @@ Processes each entry's body sequentially, looking for senses that carry a termin
 All three conditions must hold. When found:
 
 1. **Scope boundary**: scan forward through subsequent body elements. The scope ends just before the next sense that also has a trailing `VoiceTransition` (with no citations), or at end of body.
-
 2. **Zero-scope**: if there are no subsequent elements, or the scope boundary falls at 0 (the immediately following element is itself a transition carrier), the transition is left in place as an annotation.
-
-3. **Strong vs medium**: the transition's plain text is tested against two patterns:
-   - `^S'[A-Z...]..., v. réfl/etc.` → strong, with extracted form and POS.
-   - `^[UPPERCASE FORM], v. n|a|réfl|s. m|f|adj` → strong, with extracted form and POS.
-   - Everything else → medium.
-
+3. **Strong vs medium**: the transition's plain text is tested against two patterns: `^S'[A-Z...]..., v. réfl/etc.` → strong, with extracted form and POS; `^[UPPERCASE FORM], v. n|a|réfl|s. m|f|adj` → strong, with extracted form and POS; everything else → medium.
 4. **Restructuring**: the transition indent is removed from the source sense. A `TransitionGroup` is created wrapping the scoped body elements. Both the (now shorter) source sense and the new group are emitted to the new body.
-
 5. **Large-scope warning**: if a group scopes more than 15 senses, it is logged as ambiguous.
 
-Inter-sense scoping examines only the last indent of each sense. A VoiceTransition indent that appears at a non-terminal position within a sense (e.g. `Substantivement, ...` followed by further indents) is never considered for inter-sense scoping; it is handled exclusively by intra-sense scoping in pass 2.
+Inter-sense scoping examines only the last indent of each sense. A VoiceTransition indent that appears at a non-terminal position within a sense is never considered for inter-sense scoping; it is handled exclusively by intra-sense scoping in pass 2.
+
+As of the v0.2.0 build, no transition resolves to strong scope (all 298 classified VoiceTransitions resolve to medium, intra-sense, or zero scope), so the strong-path encodings below are tested but unpopulated. Populating them — deciding which printed transition forms genuinely govern beyond their own sense — is the classification branch's voice-transition scoping work; the 674 `intra_sense_form` review flags are its worklist.
 
 ### 5b. Intra-sense scoping
 
-After inter-sense scoping, each sense (including those inside `TransitionGroup`s) has its indents processed:
-
-Within a sense's indent list, any `NatureLabel` or `VoiceTransition` indent that is not the last in the list absorbs all following non-transition indents as children, up to the next transition or end of list.
-
+After inter-sense scoping, each sense (including those inside `TransitionGroup`s) has its indents processed: within a sense's indent list, any `NatureLabel` or `VoiceTransition` indent that is not the last in the list absorbs all following non-transition indents as children, up to the next transition or end of list.
 
 ## TEI emission
 
-The TEI emitter serializes the enriched, scope-resolved model to TEI Lex-0 XML. Key behaviors:
+The TEI emitter (`emit_tei.jl`) serializes the enriched, scope-resolved model to TEI Lex-0 XML, conformant with the pinned TEI Lex-0 v0.9.5 RNG (`vendor/tei-lex0-0.9.5/`; validated by `jing` via `scripts/validate_lex0.jl` — see `scripts/README_validation.md`). It is a native string emitter: no DOM in the emit path. Schema-conformance questions are settled empirically by the probe file (`test/probe_lex0.xml`), which isolates one construct per minimal entry and is re-run whenever the vendored schema changes; the RNG's verdicts override the Bowers et al. paper and all project documents where they disagree.
+
+### Entry shell and identity
+
+Every top-level entry carries `xml:id` (see Phase 1i/1j), `xml:lang="fr-x-lit19c"`, and `type="mainEntry"` (`type` is schema-required). Sense `xml:id`s are hierarchical: `{entry_id}_s{body_index}` for top-level senses, `.{child_index}` appended at each nesting level. Nested related entries (locutions/proverbs) extend the parent sense id with a form slug. Id generation is deterministic: identical sources produce byte-identical ids across builds.
 
 ### Markup conversion
 
-Gannaz inline markup is converted to TEI equivalents via regex substitution:
+Gannaz inline markup is converted via the substitution layer plus a stack-based converter that preserves nesting (independent regex passes on nested wrappers produce crossed tags; the tree-aware conversion is required for well-formedness):
 
 | Source | TEI |
 |--------|-----|
 | `<semantique type="domaine">` | `<usg type="domain">` |
-| `<semantique type="indicateur">` | `<usg type="sem">` |
-| `<semantique>` | `<usg type="sem">` |
-| `<a ref="X">Y</a>` | `<xr><ref target="#X">Y</ref></xr>` |
+| `<semantique type="indicateur">` / `<semantique>` | routed `<usg>` (see label routing) |
+| `<a ref="X">Y</a>` | `<xr type="…"><ref type="entry" target="#id">Y</ref></xr>`, with the target passed through `make_id` normalization |
 | `<exemple>` | `<mentioned>` |
-| `<nature>` | `<usg type="gram">` |
-| `<i lang="la">` | `<foreign xml:lang="la">` |
+| `<nature>` | routed `<gramGrp>`/`<usg>` (see label routing) |
+| `<i lang="X">` | `<foreign xml:lang="X">` (any language, not only Latin) |
 | `<i>` | `<mentioned>` |
 
-All `<usg>` text content is lowercased (tag attributes and tag names are preserved).
+Context flattening: `mentioned` and `foreign` are invalid inside `<etym>`, `<note>`, `<quote>`, and `<def>` per the RNG, and flatten there to `<hi rend="italic">` preserving `xml:lang` — a reversible, information-preserving fallback. Reference wrappers dissolve to bare `<ref>` inside quotes. Interstitial prose inside `<xr>` wraps in `<seg>` (bare text is invalid there).
+
+### Label routing
+
+All usage/grammar label content routes through `src/norms.jl`: normalize (lowercase, strip trailing punctuation), split compound "X et Y" labels into atoms, look up each atom through ordered tiers (exact match → prefix → lemma rules → `^terme` domain tier → residue), and return typed atoms for the caller to place. The routed vocabulary is the applicable Lex-0 `usg/@type` set — `socioCultural`, `attitude`, `meaningType`, `temporal`, `frequency`, `textType`, `normativity`, `domain` — plus `<gram>` types (`pos`, `gender`, `number`, `tense`, `valency`, `construction`, `agreement`) emitted inside `<gramGrp>`. Unroutable residue emits as `<usg type="hint">` and is counted per population; residue rates are logged on every build. Tier ordering is load-bearing (exact-before-domain keeps `terme familier` on `socioCultural`; lemma-before-domain keeps `terme vieilli` on `temporal`) and pinned by tests. Conflated POS strings (`s. m.`, `v. réfl.`, `part. passé.`) split into separate typed `<gram>` elements via the POS parser, applied to `entry.pos` and transition POS strings alike.
+
+Inline `<usg>` elements that would land inside `<def>` (invalid per the RNG's `<def>` content model) hoist to sense-level siblings, classified `def_end`/`single_clause`/`uncertain` and recorded in `test/reports/def_usg_hoists.tsv` as the audit trail; uncertain cases hoist anyway, since an over-scoped label is recoverable and a lost one is not. `<pron>` content that is prose commentary rather than a transcription relocates to `<note type="pronunciation">`, with a report file for the discriminator's decisions.
 
 ### Label splitting
 
 Three splitting mechanisms handle label/definition separation, each targeting a different content shape.
 
-#### `split_label` (positional, tag-leading)
+**`split_label`** (positional, tag-leading), used by Figurative, DomainLabel, and as a final fallback: tries leading `<gramGrp>`, then leading `<usg>`, then leading `Fig.`, then falls back to the entire content as the label with an empty definition.
 
-Used by Figurative, DomainLabel, and as a final fallback. Tries, in order:
+**`split_gram`** (structural, tag-anchored), used by NatureLabel and VoiceTransition when the source had a `<nature>` tag: splits the converted content into pre-text, label, and definition around the first gram element. Pre-text is classified as `:none`, `:reflexive_form` (starts `Se`/`S'` + verb, label contains `réfl`), `:locution_form` (label matches `loc. adv.` etc.), or `:headword_echo`. When the definition is empty (the tag wrapped both label and definition), the fused string passes to `split_bare_transition` for sub-splitting.
 
-1. Leading `<gramGrp><gram>...</gram></gramGrp>` → label is the gram content.
-2. Leading `<usg>...</usg>` → label is the usg content.
-3. Leading `Fig.` → label is `fig.`.
-4. Fallback: the entire content is the label, definition is empty.
-
-#### `split_gram` (structural, tag-anchored)
-
-Used by NatureLabel and VoiceTransition when a `<usg type="gram">` element is present (i.e. the source had a `<nature>` tag). Splits the converted content into three spans around the first `<usg type="gram">` element:
-
-- **pre_text**: everything before the `<usg>` element (stripped of trailing punctuation/whitespace).
-- **label_text**: the `<usg type="gram">` content.
-- **def_text**: everything after `</usg>` (stripped of leading punctuation/whitespace).
-
-A second step classifies `pre_text`:
-
-| Signal | `pre_kind` |
-|--------|------------|
-| Empty | `:none` |
-| Starts with `Se`/`S'` + verb, label contains `réfl` | `:reflexive_form` |
-| Label matches `loc. adv.`/`loc. prépos.`/`locut.` | `:locution_form` |
-| Everything else | `:headword_echo` |
-
-When `def_text` is empty (the `<nature>` tag wrapped both label and definition, e.g. `<nature>Substantivement, le trois pour cent...</nature>`), the fused `label_text` is passed to `split_bare_transition` for sub-splitting.
-
-#### `split_bare_transition` (text-pattern, no tag boundary)
-
-Used by heuristically-classified VoiceTransition and RegisterLabel indents where the content is plain text with no `<usg>` element to anchor on. Matches a known root label (`Substantivement`, `Absolument`, `Familièrement`, `Populairement`, etc.), greedily consumes any `et ...` compound continuation, and splits at the first `,` `.` `:` separator. Returns the label (lowercased) and the definition text after the separator.
-
-Returns `nothing` when no root label matches or when the separator is missing (9 known no-separator cases, deferred to LLM review).
-
-### Sense IDs
-
-TEI `xml:id` attributes are generated hierarchically: `{entry_id}_s{body_index}` for top-level senses, with `.{child_index}` appended at each nesting level.
+**`split_bare_transition`** (text-pattern, no tag boundary), used for heuristically-classified transition and register indents: matches a known root label, consumes `et …` compound continuations, and splits at the first `,` `.` `:` separator. Returns `nothing` when no root matches or the separator is missing; the fallback then swallows the whole content as the label. Known defect, measured and routed to the classification branch: Littré routinely interposes a short adverbial between root and separator (`populairement encore, …`, `substantivement, le trois pour cent…`), producing fused label-plus-definition emissions that surface as the routed `hint` residues; the fix is tolerating an adverbial run in `bare_label_tail`.
 
 ### Role dispatch
 
 Each `IndentRole` has a dedicated `emit_indent` method:
 
-- **Figurative**: `<sense type="figuré">` with `<usg type="sem">` label.
-- **DomainLabel**: `<sense>` with `<usg type="domain">` label; falls back to default sense if label/def split fails.
-- **RegisterLabel**: `<sense>` with `<usg type="register">` label. Uses `split_bare_transition` when available, falling back to `split_label`.
-- **Locution**: `<re type="locution">` with optional `<form><orth>` for canonical form.
-- **Proverb**: `<re type="proverbe">`.
-- **CrossReference**: `<note type="xref">`.
-- **NatureLabel / VoiceTransition**: three paths depending on content shape. (1) When a `<usg type="gram">` element is present (`<nature>`-tagged source), `split_gram` extracts pre-text, label, and definition; `:reflexive_form` and `:locution_form` pre-text emits as `<form><orth>`, `:headword_echo` pre-text is dropped. If `split_gram` finds the label and definition fused inside the tag, `split_bare_transition` sub-splits them. (2) When no `<usg type="gram">` element is present (heuristic classification), `split_bare_transition` splits the bare text at the first separator. Falls back to `split_label` if no known root label matches. (3) Bare `<usg type="gram">`: emitted only when there is no definition text, no citations, and no children.
-- **Unclassified**: default `<sense ana="unclassified">` with any leading `<usg>` elements extracted. The `ana="unclassified"` attribute makes these queryable by XPath as the working surface for downstream review.
+- **Figurative**: `<sense ana="figurative">` with routed `<usg>` label (`@type` on `<sense>` is invalid per the RNG; instance annotation rides `ana`).
+- **DomainLabel**: `<sense>` with `<usg type="domain">` label.
+- **RegisterLabel**: `<sense>` with routed `<usg>` label(s).
+- **Locution / Proverb**: nested `<entry type="relatedEntry">` inside the parent sense, with shell attributes, `<form type="lemma">` (orth per `canonical_form_source` provenance), and a `<sense>` wrapping the definition. Printed `Prov.` markers and proverb-classified items carry `<usg type="meaningType" norm="proverbial">`. Novel `<mentioned>` phrases lift to `<cit type="example">`; content echoing the form or duplicating a sibling citation is discarded; self-glossing proverbs keep the duplicated definition. Migration is driven by adjudicated labels in `test/sampling/locutions_labeled.tsv`; the def-centric metonymic discriminator is flag-only (`metonymic_subsense`).
+- **CrossReference**: `<xr type="related">` with inner wrappers dissolved and prose seg-wrapped.
+- **NatureLabel / VoiceTransition**: the three-path split described under label splitting, emitting `<gramGrp>` constructs and forms; valency emits at sense level (the Ch. 4 inheritance encoding) pending scope adjudication.
+- **Unclassified**: `<sense ana="unclassified">` with any leading `<usg>` elements extracted — the XPath-queryable review surface.
 
 ### TransitionGroup dispatch
 
-- **Strong** (`:strong`): `<entry type="grammaticalVariant">` with `<form><orth>` and `<gramGrp>`.
-- **Medium** (`:medium`): `<sense>` with `<usg type="gram">` label.
+- **Strong** (`:strong`): nested `<entry type="homonymicEntry">` with `xml:id`/`xml:lang`, `<form type="lemma">` from the transition form, and `<gramGrp>` from the parsed transition POS. (Currently unpopulated; see Phase 5a.)
+- **Medium** (`:medium`): `<sense>` with routed label.
 
 ### Rubrique dispatch
 
-Each `RubriqueKind` maps to an XML wrapper:
+No rubrique body is wrapped in `<p>` (invalid in the target contexts); content emits as bare text with flattened inline markup.
 
-| Kind | Opening tag |
-|------|------------|
-| Historique | `<note type="historique">` |
-| Remarque | `<note type="remarque">` |
-| Supplement | `<note type="supplément">` |
-| Etymologie | `<etym>` |
-| Synonyme | `<re type="synonyme">` |
-| Proverbes | `<re type="proverbes">` |
+| Kind | Encoding |
+|------|----------|
+| Etymologie | `<etym>`, contents constructed (see below) |
+| Historique | folded into the entry's (or sense's) single combined `<etym>`, after etymological content: century markers as `<lbl>` (text parseable by `century_range`), attestation citations as `<cit type="example" ana="attestation">`, each with `<date notBefore notAfter>` inside its `<bibl>` |
+| Remarque | `<note type="remarque">`, citations as sibling `<cit type="example">` elements |
+| Supplement | `<note type="supplément">`, minimal mechanical fixes only |
+| Synonyme | `<xr type="synonymy">` with `<lbl>`/`<ref>` children and seg-wrapped prose; citations as flagged siblings |
+| Proverbes | `<note type="proverbes">` with sibling citations (content not parsed into individual proverbs) |
 
-Rubrique body: the main content as `<p>`, then each indent's content as a `<p>`, with citations after each.
+### Etymology construction
 
+`src/etym.jl` segments Etymologie content (`segment_etymology`, the single tokenizer shared with the flag pass) into cits, connectors, cross-references, prose, and suspects. Language cues match the longest table key as a suffix, case-insensitively, against `data/etym_language_table.toml`; cue clusters joined by `et`/`ou` split into sibling `<cit type="cognate|etymon">` elements sharing the form, with connectors as `<lbl>`. Each cit carries `xml:lang`, a `<lang expand norm>` preserving the printed abbreviation (omitted when nothing was printed; a full language name governing from prose supplies `xml:lang` with no `<lang>` element), `<form><orth>` (comma-separated variants as `<form type="variant">` siblings), optional `<gloss>` (no attributes — the RNG admits none there), and `<usg type="hint">fictif</usg>` for `lat. fictif` forms. Etymon-vs-cognate rides derivational markers (`du`, `dériv-`, `tiré`, stretch-leading `de`); unmarked cits default to cognate with a `defaulted` model field (logged as a counter, not flagged per-instance). `voy.`/`cf.`/`comparez` tails become `<xr type="related">`. Suspect tokens — adjacent to a form, unmatched by table and stoplist — emit as `<lbl ana="suspect">` and as `suspect_language_token` flags, equal counts by construction. Rubriques whose markup falls outside the segmenter's event inventory emit unsegmented (byte-identical to the flattened fallback) and are counted via `etym_fallback`. Private-use `xml:lang` subtags respect the RFC 3066 eight-character cap (`fr-x-bourg`, not `fr-x-bourguignon`).
+
+### Instance annotation convention
+
+`ana` is the project's channel for instance-level annotation, orthogonal to `type`: `ana="attestation"` (diachronic attestations vs. synchronic examples), `ana="figurative"` (sense-level, replacing the invalid `sense/@type`), `ana="suspect"` (unresolved language-position tokens), `ana="unclassified"` (classifier review surface).
 
 ## SQLite emission
 
@@ -337,10 +317,10 @@ Six tables: `entries`, `senses`, `citations`, `locutions`, `rubriques`, `review_
 Body elements map to `senses` rows:
 
 - `Sense` → `sense_type='sense'`, with `num`, `is_supplement`, and `indent_id` derived as `{entry_id}.{num || 1}`.
-- `TransitionGroup` → `sense_type='grammatical_variant'` (strong) or `'usage_group'` (medium), with `transition_type`, `transition_form`, `transition_pos`.
+- `TransitionGroup` → `sense_type='homonymic_entry'` (strong; renamed from `grammatical_variant` in v0.2.0, mirroring the TEI vocabulary — zero live rows in the current build) or `'usage_group'` (medium), with `transition_type`, `transition_form`, `transition_pos`.
 - `Indent` → `sense_type` derived from role (e.g. `'figurative'`, `'locution'`, `'domain'`, `'cross_reference'`, `'register'`, `'unclassified'`, `'annotation'` for childless NatureLabel/VoiceTransition, `'transition_group'` for those with children, `'sense'` as fallback).
 
-All insertions are recursive: each indent's children produce child rows with `parent_sense_id` pointing to the parent's auto-incremented `sense_id`, and `depth` incremented. After scope resolution, the indent hierarchy (including intra-sense grouping) is reflected in the `parent_sense_id` and `depth` columns.
+All insertions are recursive: each indent's children produce child rows with `parent_sense_id` pointing to the parent's auto-incremented `sense_id`, and `depth` incremented.
 
 ### Locutions
 
@@ -352,19 +332,16 @@ Full-text search tables (`senses_fts`, `citations_fts`) are populated after the 
 
 ### Review queue
 
-All `ReviewFlag`s are inserted with `context` serialized as JSON.
-
+All `ReviewFlag`s are inserted with `context` serialized as JSON (via JSON.jl).
 
 ## Flag collection
 
-Flags are generated post-scope-resolution and record items for human review.
+Flags are generated post-scope-resolution by `collect_flags` and record items for human review. Aggregate counters (routing residue rates, the etymology resolved-vs-suspect hit rate, `cognate_defaulted`) are logged at collection time rather than flagged per-instance.
 
 ### Flag types
 
-- **unclassified**: indents whose role is `Unclassified` (no rule matched). Includes neighboring indent context. Note: only top-level indents under a sense are flagged; nested unclassified children inherit their parent's review status. To enumerate all unclassified indents regardless of nesting depth, query `senses.sense_type = 'unclassified'` directly.
-- **skipped_locution**: indents classified as Locution but with empty `canonical_form`.
-- **likely_locution**: indents *not* classified as Locution but whose plain text starts with `Loc.` or `Locution`.
-- **scope_decision**: every `TransitionGroup` in the body (both strong and medium), recording scope type, count, and boundary content.
-- **large_scope**: subset of scope_decision where scoped senses > 15.
-- **large_intra_scope**: intra-sense transitions with > 5 children.
-- **calibration_sample**: stratified random sample of 5 indents per (role, method) bucket, seeded deterministically (`seed=42`).
+Classification and scope: **unclassified** (top-level unclassified indents, with neighboring context; nested unclassified children are enumerable via `senses.sense_type = 'unclassified'`), **skipped_locution**, **likely_locution**, **scope_decision**, **large_scope** (> 15 senses), **large_intra_scope** (> 5 children), **calibration_sample** (stratified, seed=42).
+
+Structural (phase `structural`, added with the TEI conformance work): **metonymic_subsense** (flag-only discriminator on locution glosses), **sense_level_valency** (valency scoped without a printed form), **synonyme_citations**, **intra_sense_form** (printed reflexive/locution forms pending scope adjudication — the classification branch's worklist).
+
+Etymology: **suspect_language_token** (mirrors `ana="suspect"` in the corpus, equal counts by construction), **etym_fallback** (unsegmented etymology rubriques).

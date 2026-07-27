@@ -4,6 +4,8 @@ This guide summarizes the SQLite schema emitted by the Deep-Littré pipeline and
 
 Source references: project README and `emit_sqlite.jl`. The README describes the intended database contents and purpose of each table, while the emitter shows the exact column names and the actual values written into fields like `sense_type`, `role`, and `rubrique_type`.
 
+> **Vocabulary maintenance note (v0.2.0).** The "actual values present" lists below should be regenerated from a fresh build (the `SELECT DISTINCT` queries in this guide are the source), not hand-maintained; a prior edition of this guide listed `Continuation` and `Elaboration` roles that never existed in the pipeline. Until a regeneration script with a CI diff check lands, treat the emitter as authoritative where this guide disagrees.
+
 ## Overview
 
 The database is a flattened but still hierarchical representation of Littré:
@@ -71,34 +73,24 @@ Interpretation:
 - `depth` reflects nesting depth
 - transition containers use `transition_type`, `transition_form`, and `transition_pos`
 
-Actual `sense_type` values present in this database:
+`sense_type` values (v0.2.0 vocabulary):
 
 - `annotation`
 - `cross_reference`
 - `domain`
 - `figurative`
-- `homonymic_entry` (named `grammatical_variant` before v0.2.0; renamed to mirror the TEI `type="homonymicEntry"` migration — breaking for downstream queries)
+- `homonymic_entry`
 - `locution`
 - `proverb`
 - `register`
 - `sense`
 - `transition_group`
+- `unclassified`
 - `usage_group`
 
-Actual `role` values present in this database:
+**Breaking change in v0.2.0**: `grammatical_variant` was renamed to `homonymic_entry`, mirroring the TEI encoding's move from the project-specific `<entry type="grammaticalVariant">` to the spec-blessed `<entry type="homonymicEntry">`. Downstream queries filtering on `sense_type = 'grammatical_variant'` must be updated. As of the v0.2.0 build this value has zero live rows — strong-scope voice transitions are pending the classification branch's scoping work — so the break is prospective.
 
-- `Continuation`
-- `CrossReference`
-- `DomainLabel`
-- `Elaboration`
-- `Figurative`
-- `Locution`
-- `NatureLabel`
-- `Proverb`
-- `RegisterLabel`
-- `VoiceTransition`
-
-Use `sense_type` for most filtering. It is the cleaner public-facing category. Use `role` when you want classifier-specific distinctions such as `Continuation` vs `Elaboration`.
+`role` values are the classifier's `IndentRole` names: `Figurative`, `DomainLabel`, `NatureLabel`, `RegisterLabel`, `VoiceTransition`, `Locution`, `Proverb`, `CrossReference`, `Unclassified`. Use `sense_type` for most filtering; it is the cleaner public-facing category. Use `role` when you want the classifier's own taxonomy.
 
 ### `citations`
 
@@ -133,6 +125,7 @@ Notes:
 
 - only senses classified as locutions get rows here
 - the row points back to the corresponding row in `senses`
+- as of v0.2.0 the model additionally tracks the form's provenance (`:exemple` for forms printed as such in the source, `:prose` for editorially extracted forms, `:none`); in the TEI this distinction rides `<orth>` text content vs. `<orth value="…"/>`
 
 ### `rubriques`
 
@@ -146,7 +139,7 @@ Columns:
 - `content_plain TEXT`
 - `content_markup TEXT`
 
-Actual `rubrique_type` values present in this database:
+`rubrique_type` values:
 
 - `Etymologie`
 - `Historique`
@@ -175,6 +168,8 @@ Notes:
 
 - unresolved items usually have `resolution IS NULL` or `resolution = ''`
 - `context` is JSON stored as text
+
+Flag types as of v0.2.0, by origin. Classification and scope: `unclassified`, `skipped_locution`, `likely_locution`, `scope_decision`, `large_scope`, `large_intra_scope`, `calibration_sample`. Structural (added in the TEI conformance work, phase `structural`): `metonymic_subsense` (locution gloss shaped like a headword gloss — flag-only discriminator), `sense_level_valency` (valency transition scoped without a printed form), `synonyme_citations` (citations emitted as siblings of a synonymy cross-reference), `intra_sense_form` (printed reflexive/locution form on an intra-sense transition, pending scope adjudication). Etymology: `suspect_language_token` (token in language-abbreviation position matching neither the language table nor the grammatical stoplist; these carry `ana="suspect"` in the TEI corpus, and the corpus grep count equals the flag count by construction), `etym_fallback` (etymology rubrique whose markup fell outside the segmenter's event inventory and was emitted as unsegmented prose).
 
 ### Full-text tables
 
@@ -330,7 +325,7 @@ WHERE l.canonical_form LIKE '%avoir envie%'
 ORDER BY e.headword;
 ```
 
-### 13. Find transition groups and grammatical variants
+### 13. Find transition groups, homonymic entries, and usage groups
 
 ```sql
 SELECT e.headword,
@@ -490,10 +485,21 @@ GROUP BY role
 ORDER BY n DESC, role;
 ```
 
+### 27. The etymology suspect-token worklist
+
+```sql
+SELECT entry_id, headword, reason, context
+FROM review_queue
+WHERE flag_type = 'suspect_language_token'
+ORDER BY headword;
+```
+
+The same population is greppable in the TEI corpus as `ana="suspect"`; the two counts are equal by construction (one tokenizer feeds both).
+
 ## Notes on query strategy
 
 1. Prefer `sense_type` over `role` when your goal is a user-facing semantic class such as figurative, locution, proverb, or cross-reference.
-2. Prefer `role` when you care about internal classifier distinctions such as `Continuation` versus `Elaboration`.
+2. Prefer `role` when you care about the classifier's own taxonomy.
 3. For locutions, use the `locutions` table rather than filtering only on `senses.sense_type = 'locution'`, unless you explicitly want all locution-classified rows whether or not canonical extraction succeeded.
 4. When reconstructing local hierarchy, `parent_sense_id` and `depth` are the key fields.
 5. FTS is best for content discovery; exact joins and filters are better for structural extraction.
