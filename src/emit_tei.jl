@@ -369,7 +369,7 @@ function quote_markup(s::AbstractString)::String
 end
 
 function emit_citation(io::IO, cit::Citation, level::Int;
-		cit_type::String = "example", ana::String = "")
+		cit_type::String = "example", ana::String = "", bibl_date::String = "")
 	p = pad(level)
 	author = isempty(cit.resolved_author) ? cit.author : cit.resolved_author
 	text = quote_markup(markup_to_tei(cit.text))
@@ -379,19 +379,20 @@ function emit_citation(io::IO, cit::Citation, level::Int;
 
 	println(io, "$(p)<cit$(type_attr)$(ana_attr)>")
 	println(io, "$(p)  <quote>$(text)</quote>")
-	if !isempty(author) || !isempty(cit.reference)
+	if !isempty(author) || !isempty(cit.reference) || !isempty(bibl_date)
 		println(io, "$(p)  <bibl>")
 		!isempty(author) && println(io, "$(p)    <author>$(escape_xml(author))</author>")
 		!isempty(cit.reference) && println(io, "$(p)    <biblScope>$(escape_xml(cit.reference))</biblScope>")
+		!isempty(bibl_date) && println(io, "$(p)    $(bibl_date)")
 		println(io, "$(p)  </bibl>")
 	end
 	println(io, "$(p)</cit>")
 end
 
 function emit_citations(io::IO, citations::Vector{Citation}, level::Int;
-		cit_type::String = "example", ana::String = "")
+		cit_type::String = "example", ana::String = "", bibl_date::String = "")
 	for cit in citations
-		emit_citation(io, cit, level; cit_type, ana)
+		emit_citation(io, cit, level; cit_type, ana, bibl_date)
 	end
 end
 
@@ -840,24 +841,69 @@ function emit_rubrique(io::IO, rub::Rubrique, ::Synonyme, level::Int)
 	end
 end
 
+# ── Etymology segment serialization ──────────────────────────────
+# Pure emitter over the verdicts of segment_etymology; no position detection
+# happens here. Suspects keep their token visible as <lbl ana="suspect"> —
+# the in-corpus residue channel, greppable without the review queue.
+
+function print_etym_segment(io::IO, cit::EtymCit, level::Int)
+	p = pad(level)
+	language = isempty(cit.language) ? "" : " xml:lang=\"$(escape_xml(cit.language))\""
+	println(io, "$(p)  <cit type=\"$(cit.cit_type)\"$(language)>")
+	if cit.cue !== nothing
+		expand = isempty(cit.cue.expand) ? "" : " expand=\"$(escape_xml(cit.cue.expand))\""
+		println(io, "$(p)    <lang$(expand) norm=\"$(escape_xml(cit.cue.code))\">$(escape_xml(cit.cue.printed))</lang>")
+	end
+	cit.fictif && println(io, "$(p)    <usg type=\"hint\">fictif</usg>")
+	form_type = length(cit.forms) > 1 ? " type=\"variant\"" : ""
+	for form in cit.forms
+		println(io, "$(p)    <form$(form_type)><orth>$(escape_xml(form))</orth></form>")
+	end
+	isempty(cit.gloss) ||
+		println(io, "$(p)    <gloss xml:lang=\"fr\">$(escape_xml(cit.gloss))</gloss>")
+	println(io, "$(p)  </cit>")
+end
+
+print_etym_segment(io::IO, connector::EtymConnector, level::Int) =
+	println(io, "$(pad(level))  <lbl>$(escape_xml(connector.printed))</lbl>")
+
+print_etym_segment(io::IO, suspect::EtymSuspect, level::Int) =
+	println(io, "$(pad(level))  <lbl ana=\"suspect\">$(escape_xml(suspect.token))</lbl>")
+
+function print_etym_segment(io::IO, reference::EtymCrossReference, level::Int)
+	target = escape_xml(make_reference_id(reference.target))
+	println(io, "$(pad(level))  <xr type=\"related\"><lbl>$(escape_xml(reference.label))</lbl><ref type=\"entry\" target=\"#$(target)\">$(escape_xml(reference.printed))</ref></xr>")
+end
+
+print_etym_segment(io::IO, prose::EtymProse, level::Int) =
+	println(io, "$(pad(level))  $(etym_markup(prose.markup))")
+
 # Historique folds into <etym>: century markers become <lbl> (the RNG admits
-# neither <date> in <etym> nor type="attestation" on <cit>, so the machine-
-# readable date range and the attestation reading ride elsewhere — the lbl
-# text stays parseable by century_range, and the citations carry
+# no <date> in <etym>, so the machine-readable range rides inside each
+# attestation's <bibl>, duplicated per citation within the century group; the
+# lbl text stays parseable by century_range, and the citations carry
 # ana="attestation"). try_lbl is confined to historique segments so an
 # etymological account opening with a century is never swallowed into a label.
+# Etymological accounts (try_lbl = false) route through segment_etymology.
 function emit_etym_segment(io::IO, content::String, citations::Vector{Citation},
 		level::Int; try_lbl::Bool)
 	p = pad(level)
+	bibl_date = ""
 	if !isempty(content)
 		plain = strip(strip_tags(content))
 		if try_lbl && century_range(plain) !== nothing
 			println(io, "$(p)  <lbl>$(escape_xml(plain))</lbl>")
-		else
+			date_markup = century_date_markup(plain)
+			date_markup === nothing || (bibl_date = date_markup)
+		elseif try_lbl
 			println(io, "$(p)  $(etym_markup(content))")
+		else
+			for segment in segment_etymology(content)
+				print_etym_segment(io, segment, level)
+			end
 		end
 	end
-	emit_citations(io, citations, level + 1; ana = "attestation")
+	emit_citations(io, citations, level + 1; ana = "attestation", bibl_date)
 end
 
 # Ordering convention: etymological account first, historical attestations

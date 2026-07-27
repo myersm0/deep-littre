@@ -1,156 +1,159 @@
 # Littré etymology language abbrev -> BCP 47. Consumed by W4 <cit> construction.
 # Match the last dot-terminated abbrev before a <foreign>/<mentioned> form in <etym>.
 # Amendments per 01_decisions: bas-bret.=br, flam.=nl.
+# expand added post-calibration (2026-07-26, W4): French expansion of the printed
+# abbreviation, display content only — never consulted for recognition. Omitted
+# where no French full form is attestable (cornw.).
 
 [language]
-"all." = { code = "de", note = "German" }
-"all. mod." = { code = "de", note = "German" }
-"allem." = { code = "de", note = "German" }
-"allem. mod." = { code = "de", note = "German" }
-"allemand" = { code = "de", note = "German" }
-"anc. all." = { code = "de", note = "German" }
-"anc. angl." = { code = "ang", note = "Old English" }
-"anc. cat." = { code = "ca", note = "Catalan" }
-"anc. catal." = { code = "ca", note = "Catalan" }
-"anc. espagn." = { code = "es", note = "Spanish" }
-"anc. fr." = { code = "fro", note = "Old French" }
-"anc. franc." = { code = "fro", note = "Old French" }
-"anc. franç." = { code = "fro", note = "Old French" }
-"anc. français" = { code = "fro", note = "Old French" }
-"anc. h. allem." = { code = "goh", note = "Old High German" }
-"anc. haut allem." = { code = "goh", note = "Old High German" }
-"anc. haut-all." = { code = "goh", note = "Old High German" }
-"anc. haut-allem." = { code = "goh", note = "Old High German" }
-"anc. irl." = { code = "ga", note = "Irish" }
-"anc. lat." = { code = "la", note = "Latin" }
-"anc. portug." = { code = "pt", note = "Portuguese" }
-"anc. provenç." = { code = "pro", note = "Old Provençal" }
-"anc. scand." = { code = "non", note = "Old Norse" }
-"anc. scandin." = { code = "non", note = "Old Norse" }
-"anc. scandinave" = { code = "non", note = "Old Norse" }
-"ancien français" = { code = "fro", note = "Old French" }
-"angl." = { code = "en", note = "English" }
-"angl. sax." = { code = "ang", note = "Old English" }
-"anglais" = { code = "en", note = "English" }
-"anglo-sax." = { code = "ang", note = "Old English" }
-"anglo-saxon" = { code = "ang", note = "Old English" }
-"anglosax." = { code = "ang", note = "Old English" }
-"ar." = { code = "ar", note = "Arabic" }
-"arabe" = { code = "ar", note = "Arabic" }
-"b. lat." = { code = "la", note = "Late/Low Latin" }
-"b.-lat." = { code = "la", note = "Late/Low Latin" }
-"bas-bret." = { code = "br", note = "Breton (per 01_decisions)" }
-"bas-lat." = { code = "la", note = "Late/Low Latin" }
-"bas-latin" = { code = "la", note = "Late/Low Latin" }
-"basque" = { code = "eu", note = "Basque" }
-"berrich." = { code = "fr-x-berrichon", note = "Berrichon" }
-"berrichon" = { code = "fr-x-berrichon", note = "Berrichon" }
-"bourg." = { code = "fr-x-bourguignon", note = "Bourguignon" }
-"bourguig." = { code = "fr-x-bourguignon", note = "Bourguignon" }
-"bourguign." = { code = "fr-x-bourguignon", note = "Bourguignon" }
-"bourguignon" = { code = "fr-x-bourguignon", note = "Bourguignon" }
-"bret." = { code = "br", note = "Breton (per 01_decisions)" }
-"breton" = { code = "br", note = "Breton (per 01_decisions)" }
-"cat." = { code = "ca", note = "Catalan" }
-"cat. mod." = { code = "ca", note = "Catalan" }
-"catal." = { code = "ca", note = "Catalan" }
-"catal. mod." = { code = "ca", note = "Catalan" }
-"catalan" = { code = "ca", note = "Catalan" }
-"celt." = { code = "cel", note = "Celtic (collective)" }
-"celtique" = { code = "cel", note = "Celtic (collective)" }
-"champ." = { code = "fr-x-champenois", note = "Champenois" }
+"all." = { code = "de", expand = "allemand", note = "German" }
+"all. mod." = { code = "de", expand = "allemand moderne", note = "German" }
+"allem." = { code = "de", expand = "allemand", note = "German" }
+"allem. mod." = { code = "de", expand = "allemand moderne", note = "German" }
+"allemand" = { code = "de", expand = "allemand", note = "German" }
+"anc. all." = { code = "de", expand = "ancien allemand", note = "German" }
+"anc. angl." = { code = "ang", expand = "ancien anglais", note = "Old English" }
+"anc. cat." = { code = "ca", expand = "ancien catalan", note = "Catalan" }
+"anc. catal." = { code = "ca", expand = "ancien catalan", note = "Catalan" }
+"anc. espagn." = { code = "es", expand = "ancien espagnol", note = "Spanish" }
+"anc. fr." = { code = "fro", expand = "ancien français", note = "Old French" }
+"anc. franc." = { code = "fro", expand = "ancien français", note = "Old French" }
+"anc. franç." = { code = "fro", expand = "ancien français", note = "Old French" }
+"anc. français" = { code = "fro", expand = "ancien français", note = "Old French" }
+"anc. h. allem." = { code = "goh", expand = "ancien haut-allemand", note = "Old High German" }
+"anc. haut allem." = { code = "goh", expand = "ancien haut-allemand", note = "Old High German" }
+"anc. haut-all." = { code = "goh", expand = "ancien haut-allemand", note = "Old High German" }
+"anc. haut-allem." = { code = "goh", expand = "ancien haut-allemand", note = "Old High German" }
+"anc. irl." = { code = "ga", expand = "ancien irlandais", note = "Irish" }
+"anc. lat." = { code = "la", expand = "ancien latin", note = "Latin" }
+"anc. portug." = { code = "pt", expand = "ancien portugais", note = "Portuguese" }
+"anc. provenç." = { code = "pro", expand = "ancien provençal", note = "Old Provençal" }
+"anc. scand." = { code = "non", expand = "ancien scandinave", note = "Old Norse" }
+"anc. scandin." = { code = "non", expand = "ancien scandinave", note = "Old Norse" }
+"anc. scandinave" = { code = "non", expand = "ancien scandinave", note = "Old Norse" }
+"ancien français" = { code = "fro", expand = "ancien français", note = "Old French" }
+"angl." = { code = "en", expand = "anglais", note = "English" }
+"angl. sax." = { code = "ang", expand = "anglo-saxon", note = "Old English" }
+"anglais" = { code = "en", expand = "anglais", note = "English" }
+"anglo-sax." = { code = "ang", expand = "anglo-saxon", note = "Old English" }
+"anglo-saxon" = { code = "ang", expand = "anglo-saxon", note = "Old English" }
+"anglosax." = { code = "ang", expand = "anglo-saxon", note = "Old English" }
+"ar." = { code = "ar", expand = "arabe", note = "Arabic" }
+"arabe" = { code = "ar", expand = "arabe", note = "Arabic" }
+"b. lat." = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
+"b.-lat." = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
+"bas-bret." = { code = "br", expand = "bas-breton", note = "Breton (per 01_decisions)" }
+"bas-lat." = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
+"bas-latin" = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
+"basque" = { code = "eu", expand = "basque", note = "Basque" }
+"berrich." = { code = "fr-x-berrichon", expand = "berrichon", note = "Berrichon" }
+"berrichon" = { code = "fr-x-berrichon", expand = "berrichon", note = "Berrichon" }
+"bourg." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
+"bourguig." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
+"bourguign." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
+"bourguignon" = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
+"bret." = { code = "br", expand = "breton", note = "Breton (per 01_decisions)" }
+"breton" = { code = "br", expand = "breton", note = "Breton (per 01_decisions)" }
+"cat." = { code = "ca", expand = "catalan", note = "Catalan" }
+"cat. mod." = { code = "ca", expand = "catalan moderne", note = "Catalan" }
+"catal." = { code = "ca", expand = "catalan", note = "Catalan" }
+"catal. mod." = { code = "ca", expand = "catalan moderne", note = "Catalan" }
+"catalan" = { code = "ca", expand = "catalan", note = "Catalan" }
+"celt." = { code = "cel", expand = "celtique", note = "Celtic (collective)" }
+"celtique" = { code = "cel", expand = "celtique", note = "Celtic (collective)" }
+"champ." = { code = "fr-x-champenois", expand = "champenois", note = "Champenois" }
 "cornw." = { code = "kw", note = "Cornish" }
-"dan." = { code = "da", note = "Danish" }
-"danois" = { code = "da", note = "Danish" }
-"esp." = { code = "es", note = "Spanish" }
-"espagn." = { code = "es", note = "Spanish" }
-"espagnol" = { code = "es", note = "Spanish" }
-"flam." = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"flamand" = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"fr." = { code = "fr", note = "French" }
-"franç." = { code = "fr", note = "French" }
-"français" = { code = "fr", note = "French" }
-"gael." = { code = "gd", note = "Gaelic (ambiguous ga/gd)" }
-"gaél." = { code = "gd", note = "Gaelic (ambiguous ga/gd)" }
-"gaélique" = { code = "gd", note = "Gaelic (ambiguous ga/gd)" }
-"genev." = { code = "fr-CH-x-genev", note = "Genevois" }
-"genevois" = { code = "fr-CH-x-genev", note = "Genevois" }
-"genév." = { code = "fr-CH-x-genev", note = "Genevois" }
-"german." = { code = "de", note = "German" }
-"goth." = { code = "got", note = "Gothic" }
-"gothique" = { code = "got", note = "Gothic" }
-"gr." = { code = "grc", note = "Ancient Greek" }
-"grec" = { code = "grc", note = "Ancient Greek" }
-"génev." = { code = "fr-CH-x-genev", note = "Genevois" }
-"h. allem." = { code = "goh", note = "Old High German" }
-"haut-allem." = { code = "goh", note = "Old High German" }
-"holl." = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"holland." = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"hollandais" = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"hébr." = { code = "he", note = "Hebrew" }
-"hébreu" = { code = "he", note = "Hebrew" }
-"irl." = { code = "ga", note = "Irish" }
-"irland." = { code = "ga", note = "Irish" }
-"irlandais" = { code = "ga", note = "Irish" }
-"isl." = { code = "is", note = "Icelandic" }
-"island." = { code = "is", note = "Icelandic" }
-"islandais" = { code = "is", note = "Icelandic" }
-"it." = { code = "it", note = "Italian" }
-"ital." = { code = "it", note = "Italian" }
-"italien" = { code = "it", note = "Italian" }
-"kymr." = { code = "cy", note = "Welsh" }
-"l." = { code = "la", note = "Latin" }
-"lat." = { code = "la", note = "Latin" }
-"latin" = { code = "la", note = "Latin" }
-"latin." = { code = "la", note = "Latin" }
-"lithuan." = { code = "lt", note = "Lithuanian" }
-"nam." = { code = "wa", note = "Walloon" }
-"namur." = { code = "wa", note = "Walloon" }
-"namurois" = { code = "wa", note = "Walloon" }
-"napolit." = { code = "nap", note = "Neapolitan" }
-"nivern." = { code = "fr-x-nivernais", note = "Nivernais" }
-"norm." = { code = "nrf", note = "Norman" }
-"normand" = { code = "nrf", note = "Norman" }
-"norrois" = { code = "non", note = "Old Norse" }
-"néerl." = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"néerlandais" = { code = "nl", note = "Dutch/Flemish (per 01_decisions)" }
-"pers." = { code = "fa", note = "Persian" }
-"persan" = { code = "fa", note = "Persian" }
-"pic." = { code = "pcd", note = "Picard" }
-"picard" = { code = "pcd", note = "Picard" }
-"picard." = { code = "pcd", note = "Picard" }
-"piém." = { code = "pms", note = "Piedmontese" }
-"piémont." = { code = "pms", note = "Piedmontese" }
-"poitev." = { code = "fr-x-poitevin", note = "Poitevin" }
-"polonais" = { code = "pl", note = "Polish" }
-"port." = { code = "pt", note = "Portuguese" }
-"portug." = { code = "pt", note = "Portuguese" }
-"portugais" = { code = "pt", note = "Portuguese" }
-"prov." = { code = "pro", note = "Old Provençal" }
-"provenc." = { code = "pro", note = "Old Provençal" }
-"provenç." = { code = "pro", note = "Old Provençal" }
-"provenç. mod." = { code = "oc", note = "Modern Occitan/Provençal" }
-"provençal" = { code = "pro", note = "Old Provençal" }
-"rac. sanscr." = { code = "sa", note = "Sanskrit" }
-"rad. sanscr." = { code = "sa", note = "Sanskrit" }
-"rouchi" = { code = "fr-x-rouchi", note = "Rouchi" }
-"russ." = { code = "ru", note = "Russian" }
-"russe" = { code = "ru", note = "Russian" }
-"saintong." = { code = "fr-x-saintongeais", note = "Saintongeais" }
-"saintongeais" = { code = "fr-x-saintongeais", note = "Saintongeais" }
-"sansc." = { code = "sa", note = "Sanskrit" }
-"sanscr." = { code = "sa", note = "Sanskrit" }
-"sanscrit" = { code = "sa", note = "Sanskrit" }
-"sax." = { code = "osx", note = "Old Saxon" }
-"scand." = { code = "non", note = "Old Norse" }
-"scandinave" = { code = "non", note = "Old Norse" }
-"suéd." = { code = "sv", note = "Swedish" }
-"suédois" = { code = "sv", note = "Swedish" }
-"turc" = { code = "tr", note = "Turkish" }
-"vénit." = { code = "vec", note = "Venetian" }
-"wal." = { code = "wa", note = "Walloon" }
-"wall." = { code = "wa", note = "Walloon" }
-"wallon" = { code = "wa", note = "Walloon" }
+"dan." = { code = "da", expand = "danois", note = "Danish" }
+"danois" = { code = "da", expand = "danois", note = "Danish" }
+"esp." = { code = "es", expand = "espagnol", note = "Spanish" }
+"espagn." = { code = "es", expand = "espagnol", note = "Spanish" }
+"espagnol" = { code = "es", expand = "espagnol", note = "Spanish" }
+"flam." = { code = "nl", expand = "flamand", note = "Dutch/Flemish (per 01_decisions)" }
+"flamand" = { code = "nl", expand = "flamand", note = "Dutch/Flemish (per 01_decisions)" }
+"fr." = { code = "fr", expand = "français", note = "French" }
+"franç." = { code = "fr", expand = "français", note = "French" }
+"français" = { code = "fr", expand = "français", note = "French" }
+"gael." = { code = "gd", expand = "gaélique", note = "Gaelic (ambiguous ga/gd)" }
+"gaél." = { code = "gd", expand = "gaélique", note = "Gaelic (ambiguous ga/gd)" }
+"gaélique" = { code = "gd", expand = "gaélique", note = "Gaelic (ambiguous ga/gd)" }
+"genev." = { code = "fr-CH-x-genev", expand = "genevois", note = "Genevois" }
+"genevois" = { code = "fr-CH-x-genev", expand = "genevois", note = "Genevois" }
+"genév." = { code = "fr-CH-x-genev", expand = "genevois", note = "Genevois" }
+"german." = { code = "de", expand = "germanique", note = "German" }
+"goth." = { code = "got", expand = "gothique", note = "Gothic" }
+"gothique" = { code = "got", expand = "gothique", note = "Gothic" }
+"gr." = { code = "grc", expand = "grec", note = "Ancient Greek" }
+"grec" = { code = "grc", expand = "grec", note = "Ancient Greek" }
+"génev." = { code = "fr-CH-x-genev", expand = "genevois", note = "Genevois" }
+"h. allem." = { code = "goh", expand = "haut-allemand", note = "Old High German" }
+"haut-allem." = { code = "goh", expand = "haut-allemand", note = "Old High German" }
+"holl." = { code = "nl", expand = "hollandais", note = "Dutch/Flemish (per 01_decisions)" }
+"holland." = { code = "nl", expand = "hollandais", note = "Dutch/Flemish (per 01_decisions)" }
+"hollandais" = { code = "nl", expand = "hollandais", note = "Dutch/Flemish (per 01_decisions)" }
+"hébr." = { code = "he", expand = "hébreu", note = "Hebrew" }
+"hébreu" = { code = "he", expand = "hébreu", note = "Hebrew" }
+"irl." = { code = "ga", expand = "irlandais", note = "Irish" }
+"irland." = { code = "ga", expand = "irlandais", note = "Irish" }
+"irlandais" = { code = "ga", expand = "irlandais", note = "Irish" }
+"isl." = { code = "is", expand = "islandais", note = "Icelandic" }
+"island." = { code = "is", expand = "islandais", note = "Icelandic" }
+"islandais" = { code = "is", expand = "islandais", note = "Icelandic" }
+"it." = { code = "it", expand = "italien", note = "Italian" }
+"ital." = { code = "it", expand = "italien", note = "Italian" }
+"italien" = { code = "it", expand = "italien", note = "Italian" }
+"kymr." = { code = "cy", expand = "kymrique", note = "Welsh" }
+"l." = { code = "la", expand = "latin", note = "Latin" }
+"lat." = { code = "la", expand = "latin", note = "Latin" }
+"latin" = { code = "la", expand = "latin", note = "Latin" }
+"latin." = { code = "la", expand = "latin", note = "Latin" }
+"lithuan." = { code = "lt", expand = "lithuanien", note = "Lithuanian" }
+"nam." = { code = "wa", expand = "namurois", note = "Walloon" }
+"namur." = { code = "wa", expand = "namurois", note = "Walloon" }
+"namurois" = { code = "wa", expand = "namurois", note = "Walloon" }
+"napolit." = { code = "nap", expand = "napolitain", note = "Neapolitan" }
+"nivern." = { code = "fr-x-nivernais", expand = "nivernais", note = "Nivernais" }
+"norm." = { code = "nrf", expand = "normand", note = "Norman" }
+"normand" = { code = "nrf", expand = "normand", note = "Norman" }
+"norrois" = { code = "non", expand = "norrois", note = "Old Norse" }
+"néerl." = { code = "nl", expand = "néerlandais", note = "Dutch/Flemish (per 01_decisions)" }
+"néerlandais" = { code = "nl", expand = "néerlandais", note = "Dutch/Flemish (per 01_decisions)" }
+"pers." = { code = "fa", expand = "persan", note = "Persian" }
+"persan" = { code = "fa", expand = "persan", note = "Persian" }
+"pic." = { code = "pcd", expand = "picard", note = "Picard" }
+"picard" = { code = "pcd", expand = "picard", note = "Picard" }
+"picard." = { code = "pcd", expand = "picard", note = "Picard" }
+"piém." = { code = "pms", expand = "piémontais", note = "Piedmontese" }
+"piémont." = { code = "pms", expand = "piémontais", note = "Piedmontese" }
+"poitev." = { code = "fr-x-poitevin", expand = "poitevin", note = "Poitevin" }
+"polonais" = { code = "pl", expand = "polonais", note = "Polish" }
+"port." = { code = "pt", expand = "portugais", note = "Portuguese" }
+"portug." = { code = "pt", expand = "portugais", note = "Portuguese" }
+"portugais" = { code = "pt", expand = "portugais", note = "Portuguese" }
+"prov." = { code = "pro", expand = "provençal", note = "Old Provençal" }
+"provenc." = { code = "pro", expand = "provençal", note = "Old Provençal" }
+"provenç." = { code = "pro", expand = "provençal", note = "Old Provençal" }
+"provenç. mod." = { code = "oc", expand = "provençal moderne", note = "Modern Occitan/Provençal" }
+"provençal" = { code = "pro", expand = "provençal", note = "Old Provençal" }
+"rac. sanscr." = { code = "sa", expand = "racine sanscrite", note = "Sanskrit" }
+"rad. sanscr." = { code = "sa", expand = "radical sanscrit", note = "Sanskrit" }
+"rouchi" = { code = "fr-x-rouchi", expand = "rouchi", note = "Rouchi" }
+"russ." = { code = "ru", expand = "russe", note = "Russian" }
+"russe" = { code = "ru", expand = "russe", note = "Russian" }
+"saintong." = { code = "fr-x-saintongeais", expand = "saintongeais", note = "Saintongeais" }
+"saintongeais" = { code = "fr-x-saintongeais", expand = "saintongeais", note = "Saintongeais" }
+"sansc." = { code = "sa", expand = "sanscrit", note = "Sanskrit" }
+"sanscr." = { code = "sa", expand = "sanscrit", note = "Sanskrit" }
+"sanscrit" = { code = "sa", expand = "sanscrit", note = "Sanskrit" }
+"sax." = { code = "osx", expand = "saxon", note = "Old Saxon" }
+"scand." = { code = "non", expand = "scandinave", note = "Old Norse" }
+"scandinave" = { code = "non", expand = "scandinave", note = "Old Norse" }
+"suéd." = { code = "sv", expand = "suédois", note = "Swedish" }
+"suédois" = { code = "sv", expand = "suédois", note = "Swedish" }
+"turc" = { code = "tr", expand = "turc", note = "Turkish" }
+"vénit." = { code = "vec", expand = "vénitien", note = "Venetian" }
+"wal." = { code = "wa", expand = "wallon", note = "Walloon" }
+"wall." = { code = "wa", expand = "wallon", note = "Walloon" }
+"wallon" = { code = "wa", expand = "wallon", note = "Walloon" }
 
 [non_language]
 skip = ["abl.", "acc.", "adj.", "cf.", "dat.", "f.", "fém.", "gén.", "génit.", "m.", "masc.", "n.", "nomin.", "part.", "pl.", "plur.", "pron.", "rac.", "rad.", "s.", "s. f.", "s. m.", "sing.", "subst.", "v.", "voy."]

@@ -312,6 +312,60 @@ end
 
 # ── Entry point ──────────────────────────────────────────────────
 
+function etymology_rubriques(entry::Entry)::Vector{Rubrique}
+	rubriques = Rubrique[rubrique for rubrique in entry.rubriques if rubrique.kind isa Etymologie]
+	for sense in all_senses(entry)
+		append!(rubriques,
+			Rubrique[rubrique for rubrique in sense.rubriques if rubrique.kind isa Etymologie])
+	end
+	rubriques
+end
+
+function flag_suspect_etym_tokens!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	resolved_cues = 0
+	suspects = 0
+	for entry in entries
+		for rubrique in etymology_rubriques(entry)
+			contents = vcat([rubrique.content],
+				String[indent.content for indent in rubrique.indents])
+			for content in contents
+				isempty(strip(content)) && continue
+				for segment in segment_etymology(content)
+					if segment isa EtymSuspect
+						suspects += 1
+						push!(flags, ReviewFlag(
+							entry_id = entry.id[],
+							headword = entry.headword,
+							phase = "etymology",
+							flag_type = "suspect_language_token",
+							reason = "token in language-abbreviation position missing from language table",
+							context = Dict{String, Any}(
+								"token" => segment.token,
+								"anchor" => segment.anchor,
+							),
+						))
+					elseif segment isa EtymCit
+						segment.cue === nothing || (resolved_cues += 1)
+						segment.defaulted && push!(flags, ReviewFlag(
+							entry_id = entry.id[],
+							headword = entry.headword,
+							phase = "etymology",
+							flag_type = "cognate_defaulted",
+							reason = "etymon-vs-cognate not disambiguated by surrounding prose",
+							context = Dict{String, Any}(
+								"forms" => join(segment.forms, ", "),
+							),
+						))
+					end
+				end
+			end
+		end
+	end
+	total = resolved_cues + suspects
+	rate = total == 0 ? 100.0 : round(100 * resolved_cues / total; digits = 1)
+	@info "etym language cues: $(resolved_cues) resolved, $(suspects) suspect ($(rate)% hit rate)"
+end
+
 function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
 	flags = ReviewFlag[]
 	flag_unclassified!(flags, entries)
@@ -322,6 +376,7 @@ function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
 	flag_sense_level_valency!(flags, entries)
 	flag_synonyme_citations!(flags, entries)
 	flag_intra_sense_forms!(flags, entries)
+	flag_suspect_etym_tokens!(flags, entries)
 	flag_calibration_sample!(flags, entries)
 
 	by_type = Dict{String, Int}()

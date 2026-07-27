@@ -37,6 +37,11 @@ export GramElement, UsgTarget, NormTables, load_norm_tables,
 	split_atoms, normalize_atom, gram_markup, usg_markup,
 	century_range, century_date_markup
 
+include("etym.jl")
+export segment_etymology, EtymSegment,
+	EtymCit, EtymConnector, EtymCrossReference, EtymProse, EtymSuspect,
+	EtymCue, EtymLanguageTable, load_etym_language_table
+
 include("emit_tei.jl")
 export emit_tei
 
