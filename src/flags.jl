@@ -324,13 +324,28 @@ end
 function flag_suspect_etym_tokens!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
 	resolved_cues = 0
 	suspects = 0
+	fallbacks = 0
 	for entry in entries
 		for rubrique in etymology_rubriques(entry)
 			contents = vcat([rubrique.content],
 				String[indent.content for indent in rubrique.indents])
 			for content in contents
 				isempty(strip(content)) && continue
-				for segment in segment_etymology(content)
+				segments = segment_etymology(content)
+				if length(segments) == 1 && segments[1] isa EtymProse && occursin('<', content)
+					fallbacks += 1
+					push!(flags, ReviewFlag(
+						entry_id = entry.id[],
+						headword = entry.headword,
+						phase = "etymology",
+						flag_type = "etym_fallback",
+						reason = "content carries markup outside the segmentable inventory; emitted as pre-W4 prose",
+						context = Dict{String, Any}(
+							"content" => first(content, 160),
+						),
+					))
+				end
+				for segment in segments
 					if segment isa EtymSuspect
 						suspects += 1
 						push!(flags, ReviewFlag(
@@ -363,7 +378,7 @@ function flag_suspect_etym_tokens!(flags::Vector{ReviewFlag}, entries::Vector{En
 	end
 	total = resolved_cues + suspects
 	rate = total == 0 ? 100.0 : round(100 * resolved_cues / total; digits = 1)
-	@info "etym language cues: $(resolved_cues) resolved, $(suspects) suspect ($(rate)% hit rate)"
+	@info "etym language cues: $(resolved_cues) resolved, $(suspects) suspect ($(rate)% hit rate), $(fallbacks) fallback rubriques"
 end
 
 function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
