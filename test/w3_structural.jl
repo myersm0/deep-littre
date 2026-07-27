@@ -129,8 +129,10 @@ end
 	@test occursin("<xr type=\"related\" xml:id=\"agamie_s1.1\">", out)
 	@test occursin("<lbl>Voy.</lbl>", out)
 	@test occursin("<ref type=\"entry\" target=\"#agame\">AGAME</ref>", out)
+	@test occursin("<seg>.</seg>", out)
 	@test !occursin("<note type=\"xref\"", out)
 	@test !occursin("<xr type=\"related\"><lbl>", out)
+	@test !occursin(r">[^<>]*[^<>\s][^<>]*<(?:lbl|ref|seg|/xr)", replace(out, r"<seg>[^<]*</seg>" => "<seg/>"))
 end
 
 @testset "rubrique three-way split" begin
@@ -161,6 +163,7 @@ end
 	rub = Rubrique(kind = Synonyme(), content = "Comparer avec <a ref=\"BONHEUR\">BONHEUR</a>.")
 	out = render((io,) -> dl.emit_rubriques(io, [rub], 1))
 	@test occursin("<xr type=\"synonymy\">", out)
+	@test occursin("<seg>Comparer avec </seg>", out)
 	@test occursin("<ref type=\"entry\" target=\"#bonheur\">BONHEUR</ref>", out)
 	@test !occursin(r"<re[ >]", out)
 	@test !occursin("<xr type=\"related\">", out)

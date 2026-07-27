@@ -577,9 +577,35 @@ function strip_nested_xr(s::AbstractString)::String
 	replace(replace(s, "<xr type=\"related\">" => ""), "</xr>" => "")
 end
 
+# <xr> admits lbl, ref, hi, and seg but no bare text (probed): interstitial
+# prose at the top level wraps in <seg>. Text inside child elements is their
+# own content and stays bare; whitespace-only runs between elements stay bare
+# as ignorable in an element-only model.
+function wrap_xr_text(s::AbstractString)::String
+	buffer = IOBuffer()
+	depth = 0
+	for token in split_preserving(s, r"<[^>]+>")
+		if startswith(token, "<")
+			print(buffer, token)
+			if startswith(token, "</")
+				depth -= 1
+			elseif !endswith(token, "/>")
+				depth += 1
+			end
+		elseif depth > 0 || isempty(strip(token))
+			print(buffer, token)
+		else
+			print(buffer, "<seg>$(token)</seg>")
+		end
+	end
+	String(take!(buffer))
+end
+
+xr_body(s::AbstractString)::String = wrap_xr_text(strip_nested_xr(s))
+
 function emit_indent(io::IO, indent::Indent, ::CrossReference, level::Int, sense_id::String)
 	p = pad(level)
-	content = strip_nested_xr(markup_to_tei(indent.content))
+	content = xr_body(markup_to_tei(indent.content))
 	println(io, "$(p)<xr type=\"related\"$(id_attr(sense_id))>$(content)</xr>")
 end
 
@@ -771,7 +797,7 @@ function emit_rubrique(io::IO, rub::Rubrique, ::Synonyme, level::Int)
 	for indent in rub.indents
 		!isempty(indent.content) && push!(parts, note_markup(indent.content))
 	end
-	body = strip_nested_xr(join(parts, " "))
+	body = xr_body(join(parts, " "))
 	println(io, "$(p)<xr type=\"synonymy\">$(body)</xr>")
 	emit_citations(io, rub.citations, level)
 	for indent in rub.indents
