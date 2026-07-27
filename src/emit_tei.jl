@@ -225,6 +225,7 @@ end
 
 function emit_definition(io::IO, tei_content::AbstractString, level::Int, context_id::String)
 	hoisted, cleaned = extract_inline_usg(tei_content, context_id)
+	cleaned = flatten_phrase_wrappers(cleaned)
 	p = pad(level)
 	!isempty(cleaned) && println(io, "$(p)<def>$(cleaned)</def>")
 	for element in hoisted
@@ -358,11 +359,18 @@ end
 # @ana instead: attestations inside <etym> emit type="example"
 # ana="attestation", synchronic usage examples plain type="example". ana is
 # att.global and composes with the existing "hidden" marker.
+# <quote> admits ref but neither xr nor lbl: reference wrappers dissolve to
+# their printed text plus the bare ref.
+function quote_markup(s::AbstractString)::String
+	s = strip_nested_xr(s)
+	replace(replace(s, "<lbl>" => ""), "</lbl>" => "")
+end
+
 function emit_citation(io::IO, cit::Citation, level::Int;
 		cit_type::String = "example", ana::String = "")
 	p = pad(level)
 	author = isempty(cit.resolved_author) ? cit.author : cit.resolved_author
-	text = markup_to_tei(cit.text)
+	text = quote_markup(markup_to_tei(cit.text))
 	ana_values = filter(!isempty, [ana, isempty(cit.hide) ? "" : "hidden"])
 	ana_attr = isempty(ana_values) ? "" : " ana=\"$(join(ana_values, ' '))\""
 	type_attr = isempty(cit_type) ? "" : " type=\"$(cit_type)\""

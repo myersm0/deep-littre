@@ -48,6 +48,14 @@ end
 		"Ce mot fig. et absolument."
 	routed = dl.etym_markup("du lat. fictif <semantique>fig.</semantique>")
 	@test occursin("<usg type=\"meaningType\" norm=\"figurative\">fig.</usg>", routed)
+	@test dl.quote_markup("Voy. <xr type=\"related\"><lbl>Voy.</lbl><ref type=\"entry\" target=\"#a\">A</ref></xr>") ==
+		"Voy. Voy.<ref type=\"entry\" target=\"#a\">A</ref>"
+end
+
+@testset "defs flatten phrase wrappers" begin
+	out = render((io,) -> dl.emit_definition(io, "Nom de la <mentioned>rosa canina</mentioned>.", 1, "x_s1"))
+	@test occursin("<def>Nom de la <hi rend=\"italic\">rosa canina</hi>.</def>", out)
+	@test !occursin("mentioned", out)
 end
 
 @testset "inline usg extraction" begin
