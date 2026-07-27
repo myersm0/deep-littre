@@ -77,6 +77,33 @@ end
 
 const norm_tables = load_norm_tables()
 
+# ── Locution adjudications ───────────────────────────────────────
+# The hand-adjudicated labels in test/sampling/locutions_labeled.tsv drive the
+# <re> retirement's structural branch: rows labeled metonymic_subsense emit as
+# nested <sense> rather than relatedEntry, in both TEI and SQLite. Ground
+# truth by adjudication; the emitter-side heuristic only flags for review.
+const locution_adjudication_path =
+	joinpath(@__DIR__, "..", "test", "sampling", "locutions_labeled.tsv")
+
+function load_locution_adjudications(path::AbstractString = locution_adjudication_path)::Dict{String, String}
+	adjudications = Dict{String, String}()
+	if !isfile(path)
+		@warn "Locution adjudication table not found; all locutions migrate uniformly" path
+		return adjudications
+	end
+	for (i, line) in enumerate(eachline(path))
+		i == 1 && continue
+		fields = split(line, '\t')
+		length(fields) == 4 && (adjudications[fields[1]] = fields[4])
+	end
+	adjudications
+end
+
+const locution_adjudications = load_locution_adjudications()
+
+is_adjudicated_metonymic(sense_id::AbstractString)::Bool =
+	get(locution_adjudications, sense_id, "") == "metonymic_subsense"
+
 # ── Atom normalization ───────────────────────────────────────────
 # Must stay bit-compatible with scripts/sampling/build_sampling_artifacts.py:
 # lowercase, collapse whitespace, strip trailing .,;: — per atom, after the

@@ -129,6 +129,14 @@ end
 	@test occursin("<usg type=\"meaningType\" norm=\"proverbial\"/>", out)
 	@test occursin("<def>Le doute est le commencement de la sagesse.</def>", out)
 
+	# adjudication drives structure: cabinet_s3.1 is labeled metonymic_subsense
+	metonymic = classified("La clientèle, l'ensemble des affaires dont on est chargé.", Locution();
+		canonical_form = "Cet avocat, cet homme d'affaires a un très bon cabinet",
+		canonical_form_source = :exemple)
+	out = render((io, i) -> dl.emit_indent(io, i, 1, "cabinet_s3.1"), metonymic)
+	@test occursin("<sense", out)
+	@test !occursin("relatedEntry", out)
+
 	formless = classified("Locution sans forme extraite.", Locution())
 	out = render((io, i) -> dl.emit_indent(io, i, 1, "x_s1.1"), formless)
 	@test occursin("<sense", out)

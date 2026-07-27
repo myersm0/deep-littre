@@ -177,6 +177,11 @@
     <sense xml:id="probe_r_s1"><def>Définition.</def></sense>
     <note ana="remarque">Commentaire.</note>
   </entry>
+  <!-- s: orth norm value coinciding with the entry's xml:id (duplicate-ID "d" mechanism) -->
+  <entry xml:id="probe_s" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="probe_s">PROBE S</orth></form>
+    <sense xml:id="probe_s_s1"><def>Définition.</def></sense>
+  </entry>
 </body>
 </text>
 </TEI>

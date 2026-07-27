@@ -571,9 +571,11 @@ end
 
 # A locution or proverb without an extractable form cannot satisfy the nested
 # entry's mandatory <form type="lemma">; it falls back to a plain sense. The
-# population is already flagged upstream as skipped_locution.
+# population is already flagged upstream as skipped_locution. Adjudicated
+# metonymic sub-senses (see locution_adjudications) are not locutions at all
+# and emit as plain nested senses, matching the golden target.
 function emit_indent(io::IO, indent::Indent, ::Union{Locution, Proverb}, level::Int, sense_id::String)
-	if isempty(indent.canonical_form)
+	if is_adjudicated_metonymic(sense_id) || isempty(indent.canonical_form)
 		emit_default_sense(io, indent, level, sense_id)
 	else
 		emit_related_entry(io, indent, level, sense_id)

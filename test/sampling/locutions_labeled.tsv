@@ -20,8 +20,8 @@ argent_s3.18	Je ne sais de quelle couleur est son argent	Je ne sais de quelle co
 argent_s3.19	L'argent est court chez lui	L'argent est court chez lui, sa bourse est vide.	idiom
 argent_s3.20	Il est chargé d'argent comme un crapaud de plumes	Il est chargé d'argent comme un crapaud de plumes ; c'est-à-dire, il n'a pas le sou.	idiom
 bec_s13.1	Bec cornu	Bec cornu, voy. BEC-CORNU.	idiom
-cabinet_s3.1	Cet avocat, cet homme d'affaires a un très bon cabinet	La clientèle, l'ensemble des affaires dont on est chargé. Cet avocat, cet homme d'affaires a un très bon cabinet. Il a cédé son cabinet.	idiom
-cabinet_s4.2	Le cabinet tout entier donna sa démission	Les membres du conseil. Le cabinet tout entier donna sa démission. Une partie du cabinet fut changée.	idiom
+cabinet_s3.1	Cet avocat, cet homme d'affaires a un très bon cabinet	La clientèle, l'ensemble des affaires dont on est chargé. Cet avocat, cet homme d'affaires a un très bon cabinet. Il a cédé son cabinet.	metonymic_subsense
+cabinet_s4.2	Le cabinet tout entier donna sa démission	Les membres du conseil. Le cabinet tout entier donna sa démission. Une partie du cabinet fut changée.	metonymic_subsense
 ciron_s1.1	Il n'est pas plus gros qu'un ciron	familièrement. Il n'est pas plus gros qu'un ciron, il est extrêmement petit.	idiom
 cochon_s1.6	Nous n'avons pas gardé les cochons ensemble	Nous n'avons pas gardé les cochons ensemble, ou il semble que nous ayons gardé les cochons ensemble, se dit, dans un langage très vulgaire, pour repousser une familiarité déplacée.	idiom
 coiffe_ee_s6.1	il, elle ressemble à un chat coiffé	On dit aussi d'une personne laide : il, elle ressemble à un chat coiffé.	idiom
