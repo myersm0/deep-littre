@@ -76,7 +76,7 @@ end
 @testset "vouloir segmentation" begin
 	segments = segment_etymology(vouloir_content)
 	cits = [segment for segment in segments if segment isa EtymCit]
-	@test length(cits) == 11
+	@test length(cits) == 12
 	@test cits[1].language == "fr-x-bourguignon" && cits[1].cue.printed == "Bourg."
 	@test cits[2].cue.printed == "wallon" && cits[2].language == "wa"
 	@test cits[3].language == "pro"
@@ -87,8 +87,10 @@ end
 		cits[6].gloss == "je veux"
 	@test cits[7].language == "grc" && cits[7].forms == ["ϐούλομαι"]
 	@test cits[8].language == "grc" && cits[8].forms == ["ϐόλομαι"]
-	@test cits[11].cue.printed == "radical sanscr." &&
-		cits[11].forms == ["var", "vri"] && cits[11].gloss == "choisir"
+	@test cits[9].language == "got" && cits[10].language == "de" &&
+		cits[11].language == "en" && cits[11].forms == ["to will"]
+	@test cits[12].cue.printed == "radical sanscr." &&
+		cits[12].forms == ["var", "vri"] && cits[12].gloss == "choisir"
 	suspects = [segment for segment in segments if segment isa EtymSuspect]
 	@test length(suspects) == 1 && suspects[1].token == "re"
 	proses = [segment for segment in segments if segment isa EtymProse]

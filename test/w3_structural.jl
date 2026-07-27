@@ -168,7 +168,7 @@ end
 	@test !occursin("<note type=\"historique\">", out)
 	@test count("<etym>", out) == 1
 	@test occursin("<lbl>XVIe s.</lbl>", out)
-	@test !occursin("<date", out)
+	@test occursin("<date notBefore=\"1501\" notAfter=\"1600\">XVIe s.</date>", out)
 	# attestation reading on ana; the remarque citation is a plain example
 	@test count("ana=\"attestation\"", out) == 1
 	@test count("<cit type=\"example\">", out) == 1
