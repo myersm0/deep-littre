@@ -1,12 +1,8 @@
 total	78599
-valid	78367
-invalid	232
+valid	78594
+invalid	5
 # ranked error signatures
-439	element "mentioned" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-150	element "foreign" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
-11	element "i" not allowed anywhere; expected the element end-tag, text or element "c", "g", "gloss", "hi", "pc", "ref", "seg" or "xr"
 4	element "xr" not allowed here; expected the element end-tag, text or element "c", "figure", "g", "gloss", "hi", "lang", "metamark", "note", "pc", "ref" or "seg"
-2	element "xr" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
 1	ID "d" has already been defined
 1	element "hi" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
 1	first occurrence of ID "d"

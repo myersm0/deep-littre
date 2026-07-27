@@ -44,12 +44,16 @@ end
 		"<hi rend=\"italic\" xml:lang=\"la\">volere</hi>"
 	@test dl.flatten_phrase_wrappers("<i class=\"botanique\">rosa</i>") ==
 		"<hi rend=\"italic\">rosa</hi>"
+	@test dl.flatten_phrase_wrappers("<mentioned>voy. <xr type=\"related\"><lbl>Voy.</lbl><ref type=\"entry\" target=\"#a\">A</ref></xr></mentioned>") ==
+		"<hi rend=\"italic\">voy. Voy.<ref type=\"entry\" target=\"#a\">A</ref></hi>"
 	@test dl.note_markup("Ce mot <semantique>fig.</semantique> et <nature>absolument</nature>.") ==
 		"Ce mot fig. et absolument."
 	routed = dl.etym_markup("du lat. fictif <semantique>fig.</semantique>")
 	@test occursin("<usg type=\"meaningType\" norm=\"figurative\">fig.</usg>", routed)
 	@test dl.quote_markup("Voy. <xr type=\"related\"><lbl>Voy.</lbl><ref type=\"entry\" target=\"#a\">A</ref></xr>") ==
 		"Voy. Voy.<ref type=\"entry\" target=\"#a\">A</ref>"
+	@test dl.quote_markup("Esp. <foreign xml:lang=\"es\">alhandal</foreign>, <mentioned>d</mentioned>") ==
+		"Esp. <hi rend=\"italic\" xml:lang=\"es\">alhandal</hi>, <hi rend=\"italic\">d</hi>"
 end
 
 @testset "defs flatten phrase wrappers" begin

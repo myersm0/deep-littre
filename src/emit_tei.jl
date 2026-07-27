@@ -359,11 +359,13 @@ end
 # @ana instead: attestations inside <etym> emit type="example"
 # ana="attestation", synchronic usage examples plain type="example". ana is
 # att.global and composes with the existing "hidden" marker.
-# <quote> admits ref but neither xr nor lbl: reference wrappers dissolve to
-# their printed text plus the bare ref.
+# <quote> admits ref and hi but neither xr, lbl, nor the phrase wrappers:
+# reference wrappers dissolve to their printed text plus the bare ref, and
+# mentioned/foreign flatten to <hi rend="italic"> keeping any language tag.
 function quote_markup(s::AbstractString)::String
 	s = strip_nested_xr(s)
-	replace(replace(s, "<lbl>" => ""), "</lbl>" => "")
+	s = replace(replace(s, "<lbl>" => ""), "</lbl>" => "")
+	flatten_phrase_wrappers(s)
 end
 
 function emit_citation(io::IO, cit::Citation, level::Int;
@@ -558,7 +560,7 @@ function emit_related_entry(io::IO, indent::Indent, level::Int, sense_id::String
 	!isempty(def_content) && emit_definition(io, def_content, level + 2, inner_id)
 	for phrase in lifted
 		println(io, "$(p)    <cit type=\"example\">")
-		println(io, "$(p)      <quote>$(phrase)</quote>")
+		println(io, "$(p)      <quote>$(quote_markup(phrase))</quote>")
 		println(io, "$(p)    </cit>")
 	end
 	emit_citations(io, indent.citations, level + 2)
@@ -741,11 +743,34 @@ end
 # in both and preserves the print fact and any language tag; W4's
 # etymon/cognate cit construction reads the model layer, not this output, so
 # the flattening does not obstruct it.
+# <hi> itself admits ref but not xr or lbl, so reference wrappers inside a
+# flattened span dissolve to the bare ref (depth-tracked for nested hi).
+function dissolve_xr_inside_hi(s::AbstractString)::String
+	buffer = IOBuffer()
+	hi_depth = 0
+	for token in split_preserving(s, r"<[^>]+>")
+		if startswith(token, "<hi")
+			hi_depth += 1
+			print(buffer, token)
+		elseif token == "</hi>"
+			hi_depth -= 1
+			print(buffer, token)
+		elseif hi_depth > 0 &&
+				(startswith(token, "<xr") || token in ("</xr>", "<lbl>", "</lbl>"))
+			nothing
+		else
+			print(buffer, token)
+		end
+	end
+	String(take!(buffer))
+end
+
 function flatten_phrase_wrappers(s::AbstractString)::String
 	s = replace(s, r"<foreign xml:lang=\"([^\"]+)\">" => s"<hi rend=\"italic\" xml:lang=\"\1\">")
 	s = replace(s, "<mentioned>" => "<hi rend=\"italic\">")
 	s = replace(s, r"<i\b[^>]*>" => "<hi rend=\"italic\">")
-	replace(s, r"</(?:foreign|mentioned|i)>" => "</hi>")
+	s = replace(s, r"</(?:foreign|mentioned|i)>" => "</hi>")
+	dissolve_xr_inside_hi(s)
 end
 
 # <usg> is valid inside <etym> but its type must come from the closed
