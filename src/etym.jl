@@ -443,6 +443,24 @@ function emit_anchor_event!(segments::Vector{EtymSegment}, pending::EtymPending,
 end
 
 # ── Entry point ──────────────────────────────────────────────────
+# Segmentation splits the content string, so tag pairs outside the recognized
+# event inventory (other Gannaz markup, anchors nested inside wrappers) could
+# be severed across segments. Such content falls back to a single prose
+# segment — byte-identical to pre-W4 emission, where the whole line passed
+# through etym_markup together and pairs stayed intact.
+
+function etym_residual(content::String, events::Vector{EtymEvent})::String
+	bytes = Vector{UInt8}(codeunits(content))
+	for event in events
+		bytes[event.range] .= UInt8(' ')
+	end
+	String(bytes)
+end
+
+function segmentable(content::String, events::Vector{EtymEvent})::Bool
+	occursin('<', etym_residual(content, events)) && return false
+	all(event -> !any(form -> occursin('<', form), event.forms), events)
+end
 
 function segment_etymology(content::String,
 		table::EtymLanguageTable = etym_language_table)::Vector{EtymSegment}
@@ -450,6 +468,7 @@ function segment_etymology(content::String,
 	isempty(stripped) && return EtymSegment[]
 	events = etym_events(content)
 	isempty(events) && return EtymSegment[EtymProse(String(stripped))]
+	segmentable(content, events) || return EtymSegment[EtymProse(String(stripped))]
 
 	segments = EtymSegment[]
 	pending = EtymPending()

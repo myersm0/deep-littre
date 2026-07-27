@@ -1,10 +1,8 @@
 total	78599
-valid	66012
-invalid	12587
+valid	78594
+invalid	5
 # ranked error signatures
-13633	found attribute "xml:lang", but no attributes allowed here
-684	value of attribute "xml:lang" is invalid; must be an RFC 3066 language identifier or must be equal to ""
 4	element "xr" not allowed here; expected the element end-tag, text or element "c", "figure", "g", "gloss", "hi", "lang", "metamark", "note", "pc", "ref" or "seg"
 1	ID "d" has already been defined
+1	element "hi" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
 1	first occurrence of ID "d"
-1	not well-formed XML

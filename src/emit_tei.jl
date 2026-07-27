@@ -860,7 +860,7 @@ function print_etym_segment(io::IO, cit::EtymCit, level::Int)
 		println(io, "$(p)    <form$(form_type)><orth>$(escape_xml(form))</orth></form>")
 	end
 	isempty(cit.gloss) ||
-		println(io, "$(p)    <gloss xml:lang=\"fr\">$(escape_xml(cit.gloss))</gloss>")
+		println(io, "$(p)    <gloss>$(escape_xml(cit.gloss))</gloss>")
 	println(io, "$(p)  </cit>")
 end
 

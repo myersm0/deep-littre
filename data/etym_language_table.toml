@@ -4,6 +4,9 @@
 # expand added post-calibration (2026-07-26, W4): French expansion of the printed
 # abbreviation, display content only — never consulted for recognition. Omitted
 # where no French full form is attestable (cornw.).
+# Private-use codes amended 2026-07-27 (W4): RFC 3066/BCP 47 cap subtags at 8
+# characters, so full-word x-subtags (bourguignon, berrichon, champenois,
+# nivernais, saintongeais) are truncated to well-formed length.
 
 [language]
 "all." = { code = "de", expand = "allemand", note = "German" }
@@ -46,12 +49,12 @@
 "bas-lat." = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
 "bas-latin" = { code = "la", expand = "bas-latin", note = "Late/Low Latin" }
 "basque" = { code = "eu", expand = "basque", note = "Basque" }
-"berrich." = { code = "fr-x-berrichon", expand = "berrichon", note = "Berrichon" }
-"berrichon" = { code = "fr-x-berrichon", expand = "berrichon", note = "Berrichon" }
-"bourg." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
-"bourguig." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
-"bourguign." = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
-"bourguignon" = { code = "fr-x-bourguignon", expand = "bourguignon", note = "Bourguignon" }
+"berrich." = { code = "fr-x-berrich", expand = "berrichon", note = "Berrichon" }
+"berrichon" = { code = "fr-x-berrich", expand = "berrichon", note = "Berrichon" }
+"bourg." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
+"bourguig." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
+"bourguign." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
+"bourguignon" = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
 "bret." = { code = "br", expand = "breton", note = "Breton (per 01_decisions)" }
 "breton" = { code = "br", expand = "breton", note = "Breton (per 01_decisions)" }
 "cat." = { code = "ca", expand = "catalan", note = "Catalan" }
@@ -61,7 +64,7 @@
 "catalan" = { code = "ca", expand = "catalan", note = "Catalan" }
 "celt." = { code = "cel", expand = "celtique", note = "Celtic (collective)" }
 "celtique" = { code = "cel", expand = "celtique", note = "Celtic (collective)" }
-"champ." = { code = "fr-x-champenois", expand = "champenois", note = "Champenois" }
+"champ." = { code = "fr-x-champ", expand = "champenois", note = "Champenois" }
 "cornw." = { code = "kw", note = "Cornish" }
 "dan." = { code = "da", expand = "danois", note = "Danish" }
 "danois" = { code = "da", expand = "danois", note = "Danish" }
@@ -111,7 +114,7 @@
 "namur." = { code = "wa", expand = "namurois", note = "Walloon" }
 "namurois" = { code = "wa", expand = "namurois", note = "Walloon" }
 "napolit." = { code = "nap", expand = "napolitain", note = "Neapolitan" }
-"nivern." = { code = "fr-x-nivernais", expand = "nivernais", note = "Nivernais" }
+"nivern." = { code = "fr-x-nivern", expand = "nivernais", note = "Nivernais" }
 "norm." = { code = "nrf", expand = "normand", note = "Norman" }
 "normand" = { code = "nrf", expand = "normand", note = "Norman" }
 "norrois" = { code = "non", expand = "norrois", note = "Old Norse" }
@@ -139,8 +142,8 @@
 "rouchi" = { code = "fr-x-rouchi", expand = "rouchi", note = "Rouchi" }
 "russ." = { code = "ru", expand = "russe", note = "Russian" }
 "russe" = { code = "ru", expand = "russe", note = "Russian" }
-"saintong." = { code = "fr-x-saintongeais", expand = "saintongeais", note = "Saintongeais" }
-"saintongeais" = { code = "fr-x-saintongeais", expand = "saintongeais", note = "Saintongeais" }
+"saintong." = { code = "fr-x-saintong", expand = "saintongeais", note = "Saintongeais" }
+"saintongeais" = { code = "fr-x-saintong", expand = "saintongeais", note = "Saintongeais" }
 "sansc." = { code = "sa", expand = "sanscrit", note = "Sanskrit" }
 "sanscr." = { code = "sa", expand = "sanscrit", note = "Sanskrit" }
 "sanscrit" = { code = "sa", expand = "sanscrit", note = "Sanskrit" }

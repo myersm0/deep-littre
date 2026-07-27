@@ -77,7 +77,7 @@ end
 	segments = segment_etymology(vouloir_content)
 	cits = [segment for segment in segments if segment isa EtymCit]
 	@test length(cits) == 12
-	@test cits[1].language == "fr-x-bourguignon" && cits[1].cue.printed == "Bourg."
+	@test cits[1].language == "fr-x-bourg" && cits[1].cue.printed == "Bourg."
 	@test cits[2].cue.printed == "wallon" && cits[2].language == "wa"
 	@test cits[3].language == "pro"
 	@test cits[5].cit_type == :etymon && cits[5].fictif &&
@@ -104,12 +104,19 @@ end
 	@test occursin("<lbl ana=\"suspect\">re</lbl>", output)
 	@test occursin("<form type=\"variant\"><orth>var</orth></form>", output)
 	@test occursin("<form type=\"variant\"><orth>vri</orth></form>", output)
-	@test occursin("<gloss xml:lang=\"fr\">je veux</gloss>", output)
-	@test occursin("<gloss xml:lang=\"fr\">choisir</gloss>", output)
+	@test occursin("<gloss>je veux</gloss>", output)
+	@test occursin("<gloss>choisir</gloss>", output)
 	@test occursin("<cit type=\"cognate\" xml:lang=\"grc\">", output)
-	@test occursin("<cit type=\"cognate\" xml:lang=\"fr-x-bourguignon\">", output)
+	@test occursin("<cit type=\"cognate\" xml:lang=\"fr-x-bourg\">", output)
 	@test occursin("dérivé de l'indicatif latin", output)
 	@test !occursin("<seg", output)
+end
+
+@testset "markup outside the event inventory falls back to prose" begin
+	nested = "du lat. <i>voir <a ref=\"tronc\">TRONC</a></i>."
+	@test segment_etymology(nested) == EtymSegment[DeepLittre.EtymProse(strip(nested))]
+	unknown = "Diminutif de cabane ; <semantique>terme de marine ; ancien</semantique> avec <i>forme</i>."
+	@test segment_etymology(unknown) == EtymSegment[DeepLittre.EtymProse(strip(unknown))]
 end
 
 @testset "pure prose account" begin
