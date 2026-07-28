@@ -184,16 +184,36 @@ end
 	DeepLittre.emit_entry(buf, first(e for e in entries if e.headword == "ENVIE"), 0)
 	tei = String(take!(buf))
 
-	@test occursin("<entry xml:id=\"envie\">", tei)
-	@test occursin("<orth>ENVIE</orth>", tei)
+	fragment = parse_tei(tei)
+	envie = first(tei_descendants(fragment, "entry"))
+	@test tei_attribute(envie, "xml:id") == "envie"
+	@test tei_attribute(envie, "xml:lang") == "fr-x-lit19c"
+	@test tei_attribute(envie, "type") == "mainEntry"
+
+	lemma = tei_child(envie, "form")
+	@test tei_attribute(lemma, "type") == "lemma"
+	orth = first(tei_descendants(lemma, "orth"))
+	@test tei_text(orth) == "ENVIE"
+	@test tei_attribute(orth, "norm") == "envie"
 	@test occursin("<pron>an-vie</pron>", tei)
-	@test occursin("<gram type=\"pos\">s. f.</gram>", tei)
-	@test occursin("type=\"figuré\"", tei)
+
+	@test occursin("<gram type=\"pos\" norm=\"noun\">s.</gram>", tei)
+	@test occursin("<gram type=\"gender\" norm=\"feminine\">f.</gram>", tei)
+
+	figurative = tei_only(envie, "sense", "ana", "figurative")
+	figurative_usg = first(tei_descendants(figurative, "usg"))
+	@test tei_attribute(figurative_usg, "type") == "meaningType"
+	@test tei_attribute(figurative_usg, "norm") == "figurative"
 	@test occursin("<usg type=\"domain\">", tei)
-	@test occursin("<re type=\"locution\"", tei)
-	@test occursin("<orth>Avoir envie</orth>", tei)
-	@test occursin("<note type=\"historique\">", tei)
-	@test occursin("<etym>", tei)
+
+	related = tei_only(envie, "entry", "type", "relatedEntry")
+	@test tei_text(first(tei_descendants(related, "orth"))) == "Avoir envie"
+	@test !occursin("<re ", tei)
+
+	etym = first(tei_descendants(envie, "etym"))
+	@test !occursin("<note type=\"historique\">", tei)
+	@test length(tei_with_attribute(etym, "cit", "ana", "attestation")) == 1
+	@test occursin("<lbl>XIIe s.</lbl>", tei)
 	@test occursin("<author>BOILEAU</author>", tei)
 end
 
@@ -204,7 +224,8 @@ end
 	DeepLittre.emit_entry(buf, envier, 0)
 	tei = String(take!(buf))
 
-	@test occursin("<usg type=\"gram\">", tei)
+	@test occursin("<gramGrp><gram type=\"construction\" norm=\"absolute\">absolument</gram></gramGrp>", tei)
+	@test !occursin("<usg type=\"gram\"", tei)
 	@test count("<sense", tei) >= 4
 end
 

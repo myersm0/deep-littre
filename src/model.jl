@@ -67,6 +67,7 @@ end
 	children::Vector{Indent} = Indent[]
 	classification::Union{Nothing, Classification} = nothing
 	canonical_form::String = ""
+	canonical_form_source::Symbol = :none
 	source::Union{Nothing, SourceLocation} = nothing
 end
 

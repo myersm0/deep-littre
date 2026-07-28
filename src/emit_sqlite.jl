@@ -150,7 +150,8 @@ end
 function insert_indent!(db::SQLite.DB, entry_id::String, parent_sense_id::Int,
 		indent::Indent, depth::Int, indent_id::String, xml_id::String)
 	plain = strip_tags(indent.content)
-	stype = indent_sense_type(indent)
+	adjudicated_metonymic = role_of(indent) isa Locution && is_adjudicated_metonymic(xml_id)
+	stype = adjudicated_metonymic ? "sense" : indent_sense_type(indent)
 	SQLite.execute(db,
 		"INSERT INTO senses (entry_id, parent_sense_id, indent_id, xml_id, sense_type, role, content_plain, content_markup, depth) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		(entry_id, parent_sense_id, maybe(indent_id), maybe(xml_id),
@@ -159,7 +160,7 @@ function insert_indent!(db::SQLite.DB, entry_id::String, parent_sense_id::Int,
 
 	insert_citations!(db, sense_id, indent.citations)
 
-	if role_of(indent) isa Locution && !isempty(indent.canonical_form)
+	if role_of(indent) isa Locution && !isempty(indent.canonical_form) && !adjudicated_metonymic
 		SQLite.execute(db,
 			"INSERT INTO locutions (sense_id, canonical_form) VALUES (?, ?)",
 			(sense_id, indent.canonical_form))
@@ -196,7 +197,7 @@ end
 function insert_body_element!(db::SQLite.DB, entry_id::String,
 		parent_sense_id::Union{Nothing, Int}, group::TransitionGroup, depth::Int, xml_id::String)
 	plain = strip_tags(group.transition_content)
-	stype = group.kind == :strong ? "grammatical_variant" : "usage_group"
+	stype = group.kind == :strong ? "homonymic_entry" : "usage_group"
 	transition_type = string(group.kind)
 	SQLite.execute(db,
 		"INSERT INTO senses (entry_id, parent_sense_id, xml_id, sense_type, content_plain, content_markup, depth, transition_type, transition_form, transition_pos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

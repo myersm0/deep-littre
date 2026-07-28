@@ -34,9 +34,9 @@ end
 		scope_all!(entries)
 		tei = emit_single_entry(entries)
 
-		@test occursin("<usg type=\"gram\">substantivement</usg>", tei)
+		@test occursin("<gramGrp><gram type=\"construction\" norm=\"substantival\">substantivement</gram></gramGrp>", tei)
 		@test occursin("<def>homme cruel, inhumain. C'est un barbare qui se plaît à faire souffrir les animaux.</def>", tei)
-		@test !occursin("<usg type=\"gram\">substantivement, homme cruel", tei)
+		@test !occursin("substantivement, homme cruel", tei)
 	end
 
 	@testset "bare register indent splits into usg + def" begin
@@ -45,17 +45,19 @@ end
 		scope_all!(entries)
 		tei = emit_single_entry(entries)
 
-		@test occursin("<usg type=\"register\">familièrement</usg>", tei)
+		@test occursin("<usg type=\"socioCultural\" norm=\"familiar\">familièrement</usg>", tei)
 		@test occursin("<def>se dit d'un homme fort rusé.</def>", tei)
 	end
 
-	@testset "compound bare register label is preserved as full label phrase" begin
+	@testset "compound bare register label distributes its spans across elements" begin
 		entries = parse_fixture(joinpath(fixtures_synthetic, "compound_bare_register_indent.xml"))
 		enrich!(entries)
 		scope_all!(entries)
 		tei = emit_single_entry(entries)
 
-		@test occursin("<usg type=\"register\">familièrement et par dénigrement</usg>", tei)
+		@test occursin("<usg type=\"socioCultural\" norm=\"familiar\">familièrement</usg>", tei)
+		@test occursin("<usg type=\"attitude\" norm=\"derogatory\">par dénigrement</usg>", tei)
+		@test !occursin("familièrement et par dénigrement", lowercase(tei))
 		@test occursin("<def>Se dit d'un homme qui s'impose par le bruit.</def>", tei)
 	end
 
@@ -65,7 +67,7 @@ end
 		scope_all!(entries)
 		tei = emit_single_entry(entries)
 
-		@test occursin("<usg type=\"gram\">substantivement</usg>", tei)
+		@test occursin("<gramGrp><gram type=\"construction\" norm=\"substantival\">substantivement</gram></gramGrp>", tei)
 		@test occursin("<def>l'adoptant et l'adopté.</def>", tei)
 	end
 end

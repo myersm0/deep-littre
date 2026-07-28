@@ -207,7 +207,179 @@ function flag_likely_locutions!(flags::Vector{ReviewFlag}, entries::Vector{Entry
 	end
 end
 
+# ── W3 structural flags ──────────────────────────────────────────
+
+function each_nested_indent(f::Function, entry::Entry)
+	for sense in all_senses(entry), indent in sense.indents
+		_walk_indents(indent, f)
+	end
+end
+
+function flag_metonymic_glosses!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	for entry in entries
+		each_nested_indent(entry) do indent
+			is_metonymic_gloss(indent) || return
+			push!(flags, ReviewFlag(
+				entry_id = entry.id[],
+				headword = entry.headword,
+				phase = "structural",
+				flag_type = "metonymic_subsense",
+				reason = "locution gloss opens with a definite article",
+				context = Dict{String, Any}(
+					"canonical_form" => indent.canonical_form,
+					"gloss" => first(locution_gloss(indent), 200),
+				),
+			))
+		end
+	end
+end
+
+# A valency shift without a printed transition form cannot become a nested
+# homonymicEntry and stays as the sanctioned sense-level <gramGrp> fallback.
+function has_valency_reading(text::AbstractString)::Bool
+	for target in route_content(text)
+		target isa Vector{GramElement} || continue
+		any(element -> element.kind == "valency", target) && return true
+	end
+	false
+end
+
+function flag_sense_level_valency!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	for entry in entries
+		for el in entry.body
+			el isa TransitionGroup || continue
+			el.kind == :medium || continue
+			plain = strip_tags(el.transition_content)
+			has_valency_reading(plain) || continue
+			push!(flags, ReviewFlag(
+				entry_id = entry.id[],
+				headword = entry.headword,
+				phase = "structural",
+				flag_type = "sense_level_valency",
+				reason = "valency transition scoped without a printed form",
+				context = Dict{String, Any}(
+					"transition_content" => first(plain, 100),
+					"num_scoped" => length(el.sub_senses),
+				),
+			))
+		end
+	end
+end
+
+function flag_synonyme_citations!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	for entry in entries
+		rubriques = vcat(entry.rubriques,
+			Rubrique[r for sense in all_senses(entry) for r in sense.rubriques])
+		for rub in rubriques
+			rub.kind isa Synonyme || continue
+			n = length(rub.citations) + sum(length(i.citations) for i in rub.indents; init = 0)
+			n > 0 || continue
+			push!(flags, ReviewFlag(
+				entry_id = entry.id[],
+				headword = entry.headword,
+				phase = "structural",
+				flag_type = "synonyme_citations",
+				reason = "$(n) citations emitted as siblings after the synonymy xr",
+				context = Dict{String, Any}("num_citations" => n),
+			))
+		end
+	end
+end
+
+# Handoff count for the classification branch: intra-sense transitions carrying
+# a printed form (reflexive or locution pre-text) that remain sense-level
+# pending the scope decision on whether the form governs beyond its own sense.
+function flag_intra_sense_forms!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	for entry in entries
+		each_nested_indent(entry) do indent
+			is_transition(indent) || return
+			gs = split_gram(markup_to_tei(indent.content))
+			gs.pre_kind in (:reflexive_form, :locution_form) || return
+			push!(flags, ReviewFlag(
+				entry_id = entry.id[],
+				headword = entry.headword,
+				phase = "structural",
+				flag_type = "intra_sense_form",
+				reason = "printed form on an intra-sense transition ($(gs.pre_kind))",
+				context = Dict{String, Any}(
+					"form" => gs.pre_text,
+					"label" => gs.label_text,
+				),
+			))
+		end
+	end
+end
+
 # ── Entry point ──────────────────────────────────────────────────
+
+function etymology_rubriques(entry::Entry)::Vector{Rubrique}
+	rubriques = Rubrique[rubrique for rubrique in entry.rubriques if rubrique.kind isa Etymologie]
+	for sense in all_senses(entry)
+		append!(rubriques,
+			Rubrique[rubrique for rubrique in sense.rubriques if rubrique.kind isa Etymologie])
+	end
+	rubriques
+end
+
+function flag_suspect_etym_tokens!(flags::Vector{ReviewFlag}, entries::Vector{Entry})
+	resolved_cues = 0
+	suspects = 0
+	fallbacks = 0
+	for entry in entries
+		for rubrique in etymology_rubriques(entry)
+			contents = vcat([rubrique.content],
+				String[indent.content for indent in rubrique.indents])
+			for content in contents
+				isempty(strip(content)) && continue
+				segments = segment_etymology(content)
+				if length(segments) == 1 && segments[1] isa EtymProse && occursin('<', content)
+					fallbacks += 1
+					push!(flags, ReviewFlag(
+						entry_id = entry.id[],
+						headword = entry.headword,
+						phase = "etymology",
+						flag_type = "etym_fallback",
+						reason = "content carries markup outside the segmentable inventory; emitted as pre-W4 prose",
+						context = Dict{String, Any}(
+							"content" => first(content, 160),
+						),
+					))
+				end
+				for segment in segments
+					if segment isa EtymSuspect
+						suspects += 1
+						push!(flags, ReviewFlag(
+							entry_id = entry.id[],
+							headword = entry.headword,
+							phase = "etymology",
+							flag_type = "suspect_language_token",
+							reason = "token in language-abbreviation position missing from language table",
+							context = Dict{String, Any}(
+								"token" => segment.token,
+								"anchor" => segment.anchor,
+							),
+						))
+					elseif segment isa EtymCit
+						segment.cue === nothing || (resolved_cues += 1)
+						segment.defaulted && push!(flags, ReviewFlag(
+							entry_id = entry.id[],
+							headword = entry.headword,
+							phase = "etymology",
+							flag_type = "cognate_defaulted",
+							reason = "etymon-vs-cognate not disambiguated by surrounding prose",
+							context = Dict{String, Any}(
+								"forms" => join(segment.forms, ", "),
+							),
+						))
+					end
+				end
+			end
+		end
+	end
+	total = resolved_cues + suspects
+	rate = total == 0 ? 100.0 : round(100 * resolved_cues / total; digits = 1)
+	@info "etym language cues: $(resolved_cues) resolved, $(suspects) suspect ($(rate)% hit rate), $(fallbacks) fallback rubriques"
+end
 
 function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
 	flags = ReviewFlag[]
@@ -215,6 +387,11 @@ function collect_flags(entries::Vector{Entry})::Vector{ReviewFlag}
 	flag_skipped_locutions!(flags, entries)
 	flag_likely_locutions!(flags, entries)
 	flag_scope_decisions!(flags, entries)
+	flag_metonymic_glosses!(flags, entries)
+	flag_sense_level_valency!(flags, entries)
+	flag_synonyme_citations!(flags, entries)
+	flag_intra_sense_forms!(flags, entries)
+	flag_suspect_etym_tokens!(flags, entries)
 	flag_calibration_sample!(flags, entries)
 
 	by_type = Dict{String, Int}()
