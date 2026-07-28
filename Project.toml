@@ -1,6 +1,6 @@
 name = "DeepLittre"
 uuid = "aeea6b39-f262-521c-825e-ea8d68243cea"
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
