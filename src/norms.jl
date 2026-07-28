@@ -117,10 +117,21 @@ function normalize_atom(text::AbstractString)::String
 	strip(replace(collapse_content(text), r"[.,;:]+$" => ""))
 end
 
-function split_atoms(text::AbstractString)::Vector{String}
-	pieces = split(collapse_content(text), r"\s+et\s+")
-	filter(!isempty, [normalize_atom(piece) for piece in pieces])
+# The connector is coordination syntax rather than label content, so splitting
+# on it drops it from both spans. The printed span is the piece as it stood
+# after collapsing, keeping trailing punctuation that the normalized atom
+# strips; it is never re-derived from the normalized form.
+function split_atom_spans(text::AbstractString)::Vector{Tuple{String, String}}
+	spans = Tuple{String, String}[]
+	for piece in split(collapse_content(text), r"\s+et\s+")
+		printed = String(strip(piece))
+		normalized = normalize_atom(printed)
+		isempty(normalized) || push!(spans, (normalized, printed))
+	end
+	spans
 end
+
+split_atoms(text::AbstractString)::Vector{String} = first.(split_atom_spans(text))
 
 # ── POS parser ───────────────────────────────────────────────────
 
@@ -197,12 +208,20 @@ function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::Ato
 end
 
 # Whole-string POS parse first so "s. m. et f." stays one reading instead of
-# splitting into two atoms on " et ".
-function route_content(content::AbstractString, tables::NormTables = norm_tables)::Vector{AtomTarget}
+# splitting into two atoms on " et ". Each target travels with the span of the
+# source label it was routed from, so a caller placing several elements can
+# give each one text that its own type describes.
+function route_spans(content::AbstractString, tables::NormTables = norm_tables)::Vector{Tuple{AtomTarget, String}}
 	elements = parse_pos(content, tables)
-	elements === nothing || return AtomTarget[elements]
-	AtomTarget[route_atom(atom, tables) for atom in split_atoms(content)]
+	elements === nothing || return Tuple{AtomTarget, String}[(elements, String(strip(content)))]
+	Tuple{AtomTarget, String}[
+		(route_atom(normalized, tables), printed)
+		for (normalized, printed) in split_atom_spans(content)
+	]
 end
+
+route_content(content::AbstractString, tables::NormTables = norm_tables)::Vector{AtomTarget} =
+	AtomTarget[first(span) for span in route_spans(content, tables)]
 
 # ── Markup construction ──────────────────────────────────────────
 

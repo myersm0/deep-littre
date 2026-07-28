@@ -161,14 +161,20 @@ const leading_usg_pattern = r"^<usg\b[^>]*type=\"([^\"]*)\"[^>]*>(.*?)</usg>[,;:
 const inline_usg_pattern = r"<usg\b[^>]*type=\"([^\"]*)\"[^>]*>(.*?)</usg>"s
 const routed_usg_types = Set(["sem", "register", "gram"])
 
+# A label that routes to one element keeps the caller's string verbatim, inline
+# markup and all; only a compound label distributes its spans across elements.
+span_text(spans, span::AbstractString, whole::AbstractString)::AbstractString =
+	length(spans) == 1 ? whole : span
+
 # Leading labels are structural siblings of <def>, so a grammatical reading
 # may become <gramGrp> here. Anything already carrying a schema-valid type
 # (domain) is passed through untouched.
 function route_label_markup(usg_type::AbstractString, printed::AbstractString)::Vector{String}
 	usg_type in routed_usg_types || return [usg_markup(UsgTarget(String(usg_type), ""), printed)]
+	spans = route_spans(printed)
 	[
-		target isa UsgTarget ? usg_markup(target, printed) : gram_markup(target)
-		for target in route_content(printed)
+		target isa UsgTarget ? usg_markup(target, span_text(spans, span, printed)) : gram_markup(target)
+		for (target, span) in spans
 	]
 end
 
@@ -784,9 +790,10 @@ function route_residual_usg(s::AbstractString)::String
 		parts = match(inline_usg_pattern, matched_text)
 		usg_type, printed = parts.captures[1], parts.captures[2]
 		usg_type in routed_usg_types || return matched_text
+		spans = route_spans(lowercase_text_nodes(printed))
 		join(
-			usg_only_markup(target, printed)
-			for target in route_content(lowercase_text_nodes(printed))
+			usg_only_markup(target, span_text(spans, span, printed))
+			for (target, span) in spans
 		)
 	end)
 end
