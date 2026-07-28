@@ -14,6 +14,6 @@ include("helpers.jl")
 	include("norms_expected_values.jl")
 	include("test_tei_nature_indent_emission.jl")
 	include("test_tei_bare_text_label_splitting.jl")
-	include("w3_structural.jl")
-	include("w4_etymology.jl")
+	include("test_structural.jl")
+	include("test_etymology.jl")
 end
