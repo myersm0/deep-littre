@@ -118,15 +118,21 @@ function normalize_atom(text::AbstractString)::String
 end
 
 # The connector is coordination syntax rather than label content, so splitting
-# on it drops it from both spans. The printed span is the piece as it stood
-# after collapsing, keeping trailing punctuation that the normalized atom
-# strips; it is never re-derived from the normalized form.
+# on it drops it from both spans. The normalized side is always derived from
+# the collapsed string, so it is unaffected by anything below; the printed span
+# prefers the source piece, which keeps inline markup that collapsing would
+# discard, and falls back to the collapsed piece if tag removal moved a
+# boundary and the two splits disagree.
+const atom_separator = r"\s+et\s+"
+
 function split_atom_spans(text::AbstractString)::Vector{Tuple{String, String}}
+	collapsed = split(collapse_content(text), atom_separator)
+	source = split(text, atom_separator)
+	printed_pieces = length(source) == length(collapsed) ? source : collapsed
 	spans = Tuple{String, String}[]
-	for piece in split(collapse_content(text), r"\s+et\s+")
-		printed = String(strip(piece))
-		normalized = normalize_atom(printed)
-		isempty(normalized) || push!(spans, (normalized, printed))
+	for (index, piece) in enumerate(collapsed)
+		normalized = normalize_atom(piece)
+		isempty(normalized) || push!(spans, (normalized, String(strip(printed_pieces[index]))))
 	end
 	spans
 end

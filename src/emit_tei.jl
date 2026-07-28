@@ -166,14 +166,24 @@ const routed_usg_types = Set(["sem", "register", "gram"])
 span_text(spans, span::AbstractString, whole::AbstractString)::AbstractString =
 	length(spans) == 1 ? whole : span
 
+# <usg> content is macro.lexParaContent, which admits text, <ref>, <hi> and
+# <seg> but not <xr>, <lbl>, <mentioned> or <foreign>. Dissolving those
+# wrappers keeps their text and any resolvable target inside, where discarding
+# the markup wholesale would have thrown the target away. Any @type is matched,
+# so an unbalanced tag cannot survive.
+const usg_invalid_wrappers = r"</?(?:xr|lbl|mentioned|foreign)\b[^>]*>"
+
+usg_text(printed::AbstractString)::String = replace(printed, usg_invalid_wrappers => "")
+
 # Leading labels are structural siblings of <def>, so a grammatical reading
 # may become <gramGrp> here. Anything already carrying a schema-valid type
 # (domain) is passed through untouched.
 function route_label_markup(usg_type::AbstractString, printed::AbstractString)::Vector{String}
-	usg_type in routed_usg_types || return [usg_markup(UsgTarget(String(usg_type), ""), printed)]
+	usg_type in routed_usg_types ||
+		return [usg_markup(UsgTarget(String(usg_type), ""), usg_text(printed))]
 	spans = route_spans(printed)
 	[
-		target isa UsgTarget ? usg_markup(target, span_text(spans, span, printed)) : gram_markup(target)
+		target isa UsgTarget ? usg_markup(target, usg_text(span_text(spans, span, printed))) : gram_markup(target)
 		for (target, span) in spans
 	]
 end
@@ -792,7 +802,7 @@ function route_residual_usg(s::AbstractString)::String
 		usg_type in routed_usg_types || return matched_text
 		spans = route_spans(lowercase_text_nodes(printed))
 		join(
-			usg_only_markup(target, span_text(spans, span, printed))
+			usg_only_markup(target, usg_text(span_text(spans, span, printed)))
 			for (target, span) in spans
 		)
 	end)

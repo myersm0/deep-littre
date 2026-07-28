@@ -184,6 +184,10 @@ function write_baseline(report::Report, path::String)
 		for (signature, n) in report.signatures
 			println(io, "$(n)\t$(signature)")
 		end
+		println(io, "# invalid entries")
+		for result in sort(filter(r -> !isempty(r.errors), report.results); by = r -> r.id)
+			println(io, "$(result.id)\t$(join(result.errors, " | "))")
+		end
 	end
 end
 

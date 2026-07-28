@@ -1,6 +1,11 @@
 using DeepLittre
 using Test
 
+# The normalized side of the router is a published contract: the pass-1
+# reconciliation and every residue counter key on it, and the inventory below
+# was produced by a separate implementation that no longer lives in this repo.
+# These rows are the committed expected values that replace that dependency.
+
 const register_inventory_path =
 	joinpath(@__DIR__, "sampling", "register_labels_full.tsv")
 
@@ -37,10 +42,20 @@ end
 
 @testset "printed spans" begin
 	@test split_atom_spans("Familièrement et par dénigrement.") ==
-		[("familièrement", "familièrement"), ("par dénigrement", "par dénigrement.")]
-	@test split_atom_spans("Fig.") == [("fig", "fig.")]
+		[("familièrement", "Familièrement"), ("par dénigrement", "par dénigrement.")]
+	@test split_atom_spans("Fig.") == [("fig", "Fig.")]
 	@test split_atoms("Familièrement et par dénigrement.") ==
 		["familièrement", "par dénigrement"]
+
+	reference = "<xr type=\"related\"><ref type=\"entry\" target=\"#agame\">AGAME</ref></xr>"
+	@test split_atom_spans("fig. et $(reference)") == [("fig", "fig."), ("agame", reference)]
+	@test DeepLittre.usg_text(reference) ==
+		"<ref type=\"entry\" target=\"#agame\">AGAME</ref>"
+	@test DeepLittre.usg_text("<xr type=\"related\"><lbl>Voy.</lbl><ref type=\"entry\" target=\"#agame\">AGAME</ref></xr>") ==
+		"Voy.<ref type=\"entry\" target=\"#agame\">AGAME</ref>"
+	@test DeepLittre.usg_text("<mentioned>mot</mentioned> et <foreign xml:lang=\"la\">verbum</foreign>") ==
+		"mot et verbum"
+	@test DeepLittre.usg_text("familièrement") == "familièrement"
 
 	spans = route_spans("absolument et familièrement")
 	@test length(spans) == 2
@@ -51,11 +66,7 @@ end
 end
 
 @testset "register inventory routing" begin
-	mismatches = [
-		(label, routing, route_label(label))
-		for (label, routing) in register_inventory() if route_label(label) != routing
-	]
-	foreach(row -> println(stderr, join(row, "  |  ")), mismatches)
-	@test_broken isempty(mismatches)
+	for (label, routing) in register_inventory()
+		@test route_label(label) == routing
+	end
 end
-
