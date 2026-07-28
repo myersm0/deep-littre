@@ -11,3 +11,4 @@ Manifest.toml
 data/
 bak/
 .DS_STORE
+test/reports/
