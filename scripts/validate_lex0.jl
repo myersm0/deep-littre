@@ -8,7 +8,7 @@ const chunk_size = parse(Int, get(ENV, "validate_chunk", "4000"))
 
 const wrapper_head = """
 <?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="d" type="lex-0">
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="validation-wrapper" type="lex-0">
 <teiHeader><fileDesc>
 <titleStmt><title>t</title></titleStmt>
 <publicationStmt><publisher>p</publisher></publicationStmt>

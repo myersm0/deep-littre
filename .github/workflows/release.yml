@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Tag matches Project.toml
+        if: github.ref_type == 'tag'
+        run: |
+          declared=$(julia -e 'using TOML; print(TOML.parsefile("Project.toml")["version"])')
+          tagged=${GITHUB_REF_NAME#v}
+          echo "Project.toml=$declared tag=$tagged"
+          test "$declared" = "$tagged"
+
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run tests
+        run: julia --project=. -e 'using Pkg; Pkg.test()'
+
+      - name: Probe verdicts
+        run: julia --project=. scripts/validate_probe.jl
+
+      - name: Publish draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Artifacts are built locally with bin/release.jl and attached to this draft before publishing." \
+            --draft
