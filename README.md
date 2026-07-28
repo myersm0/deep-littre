@@ -149,15 +149,15 @@ WHERE l.canonical_form LIKE '%panneau%';
 Place the Gannaz XML source files (`a.xml` through `z.xml`, `a_prep.xml`) in `data/source/`, then:
 
 ```
-julia bin/run_pipeline.jl data/source data/output
+julia bin/run_pipeline.jl data/source data
 ```
 
-Output: `data/output/littre.tei.xml` and `data/output/littre.db`.
+Output: `data/littre.tei.xml` and `data/littre.db`.
 
 Optional flags:
 
 ```
-julia bin/run_pipeline.jl data/source data/output \
+julia bin/run_pipeline.jl data/source data \
   --patches patches/patches.toml \
   --verdicts data/verdicts.csv
 ```
@@ -165,7 +165,7 @@ julia bin/run_pipeline.jl data/source data/output \
 ### Validation
 
 ```
-julia scripts/validate_lex0.jl data/output/littre.tei.xml
+julia scripts/validate_lex0.jl data/littre.tei.xml
 ```
 
 Reports whole-document validity plus per-entry results and ranked error signatures; `--baseline` writes the committed starting-line report and `--gate N` enforces a no-regression floor in CI. Per-signature counts, not the whole-document error total, are the trustworthy progress metric (a resynchronizing validator reveals later errors as earlier ones clear).
