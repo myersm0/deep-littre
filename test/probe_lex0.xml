@@ -182,6 +182,18 @@
     <form type="lemma"><orth norm="probe_s">PROBE S</orth></form>
     <sense xml:id="probe_s_s1"><def>Définition.</def></sense>
   </entry>
+  <!-- t: nested <hi> inside etym (redundant italics carried from the source) -->
+  <entry xml:id="probe_t" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="t2">T</orth></form>
+    <sense xml:id="probe_t_s1"><def>Définition.</def></sense>
+    <etym><hi rend="italic" xml:lang="la">Quatuor qui <hi rend="italic">choream</hi> fecerunt</hi></etym>
+  </entry>
+  <!-- u: single-level <hi> inside etym, control -->
+  <entry xml:id="probe_u" xml:lang="fr-x-lit19c" type="mainEntry">
+    <form type="lemma"><orth norm="u2">U</orth></form>
+    <sense xml:id="probe_u_s1"><def>Définition.</def></sense>
+    <etym><hi rend="italic" xml:lang="la">Quatuor qui choream fecerunt</hi></etym>
+  </entry>
 </body>
 </text>
 </TEI>

@@ -784,12 +784,33 @@ function dissolve_xr_inside_hi(s::AbstractString)::String
 	String(take!(buffer))
 end
 
+# Lex-0 defines model.highlighted as empty, so <hi> cannot nest (probe_t/u).
+# Nested italics carry no distinction print can render either — emphasis inside
+# an italic run switches to roman — so inner wrappers are redundant and their
+# text folds into the outermost, whose xml:lang governs.
+function collapse_nested_hi(s::AbstractString)::String
+	buffer = IOBuffer()
+	depth = 0
+	for token in split_preserving(s, r"</?hi\b[^>]*>")
+		if startswith(token, "</hi")
+			depth = max(depth - 1, 0)
+			depth == 0 && print(buffer, token)
+		elseif startswith(token, "<hi")
+			depth += 1
+			depth == 1 && print(buffer, token)
+		else
+			print(buffer, token)
+		end
+	end
+	String(take!(buffer))
+end
+
 function flatten_phrase_wrappers(s::AbstractString)::String
 	s = replace(s, r"<foreign xml:lang=\"([^\"]+)\">" => s"<hi rend=\"italic\" xml:lang=\"\1\">")
 	s = replace(s, "<mentioned>" => "<hi rend=\"italic\">")
 	s = replace(s, r"<i\b[^>]*>" => "<hi rend=\"italic\">")
 	s = replace(s, r"</(?:foreign|mentioned|i)>" => "</hi>")
-	dissolve_xr_inside_hi(s)
+	collapse_nested_hi(dissolve_xr_inside_hi(s))
 end
 
 # <usg> is valid inside <etym> but its type must come from the closed

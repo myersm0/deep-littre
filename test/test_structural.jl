@@ -214,3 +214,13 @@ end
 # not the docs' hand-transcribed blocks. Expected layout once wired:
 #   test/fixtures/real/<entry>.xml         (W0 dump, parse input)
 #   test/golden/<entry>.tei.xml            (expected emit_tei output fragment)
+
+@testset "nested hi collapses to one level" begin
+	@test dl.collapse_nested_hi("<hi rend=\"italic\" xml:lang=\"la\">a <hi rend=\"italic\">b</hi> c</hi>") ==
+		"<hi rend=\"italic\" xml:lang=\"la\">a b c</hi>"
+	@test dl.collapse_nested_hi("<hi rend=\"italic\">a</hi> et <hi rend=\"italic\">b</hi>") ==
+		"<hi rend=\"italic\">a</hi> et <hi rend=\"italic\">b</hi>"
+	@test dl.collapse_nested_hi("sans balise") == "sans balise"
+	@test dl.flatten_phrase_wrappers("<i lang=\"la\">a <i>b</i> c</i>") ==
+		"<hi rend=\"italic\">a b c</hi>"
+end

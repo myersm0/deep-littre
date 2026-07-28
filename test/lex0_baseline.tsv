@@ -1,7 +1,5 @@
 total	78599
-valid	78598
-invalid	1
+valid	78599
+invalid	0
 # ranked error signatures
-1	element "hi" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"
 # invalid entries
-macabre	element "hi" not allowed here; expected the element end-tag, text or element "abbr", "affiliation", "bibl", "biblStruct", "c", "cit", "date", "desc", "email", "expan", "forename", "g", "graphic", "ident", "idno", "lang", "list", "listBibl", "listPlace", "name", "orgName", "pc", "persName", "persPronouns", "placeName", "quote", "ref", "seg", "state", "surname", "term", "title" or "trait"

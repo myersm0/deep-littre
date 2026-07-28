@@ -18,3 +18,5 @@ probe_p	invalid
 probe_q	valid
 probe_r	valid
 probe_s	valid
+probe_t	invalid
+probe_u	valid
