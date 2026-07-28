@@ -1,0 +1,40 @@
+# Littré transition label -> gramGrp construct. Consumed by route_atom in norms.jl.
+#
+# Calibrated 2026-07-19 against the full <usg type="gram"> inventory of the
+# post-W1 build: 14,750 occurrences, 151 distinct contents, top 60 covering
+# 99.4%. This stands in for a dedicated sampling pass; the residue counter in
+# the W2 report is the coverage measurement. Projected routing: 79 occurrences
+# (0.54%) fall through to <usg type="hint">, almost all of them fused
+# label-plus-definition strings produced by the split_bare_transition defect
+# recorded in the classification-branch leads.
+#
+# Atoms are normalized (lowercase, whitespace collapse, trailing .,;: stripped)
+# before lookup. Anything not matched here is tried against the POS parser, then
+# against usg_register_norms.toml, then routed to hint.
+
+[construction]
+"absolument" = "absolute"
+"substantivement" = "substantival"
+"adjectivement" = "adjectival"
+"adverbialement" = "adverbial"
+"impersonnellement" = "impersonal"
+"elliptiquement" = "elliptical"
+"activement" = "active"
+"neutralement" = "intransitive"
+"intransitivement" = "intransitive"
+"collectivement" = "collective"
+"réciproquement" = "reciprocal"
+"interrogativement" = "interrogative"
+"passivement" = "passive"
+"au passif" = "passive"
+
+[agreement]
+"au plur" = ["number", "plural"]
+"au pluriel" = ["number", "plural"]
+"au pl" = ["number", "plural"]
+"au sing" = ["number", "singular"]
+"au singulier" = ["number", "singular"]
+"au féminin" = ["gender", "feminine"]
+"au fém" = ["gender", "feminine"]
+"au masculin" = ["gender", "masculine"]
+"au masc" = ["gender", "masculine"]
