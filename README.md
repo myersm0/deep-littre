@@ -5,15 +5,15 @@
 
 A deeply structured, computationally enriched edition of Émile Littré's _Dictionnaire de la langue française_ (1872–1877), built on François Gannaz's XMLittré digitization. Available as TEI Lex-0 XML and SQLite.
 
-Littré's dictionary contains 78,600 entries with etymological, historical, and literary citations, covering the language from Old French through the late 19th century. François Gannaz digitized it as custom XML; this project transforms that XML into [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html), along with an SQLite database for computational use.
+Littré's dictionary contains 78,599 entries with etymological, historical, and literary citations, covering the language from Old French through the late 19th century. François Gannaz digitized it as custom XML; this project transforms that XML into [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html), along with an SQLite database for computational use.
 
 The pipeline is not a mechanical format conversion. Gannaz's XML uses a flat `<indent>` element as an overloaded catch-all for sub-senses, figurative uses, domain labels, locutions, register shifts, cross-references, proverbs, and grammatical transitions. The pipeline classifies each indent by semantic role under a strict certain-or-Unclassified regime, extracts canonical forms from locutions and proverbs, resolves scope ambiguities in grammatical transitions, and emits structured TEI that preserves Littré's semantic hierarchy.
 
-> **Status**: As of v0.2.0 the TEI output is schema-valid against TEI Lex-0 v0.9.5: 78,594 of 78,599 entries (99.994%) validate against the pinned RNG. Classification coverage is still being refined. See [Known limitations](#known-limitations).
+> **Status**: As of v0.2.0 the TEI output is schema-valid against TEI Lex-0 v0.9.5: all 78,599 entries validate against the pinned RNG, as does the document as a whole. Classification coverage is still being refined. See [Known limitations](#known-limitations).
 
 ## TEI Lex-0 conformance
 
-The emitted XML validates against the TEI Lex-0 v0.9.5 RelaxNG schema (BCDH/tei-lex-0, 2026-02-08). Validation uses `jing` (libxml2's RelaxNG engine emits false positives on this schema) and runs in CI via `scripts/validate_lex0.jl`, which reports per-entry validity and ranked error signatures; see `scripts/README_validation.md`. Where refinement is incomplete, the encoding uses documented conformant fallbacks (`<usg type="hint">` for unroutable labels, flattened `<hi rend="italic">` for phrase wrappers in restricted contexts). Schema-conformance questions are settled empirically by a probe file (`test/probe_lex0.xml`) of minimal single-construct entries, re-validated whenever the pinned schema changes.
+The emitted XML validates against the TEI Lex-0 v0.9.5 RelaxNG schema (BCDH/tei-lex-0, 2026-02-08), both as a whole document and entry by entry. Validation uses `jing` (libxml2's RelaxNG engine emits false positives on this schema) through `scripts/validate_lex0.jl`, which reports per-entry validity and ranked error signatures; see `scripts/README_validation.md`. The per-entry pass substitutes a synthetic header for the real one, so it cannot see the `<teiHeader>`; document-level errors are therefore reported separately and fail the run on their own, independently of the per-entry gate. Where refinement is incomplete, the encoding uses documented conformant fallbacks (`<usg type="hint">` for unroutable labels, flattened `<hi rend="italic">` for phrase wrappers in restricted contexts). Schema-conformance questions are settled empirically by a probe file (`test/probe_lex0.xml`) of minimal single-construct entries paired with controls, re-validated in CI whenever the pinned schema changes.
 
 ## Downloads
 
@@ -21,7 +21,7 @@ Pre-built data products are attached to each [GitHub release](../../releases):
 
 | File | Description | Size (compressed) |
 |------|-------------|-------------------|
-| `littre.tei.xml.gz` | TEI Lex-0 XML, all 78,600 entries | ~33 MB |
+| `littre.tei.xml.gz` | TEI Lex-0 XML, all 78,599 entries | ~33 MB |
 | `littre.db.gz` | SQLite database for computational queries | ~55 MB |
 
 Decompress with `gunzip littre.tei.xml.gz` or equivalent.
@@ -48,7 +48,7 @@ Decompress with `gunzip littre.tei.xml.gz` or equivalent.
 
 ## TEI structure
 
-Each entry follows this pattern (illustrative; the release regenerates all sample encodings from actual pipeline output):
+Each entry follows this pattern, abridged from actual pipeline output for readability:
 
 ```xml
 <entry xml:id="envie" xml:lang="fr-x-lit19c" type="mainEntry">
@@ -149,15 +149,15 @@ WHERE l.canonical_form LIKE '%panneau%';
 Place the Gannaz XML source files (`a.xml` through `z.xml`, `a_prep.xml`) in `data/source/`, then:
 
 ```
-julia bin/run_pipeline.jl data/source data
+julia bin/run_pipeline.jl data/source data/output
 ```
 
-Output: `data/littre.tei.xml` and `data/littre.db`.
+Output: `data/output/littre.tei.xml` and `data/output/littre.db`.
 
 Optional flags:
 
 ```
-julia bin/run_pipeline.jl data/source data \
+julia bin/run_pipeline.jl data/source data/output \
   --patches patches/patches.toml \
   --verdicts data/verdicts.csv
 ```
@@ -165,20 +165,21 @@ julia bin/run_pipeline.jl data/source data \
 ### Validation
 
 ```
-julia scripts/validate_lex0.jl data/littre.tei.xml
+julia scripts/validate_lex0.jl data/output/littre.tei.xml
 ```
 
-Reports whole-document validity plus per-entry results and ranked error signatures; `--baseline` writes the committed starting-line report and `--gate N` enforces a no-regression floor in CI. Per-signature counts, not the whole-document error total, are the trustworthy progress metric (a resynchronizing validator reveals later errors as earlier ones clear).
+Validates the document as a whole, then each entry in isolation, reporting per-entry results and ranked error signatures. Any document-level error fails the run on its own, since the release criterion is whole-document validity and the per-entry pass cannot see the header. `--gate N` additionally caps invalid entries at a no-regression floor, and `--baseline` writes the committed report, which records the totals, the ranked signatures, any document-level errors, and the id of every invalid entry. Per-signature counts, not the whole-document error total, are the trustworthy progress metric while errors remain (a resynchronizing validator reveals later errors as earlier ones clear).
 
 ### Tests
 
-Tests are tiered: unit tests are hermetic and corpus-free; integration tests need source data and a build; validation tests need the built corpus plus `jing` (including the schema probe and the golden-entry fixtures). Run the unit tier with `julia --project=. -e 'using Pkg; Pkg.test()'`; see `test/` for the tier layout.
+`julia --project=. -e 'using Pkg; Pkg.test()'` runs the suite, which is hermetic: it needs no source data and no build, since the routing tables and the adjudication table it reads are committed. Schema validation is separate and needs `jing`: `julia --project=. scripts/validate_probe.jl` checks the probe's verdicts against `test/probe_expected.tsv`, and `scripts/validate_lex0.jl` needs a built corpus. Both run in CI.
 
 ## Repository structure
 
 ```
 deep-littre/
 ├── Project.toml
+├── .github/workflows/          CI (tests, probe) and release
 ├── src/
 │   ├── DeepLittre.jl           Module root, using/include/export
 │   ├── model.jl                Type definitions (traits, structs, enums)
@@ -193,9 +194,11 @@ deep-littre/
 │   ├── emit_tei.jl             Model → TEI Lex-0 XML
 │   └── emit_sqlite.jl          Model → SQLite
 ├── bin/
-│   └── run_pipeline.jl         CLI entry point
+│   ├── run_pipeline.jl         CLI entry point
+│   └── release.jl              Build, gate, package, checksum
 ├── scripts/
-│   ├── validate_lex0.jl        Schema validation harness (CI gate)
+│   ├── validate_lex0.jl        Schema validation harness (release gate)
+│   ├── validate_probe.jl       Probe verdict gate (CI)
 │   └── README_validation.md
 ├── data/
 │   ├── usg_register_norms.toml Calibrated label → usg/@type routing
@@ -207,10 +210,14 @@ deep-littre/
 │   ├── tei-lex0-0.9.5/         Pinned schema + PROVENANCE.md
 │   └── jing.jar
 ├── test/
+│   ├── runtests.jl             Suite driver
+│   ├── helpers.jl              Shared TEI parsing accessors
 │   ├── probe_lex0.xml          One-construct-per-entry schema probe
+│   ├── probe_expected.tsv      Committed probe verdicts
+│   ├── lex0_baseline.tsv       Committed validation baseline
 │   ├── sampling/               Calibration artifacts (labeled samples,
-│   │                           inventories) for post-transform comparison
-│   ├── reports/                Emission audit trails (def-usg hoists, …)
+│   │                           inventories); locutions_labeled.tsv is a
+│   │                           live pipeline input, not a test fixture
 │   └── fixtures/               Golden entries + synthetic test data
 ├── patches/
 │   └── patches.toml            Source XML corrections (line-targeted)
@@ -262,7 +269,6 @@ LLM-assisted reclassification results are loaded from a CSV keyed on `(file, lin
 - **Unclassified bucket**: 58,599 of 86,957 indents (67.4%) currently fall into `Unclassified`. This is by design — under the strict regime, indents are left unclassified rather than given a best-guess label. The set is queryable via `senses.sense_type = 'unclassified'` (SQLite) or `ana="unclassified"` (TEI) and is the declared frontier for v0.3: reducing it via new tightened rules and LLM-assisted review through the verdicts machinery.
 - **Voice-transition scoping**: no transition currently resolves to strong scope, so nested `<entry type="homonymicEntry">` is encoded and tested but unpopulated; 674 printed transition forms sit at sense level pending scope adjudication (`intra_sense_form` review flags).
 - **Etymology refinement residues**: 1,423 suspect tokens (`ana="suspect"`, the table-extension worklist), 149 unsegmented etymology rubriques (`etym_fallback`), and phrase wrappers in restricted contexts flattened to `<hi rend="italic">` rather than lifted to richer structure.
-- **Five entries** of 78,599 do not yet validate (localization follow-ups, none architectural).
 - **Résumé blocks**: 96 long entries have tables of contents (`<résumé>` in source) currently emitted as placeholders.
 - **Large-scope transitions**: 3 entries have grammatical transitions scoping over >15 senses.
 - **Source data errors**: Gannaz's XML contains a small number of errors including missing homograph indices, incorrect `terme` attributes, and accent-collision headwords (31 pairs). These are corrected via `patches/patches.toml`.
