@@ -1110,6 +1110,10 @@ const tei_header = """
             </author>
             <title level="m">XMLittré</title>
             <edition>1.3</edition>
+            <imprint>
+              <publisher>François Gannaz</publisher>
+              <date>2017</date>
+            </imprint>
           </monogr>
         </biblStruct>
       </listBibl>

@@ -46,6 +46,7 @@ struct Report
 	valid::Int
 	results::Vector{EntryResult}
 	signatures::Vector{Pair{String, Int}}
+	document_errors::Vector{String}
 end
 
 function top_level_entries(corpus_path::String)::Vector{Tuple{String, String}}
@@ -133,13 +134,14 @@ function rank_signatures(results::Vector{EntryResult})::Vector{Pair{String, Int}
 	sort(collect(counts); by = pair -> (-pair.second, pair.first))
 end
 
-function validate_document(path::String)::Tuple{Bool, Int}
-	messages = run_jing([path])
-	errors = count(line -> match(message_pattern, line) !== nothing, messages)
-	(errors == 0, errors)
+# The per-entry pass replaces the real <teiHeader> with a synthetic wrapper, so
+# nothing in the header is visible to it. Whole-document messages are the only
+# check on the document scaffolding and are carried through to the report.
+function validate_document(path::String)::Vector{String}
+	filter(line -> match(message_pattern, line) !== nothing, run_jing([path]))
 end
 
-function validate_per_entry(corpus_path::String)::Report
+function validate_per_entry(corpus_path::String, document_errors::Vector{String} = String[])::Report
 	entries = top_level_entries(corpus_path)
 	directory = mktempdir()
 	basename_to_id = Dict{String, String}()
@@ -163,15 +165,24 @@ function validate_per_entry(corpus_path::String)::Report
 	rm(directory; recursive = true)
 
 	valid = count(result -> isempty(result.errors), results)
-	Report(length(results), valid, results, rank_signatures(results))
+	Report(length(results), valid, results, rank_signatures(results), document_errors)
 end
 
 function print_report(report::Report; io::IO = stdout)
 	println(io, "$(report.valid) of $(report.total) entries valid")
-	println(io)
-	println(io, "ranked error signatures:")
-	for (signature, n) in report.signatures
-		println(io, "  $(lpad(n, 6))  $(signature)")
+	if !isempty(report.signatures)
+		println(io)
+		println(io, "ranked error signatures:")
+		for (signature, n) in report.signatures
+			println(io, "  $(lpad(n, 6))  $(signature)")
+		end
+	end
+	if !isempty(report.document_errors)
+		println(io)
+		println(io, "document-level errors (outside any entry, invisible to the per-entry pass):")
+		for message in report.document_errors
+			println(io, "  $(strip(message))")
+		end
 	end
 end
 
@@ -183,6 +194,10 @@ function write_baseline(report::Report, path::String)
 		println(io, "# ranked error signatures")
 		for (signature, n) in report.signatures
 			println(io, "$(n)\t$(signature)")
+		end
+		println(io, "# document-level errors")
+		for message in report.document_errors
+			println(io, strip(message))
 		end
 		println(io, "# invalid entries")
 		for result in sort(filter(r -> !isempty(r.errors), report.results); by = r -> r.id)
@@ -198,14 +213,19 @@ function main(arguments::Vector{String})
 	end
 	corpus = arguments[1]
 
-	whole_ok, whole_errors = validate_document(corpus)
-	whole_ok || println(stderr, "whole-document validation reported $(whole_errors) error(s)")
-
-	report = validate_per_entry(corpus)
+	document_errors = validate_document(corpus)
+	report = validate_per_entry(corpus, document_errors)
 	print_report(report)
 
 	baseline_index = findfirst(==("--baseline"), arguments)
 	baseline_index === nothing || write_baseline(report, arguments[baseline_index + 1])
+
+	# The release criterion is whole-document validity, so a clean per-entry
+	# gate cannot pass a document that does not validate.
+	if !isempty(document_errors)
+		println(stderr, "regression: document does not validate ($(length(document_errors)) error(s) outside any entry)")
+		return 1
+	end
 
 	gate_index = findfirst(==("--gate"), arguments)
 	if gate_index !== nothing
