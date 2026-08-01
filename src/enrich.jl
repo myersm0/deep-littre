@@ -177,7 +177,11 @@ function classify_deterministic!(indent::Indent)::Bool
 	end
 
 	if occursin("<exemple>", c)
-		classify!(indent, Locution(), Deterministic)
+		if matches_any(proverb_patterns, strip_tags(c))
+			classify!(indent, Proverb(), Deterministic)
+		else
+			classify!(indent, Locution(), Deterministic)
+		end
 		return true
 	end
 
@@ -393,6 +397,12 @@ const proverb_gloss_introducer = r",?\s*(?:c\.-à-d\.|c'est-à-dire|se dit|pour 
 function extract_proverb_form!(indent::Indent)::Bool
 	role_of(indent) isa Proverb || return false
 	isempty(indent.canonical_form) || return false
+	printed = match(exemple_pattern, indent.content)
+	if printed !== nothing
+		indent.canonical_form = strip(printed.captures[1])
+		indent.canonical_form_source = :exemple
+		return true
+	end
 	body = replace(strip_tags(indent.content), proverb_lead_pattern => ""; count = 1)
 	m = match(proverb_gloss_introducer, body)
 	form = m === nothing ? body : body[1:prevind(body, m.offset)]

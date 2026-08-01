@@ -200,6 +200,19 @@ function route_usg_atom(atom::AbstractString, tables::NormTables = norm_tables):
 	UsgTarget("hint", "")
 end
 
+# Trailing discourse adverbials ("populairement encore", "absolument aussi")
+# are deixis rather than label content, the same species as the dropped "et"
+# connector. They are stripped only as a retry after every tier has missed,
+# so no previously routed atom can change target. A usg caller still places
+# the full printed span; a gram element reached through the retry prints the
+# stripped atom, consistent with gram content being normalized text already. Contentful interposers (au singulier, au pluriel)
+# are deliberately absent: if the tables miss them the atom stays hint and
+# shows up in the residue counts.
+const discourse_tail = r"(?:\s+(?:encore|aussi|aujourd['’]hui|en ce sens|dans le même sens))+$"
+
+strip_discourse_tail(atom::AbstractString)::String =
+	String(replace(atom, discourse_tail => ""))
+
 function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::AtomTarget
 	if haskey(tables.agreement, atom)
 		kind, norm = tables.agreement[atom]
@@ -210,7 +223,10 @@ function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::Ato
 	end
 	elements = parse_pos(atom, tables)
 	elements === nothing || return elements
-	route_usg_atom(atom, tables)
+	target = route_usg_atom(atom, tables)
+	target.kind == "hint" || return target
+	stripped = strip_discourse_tail(atom)
+	stripped == atom ? target : route_atom(stripped, tables)
 end
 
 # Whole-string POS parse first so "s. m. et f." stays one reading instead of

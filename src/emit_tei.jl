@@ -325,7 +325,19 @@ const bare_label_patterns = [
 	r"^(?:mot|terme)\s+(?:vieilli|vieux|familier|populaire|inusité|bas)\b"i,
 ]
 
-const bare_label_tail = r"^((?:\s+et\b[^,.:]*)*)\s*([,.:])\s*(.*)"s
+# Littré routinely interposes a short adverbial between the root label and
+# its separator ("Populairement encore, une ficelle"); the tail tolerates a
+# run of them alongside "et …" continuations. The adverbial stays in the
+# printed label; routing recovery for the widened atom lives in norms.jl
+# (strip_discourse_tail).
+const bare_label_adverbials = [
+	"encore", "aussi", "aujourd['’]hui", "au\\s+singulier", "au\\s+pluriel",
+	"en\\s+ce\\s+sens", "dans\\s+le\\s+même\\s+sens",
+]
+
+const bare_label_tail = Regex(
+	"^((?:\\s+et\\b[^,.:]*|\\s+(?:" * join(bare_label_adverbials, "|") *
+	")\\b)*)\\s*([,.:])\\s*(.*)", "s")
 
 function split_bare_transition(text::AbstractString)::Union{Nothing, Tuple{String, String}}
 	for pattern in bare_label_patterns

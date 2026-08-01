@@ -16,4 +16,5 @@ include("helpers.jl")
 	include("test_tei_bare_text_label_splitting.jl")
 	include("test_structural.jl")
 	include("test_etymology.jl")
+	include("classification_leads.jl")
 end
