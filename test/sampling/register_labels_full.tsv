@@ -104,7 +104,7 @@ count	normalized_label	routing
 1	ce mot est régulier	hint
 1	populairement et par pléonasme	socioCultural/popular; meaningType/pleonasm
 1	cet emploi a vieilli ; on dit tailleur	temporal/archaic
-1	terme familier forgé par voltaire	hint
+1	terme familier forgé par voltaire	socioCultural/familiar
 1	peu usité en ce dernier sens	frequency/rare
 1	populairement et par menace	socioCultural/popular; attitude/derogatory
 1	par extension et avec un sens spécial	meaningType/byExtension; hint
@@ -139,17 +139,17 @@ count	normalized_label	routing
 1	cet emploi a vieilli ; on dit présentement faire des façons	temporal/archaic
 1	il n'est plus usité dans la jurisprudence où l'on dit, en ce sens, mémoire	temporal/obsolete
 1	populairement encore, une ficelle, un escroc, un filou. méfiez-vous de lui, c'est une vraie ficelle	hint
-1	il est familier en ce sens	hint
-1	il est familier en cet emploi	hint
+1	il est familier en ce sens	socioCultural/familiar
+1	il est familier en cet emploi	socioCultural/familiar
 1	par extension dans l'usage ordinaire	meaningType/byExtension
-1	terme familier du commerce. donner sa marchandise à vil prix	hint
+1	terme familier du commerce. donner sa marchandise à vil prix	socioCultural/familiar
 1	par extension et hyperbole	meaningType/byExtension; hint
 1	par extension et populairement	meaningType/byExtension; socioCultural/popular
 1	par extension et dénigrement	meaningType/byExtension; hint
-1	ironiquement et très familièrement	attitude/ironic; hint
+1	ironiquement et très familièrement	attitude/ironic; socioCultural/familiar
 1	par extension du sens de se tenir sur la place en attendant de l'ouvrage	meaningType/byExtension
 1	par extension et par imitation d'un anglicisme (this house is haunted	meaningType/byExtension; hint
-1	ironiquement et par moquerie	attitude/ironic; hint
+1	ironiquement et par moquerie	attitude/ironic; attitude/jocular
 1	peu usité en ce sens, qui est le sens primitif	frequency/rare
 1	par plaisanterie ou sarcasme	attitude/jocular
 1	peu usité en ce sens ; on dit hygiène	frequency/rare
@@ -172,7 +172,7 @@ count	normalized_label	routing
 1	familièrement et avec un ton de plainte	socioCultural/familiar; hint
 1	ce mot est pris dans le sens sérieux quand les rois parlaient aux archevêques et aux évêques : mons l'archevêque. ils ne leur disaient ni monsieur, ni monseigneur	hint; hint
 1	par extension et par similitude avec la fourniture qu'on fait d'un cheval	meaningType/byExtension; hint
-1	par extension et par assimilation du poil des chats	meaningType/byExtension; hint
+1	par extension et par assimilation du poil des chats	meaningType/byExtension; meaningType/byAnalogy
 1	peu usité ; on dit nageant	frequency/rare
 1	peu usité aujourd'hui en cette acception	frequency/rare
 1	par exagération et par plaisanterie	meaningType/hyperbole; attitude/jocular
@@ -197,10 +197,10 @@ count	normalized_label	routing
 1	par extension et en plaisantant	meaningType/byExtension; attitude/jocular
 1	familièrement et par forme d'injure	socioCultural/familiar; hint
 1	populairement et par plaisanterie	socioCultural/popular; attitude/jocular
-1	terme bas et populaire	hint; socioCultural/popular
+1	terme bas et populaire	socioCultural/low; socioCultural/popular
 1	par extension et avec un sens de dénigrement qui est le plus ordinaire	meaningType/byExtension; hint
 1	ce mot est devenu un terme populaire pour désigner des gens bien mis	hint
-1	familièrement et par abréviation	socioCultural/familiar; hint
+1	familièrement et par abréviation	socioCultural/familiar; meaningType/elliptical
 1	ce mot est devenu, dans l'argot, synonyme d'assassiner	hint
 1	populairement et au fém	socioCultural/popular; hint
 1	par analogie et dans le langage ordinaire	meaningType/byAnalogy; hint

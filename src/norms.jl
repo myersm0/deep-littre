@@ -75,6 +75,13 @@ function load_norm_tables(directory::AbstractString = data_directory)::NormTable
 	)
 end
 
+# The tables are loaded at precompile time via the const below; without these
+# declarations, edits to the data files would not invalidate the precompile
+# cache and the package would silently serve stale tables.
+for name in ("usg_register_norms.toml", "usg_gram_norms.toml", "pos_abbreviations.toml")
+	include_dependency(joinpath(data_directory, name))
+end
+
 const norm_tables = load_norm_tables()
 
 # ── Locution adjudications ───────────────────────────────────────
@@ -98,6 +105,8 @@ function load_locution_adjudications(path::AbstractString = locution_adjudicatio
 	end
 	adjudications
 end
+
+include_dependency(locution_adjudication_path)
 
 const locution_adjudications = load_locution_adjudications()
 
@@ -197,18 +206,21 @@ function route_usg_atom(atom::AbstractString, tables::NormTables = norm_tables):
 	for rule in tables.domain_prefix
 		occursin(rule.pattern, atom) && return rule.target
 	end
-	UsgTarget("hint", "")
+	stripped = strip_discourse_tail(atom)
+	stripped == atom ? UsgTarget("hint", "") : route_usg_atom(stripped, tables)
 end
 
 # Trailing discourse adverbials ("populairement encore", "absolument aussi")
 # are deixis rather than label content, the same species as the dropped "et"
-# connector. They are stripped only as a retry after every tier has missed,
+# connector. They are stripped only as a retry after every tier has missed —
+# in route_usg_atom for the usg tiers, in route_atom for the gram tables —
 # so no previously routed atom can change target. A usg caller still places
 # the full printed span; a gram element reached through the retry prints the
-# stripped atom, consistent with gram content being normalized text already. Contentful interposers (au singulier, au pluriel)
-# are deliberately absent: if the tables miss them the atom stays hint and
-# shows up in the residue counts.
-const discourse_tail = r"(?:\s+(?:encore|aussi|aujourd['’]hui|en ce sens|dans le même sens))+$"
+# stripped atom, consistent with gram content being normalized text already.
+# Contentful interposers (au singulier, au pluriel) are deliberately absent:
+# if the tables miss them the atom stays hint and shows up in the residue
+# counts.
+const discourse_tail = r"(?:\s+(?:encore|aussi|aujourd['’]hui|en ce sens|en cet emploi|dans le même sens))+$"
 
 strip_discourse_tail(atom::AbstractString)::String =
 	String(replace(atom, discourse_tail => ""))

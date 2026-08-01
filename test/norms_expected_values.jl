@@ -5,6 +5,8 @@ using Test
 # reconciliation and every residue counter key on it, and the inventory below
 # was produced by a separate implementation that no longer lives in this repo.
 # These rows are the committed expected values that replace that dependency.
+# The routing column is the maintenance surface: when the tables or the
+# router change deliberately, update the affected rows in the same commit.
 
 const register_inventory_path =
 	joinpath(@__DIR__, "sampling", "register_labels_full.tsv")
@@ -71,5 +73,5 @@ end
 		for (label, routing) in register_inventory() if route_label(label) != routing
 	]
 	foreach(row -> println(stderr, join(row, "  |  ")), mismatches)
-	@test_broken isempty(mismatches)
+	@test isempty(mismatches)
 end

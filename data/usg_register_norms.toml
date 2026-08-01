@@ -222,3 +222,8 @@ norm = ""
 pattern = "d[eu']"
 type = "domain"
 norm = ""
+
+[[lemma]]
+pattern = "terme familier"
+type = "socioCultural"
+norm = "familiar"
