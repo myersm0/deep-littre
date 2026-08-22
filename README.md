@@ -2,7 +2,7 @@
 [![CI](https://github.com/myersm0/deep-littre/actions/workflows/CI.yml/badge.svg)](https://github.com/myersm0/deep-littre/actions/workflows/CI.yml)
 [![Release](https://img.shields.io/github/v/release/myersm0/deep-littre)](https://github.com/myersm0/deep-littre/releases/latest)
 
-A deeply structured, computationally enriched edition of Émile Littré's _Dictionnaire de la langue française_ (1872–1877), built on François Gannaz's XMLittré digitization. Available as TEI Lex-0 XML and SQLite.
+A deeply structured edition of Émile Littré's _Dictionnaire de la langue française_ (1872–1877), built on François Gannaz's XMLittré digitization. Available as TEI Lex-0 XML and SQLite.
 
 Littré's dictionary contains 78,599 entries with etymological, historical, and literary citations, covering the language from Old French through the late 19th century. François Gannaz digitized it as custom XML; this project transforms that XML into [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html), along with an SQLite database for computational use.
 
@@ -106,8 +106,6 @@ The SQLite database provides a flat, queryable view of the dictionary:
 - **locutions**: canonical forms keyed to sense_id
 - **review_queue**: pipeline-flagged items for human review (unclassified indents, scope decisions, suspect etymology tokens, etc.)
 
-Note for v0.1.0 users: the `sense_type` value `grammatical_variant` was renamed `homonymic_entry` in v0.2.0, mirroring the TEI encoding (zero live rows in the current build, so the break is prospective).
-
 Example queries:
 
 ```sql
@@ -171,7 +169,7 @@ Validates the document as a whole, then each entry in isolation, reporting per-e
 
 ### Tests
 
-`julia --project=. -e 'using Pkg; Pkg.test()'` runs the suite, which is hermetic: it needs no source data and no build, since the routing tables and the adjudication table it reads are committed. Schema validation is separate and needs `jing`: `julia --project=. scripts/validate_probe.jl` checks the probe's verdicts against `test/probe_expected.tsv`, and `scripts/validate_lex0.jl` needs a built corpus. Both run in CI.
+`julia --project=. -e 'using Pkg; Pkg.test()'` runs the suite (which needs no source data and no build, since the routing tables and the adjudication table it reads are committed). Schema validation is separate and needs `jing`: `julia --project=. scripts/validate_probe.jl` checks the probe's verdicts against `test/probe_expected.tsv`, and `scripts/validate_lex0.jl` needs a built corpus. Both run in CI.
 
 ## Repository structure
 
@@ -231,9 +229,9 @@ deep-littre/
 
 ### Type system
 
-Indent roles and rubrique kinds are modeled as trait hierarchies (`abstract type IndentRole end` with concrete singletons like `Figurative`, `DomainLabel`, `Unclassified`, etc.). This enables Julia's multiple dispatch for the emitters — each role gets its own `emit_indent` method rather than a monolithic match/case.
+Indent roles and rubrique kinds are modeled as trait hierarchies (`abstract type IndentRole end` with concrete singletons like `Figurative`, `DomainLabel`, `Unclassified`, etc.). This enables Julia's multiple dispatch for the emitters — each role gets its own `emit_indent` method.
 
-The `Sense`/`TransitionGroup` split (both subtypes of `BodyElement`) cleanly separates regular senses from grammatical transition containers, avoiding the "one struct with dead fields" antipattern.
+The `Sense`/`TransitionGroup` split (both subtypes of `BodyElement`) cleanly separates regular senses from grammatical transition containers.
 
 ### Two emitters, one model
 
@@ -241,15 +239,15 @@ The TEI and SQLite emitters are independent interpreters of the shared model, an
 
 ### Strict certain-or-Unclassified classification
 
-Phase 3 follows a strict certainty regime. Classification rules either match enough structural signal to be definitively right, or the indent is left `Unclassified` for downstream review. There is no confidence axis. The `Unclassified` role is a first-class member of the `IndentRole` hierarchy, dispatched on like any other; the alternative — using `nothing` for unmatched indents — would have scattered null checks through downstream code and lost the dispatch uniformity.
+Classification rules either match enough structural signal to be definitively right, or the indent is left `Unclassified` for downstream review. The `Unclassified` role is a first-class member of the `IndentRole` hierarchy, dispatched on like any other; the alternative — using `nothing` for unmatched indents — would have scattered null checks through downstream code and lost the dispatch uniformity.
 
-This regime trades exhaustive role coverage for high precision. The `Unclassified` bucket is the working surface for follow-up — clustered LLM analysis, new tightened rules, or manual review — rather than a fictional classification baked into the output.
+This regime trades exhaustive role coverage for high precision. The `Unclassified` bucket is the working surface for follow-up.
 
 The same philosophy extends to emission: unroutable labels emit as `<usg type="hint">` (the spec's documented interim encoding) rather than guessed types, unresolved etymology tokens are marked `ana="suspect"` rather than silently mapped or deleted, and every such residue is counted and reported per build.
 
 ### Schema as arbiter
 
-Conformance claims are settled by validating against the pinned RNG, not by reading documents — including this project's own. The probe file (`test/probe_lex0.xml`) isolates one construct per minimal entry; surprising validator behavior gets a new probe entry before hand-debugging. The published schema diverges from the TEI Lex-0 paper on several load-bearing points (closed `cit/@type` vocabulary, no `<dictScrap>`, no `@type` on `<sense>`, RFC 3066 language-tag datatypes), and the schema wins.
+Conformance claims are settled by validating against the pinned RNG. The probe file (`test/probe_lex0.xml`) isolates one construct per minimal entry; surprising validator behavior gets a new probe entry before hand-debugging. The published schema diverges from the TEI Lex-0 paper on several load-bearing points (closed `cit/@type` vocabulary, no `<dictScrap>`, no `@type` on `<sense>`, RFC 3066 language-tag datatypes), and the schema wins.
 
 ### Immutability with targeted mutation
 
@@ -261,7 +259,7 @@ Source corrections are line-targeted string replacements in TOML format, applied
 
 ### Classification overrides (verdicts)
 
-LLM-assisted reclassification results are loaded from a CSV keyed on `(file, line)`. They take precedence over heuristic classification but are applied during the same pass. An optional `check` column verifies that the content at the specified line matches expectations.
+LLM-assisted reclassification results, or _verdicts_, are loaded from a CSV keyed on `(file, line)`. They take precedence over heuristic classification but are applied during the same pass. An optional `check` column verifies that the content at the specified line matches expectations.
 
 ## Known limitations
 
