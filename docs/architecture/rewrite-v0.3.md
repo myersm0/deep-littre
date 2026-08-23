@@ -20,7 +20,8 @@ No dual v0.2/v0.3 pipeline is maintained on `main`. v0.2 remains runnable from i
 - `patches.toml` and patch provenance;
 - calibrated usage/grammar normalization tables;
 - the etymology language table;
-- existing hand/LLM adjudication data, migrated only after the new record shape has been exercised end to end;
+- existing hand/LLM adjudication data where such durable judgments actually exist, migrated only after the new record shape has been exercised end to end;
+- historically tagged/labeled locution artifacts retained for provenance review, not presumed to be adjudicated ground truth;
 - the pinned TEI Lex-0 schema and `jing` validation harness;
 - the probe corpus and expected verdicts;
 - the 25-entry development corpus and useful golden fixtures;
@@ -96,9 +97,9 @@ Land the patch guards and source invariants first. Establish the XML.jl 0.4.x so
 
 ### 3. Build the source layer and census
 
-Implement the source representation independently of semantic adjudication. Run a full-corpus parse-and-census smoke test early; parser and source-vocabulary edge cases are expected in the 78,599-entry tail, not necessarily in the 25-entry sample.
+Implement the source representation independently of semantic adjudication. In week one, benchmark full-corpus `FlatNode` parse, traversal, and span extraction with the exact pinned XML.jl version; `LazyNode` is a correctness/reference fallback, not the corpus-scale execution plan. Run the full-corpus parse-and-`SourceBlock`-census smoke test early; parser and source-vocabulary edge cases are expected in the 78,599-entry tail, not necessarily in the 25-entry sample.
 
-### 4. Exercise the semantic machinery on development inputs
+### 4. Build the adjudication authoring path and exercise it on development inputs
 
 The primary fast loop is:
 
@@ -106,30 +107,33 @@ The primary fast loop is:
 - the Lex-0 probe corpus;
 - selected golden fixtures that capture important v0.2 preservation behavior.
 
-At least two thin structural passes must exist before expensive adjudications are migrated:
+Before structural coverage work scales up, implement the versioned adjudication projection and authoring harness so a human, LLM, or rule pass can return semantic decisions without authoring source coordinates or hashes. Then implement at least two thin structural adjudication passes:
 
 - `SubLemma`;
 - `VoiceVariant`.
 
-The implementation must also support a block-level `segmentation_complete` closure record. A block or residual span is derivable as an ordinary `Sense` only when the frozen structural alternative set has been exhausted with no unresolved result.
+The implementation must also support `segmentation_complete` under closure protocol version 1. A block or residual span is derivable as an ordinary `Sense` only when the frozen structural alternatives have been exhausted with no unresolved result and closure is complete.
 
 For v0.3, structural alternative-set version 1 is:
 
 - `SubLemma`;
-- `VoiceVariant`;
-- segmentation completeness.
+- `VoiceVariant`.
+
+Closure protocol version 1 additionally requires `segmentation_complete`. Structural passes perform exhaustive extraction over their target span and expose explicit residual spans, so positive and negative outcomes can coexist within one enclosing source block while applying to different targets.
 
 ### 5. Validate one complete adjudication path
 
-Before migrating the existing locution labels or cabinet rulings, demonstrate on real sample material:
+Before importing any legacy classification artifact or settled ruling, demonstrate on real sample material:
 
-`source anchor → census block → examination record → semantic assertion → target reference → semantic resolution → TEI → SQLite`
+`source anchor → SourceBlock → examination record → semantic assertion → target reference → semantic resolution → TEI → SQLite`
 
 The point is to discover record-shape mistakes before the most expensive hand-made data is converted.
 
-### 6. Migrate existing adjudications
+### 6. Review and import existing adjudications deliberately
 
-Only after the path above is stable should the legacy verdicts CSV, locution labels, and other settled rulings be re-anchored into the authoritative store.
+There is no assumed legacy verdicts CSV population to migrate. Audit provenance before treating any historical locution tag/label artifact as an adjudication; the reported population is retained for review and may later become an evaluation asset if its quality warrants it, but it is not ground truth by default.
+
+Only judgments whose provenance establishes that they are actual settled human/LLM/rule adjudications are re-anchored into the authoritative store. Settled cabinet rulings and similar cases can be imported after the end-to-end path above is stable; unverified legacy tags remain reference/audit data rather than authoritative records.
 
 ## Retirement gate for v0.2 code
 
@@ -138,7 +142,7 @@ The 25-entry sample is a development corpus, not a deletion gate.
 The old implementation may be removed from `main` only after the new pipeline satisfies all of the following:
 
 1. the full XMLittré corpus parses successfully;
-2. the full source census completes and its invariants hold;
+2. the full `SourceBlock` census completes and its invariants hold;
 3. all 78,599 entries render through the new pipeline;
 4. the whole TEI document and every entry validate against the pinned RNG;
 5. a canonical semantic-preservation extraction agrees with v0.2 for facts expected to survive;

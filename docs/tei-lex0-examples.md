@@ -110,18 +110,21 @@ v0.2 serializes the figurative reading as a nested sense:
 </sense>
 ```
 
-v0.3 removes the redundant `ana` classification and can represent the multiword unit independently:
+v0.3 removes the redundant `ana` classification and can represent the multiword unit independently. The `relatedEntry` remains nested inside the containing sense:
 
 ```xml
-<entry xml:id="boue_batir_sur_la_boue"
-       xml:lang="fr-x-lit19c"
-       type="relatedEntry">
-  <form type="lemma"><orth value="bâtir sur la boue"/></form>
-  <sense xml:id="boue_batir_sur_la_boue_s1">
-    <usg type="meaningType" norm="figurative">fig.</usg>
-    <def>se bercer de vaines espérances.</def>
-  </sense>
-</entry>
+<sense xml:id="boue_s2">
+  <def>...</def>
+  <entry xml:id="boue_batir_sur_la_boue"
+         xml:lang="fr-x-lit19c"
+         type="relatedEntry">
+    <form type="lemma"><orth value="bâtir sur la boue"/></form>
+    <sense xml:id="boue_batir_sur_la_boue_s1">
+      <usg type="meaningType" norm="figurative">fig.</usg>
+      <def>se bercer de vaines espérances.</def>
+    </sense>
+  </entry>
+</sense>
 ```
 
 Again, this is possible because `meaningType=figurative` and `SubLemma` are independent facts rather than competing `IndentRole` values.
@@ -136,23 +139,26 @@ Tenir cabinet, tenir conseil.
 
 as a form/gloss pair embedded in definition prose.
 
-After adjudication:
+After adjudication, the related entry is nested inside the containing sense:
 
 ```xml
-<entry xml:id="cabinet_tenir_cabinet"
-       xml:lang="fr-x-lit19c"
-       type="relatedEntry">
-  <form type="lemma">
-    <orth value="tenir cabinet"/>
-  </form>
-  <sense xml:id="cabinet_tenir_cabinet_s1">
-    <def>tenir conseil.</def>
-    <cit type="example">
-      <quote>On tenait cabinet mal à propos, l'on donnait des rendez-vous sans sujet</quote>
-      <bibl><author>RETZ</author><biblScope>II, 65</biblScope></bibl>
-    </cit>
-  </sense>
-</entry>
+<sense xml:id="cabinet_s4">
+  <def>...</def>
+  <entry xml:id="cabinet_tenir_cabinet"
+         xml:lang="fr-x-lit19c"
+         type="relatedEntry">
+    <form type="lemma">
+      <orth value="tenir cabinet"/>
+    </form>
+    <sense xml:id="cabinet_tenir_cabinet_s1">
+      <def>tenir conseil.</def>
+      <cit type="example">
+        <quote>On tenait cabinet mal à propos, l'on donnait des rendez-vous sans sujet</quote>
+        <bibl><author>RETZ</author><biblScope>II, 65</biblScope></bibl>
+      </cit>
+    </sense>
+  </entry>
+</sense>
 ```
 
 `orth/@value` records that the canonical form is an editorial decomposition of source prose rather than a separately printed lemma field.

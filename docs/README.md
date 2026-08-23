@@ -12,6 +12,7 @@ The v0.2 pipeline remains available from its release tag. Its implementation-ori
 - [`architecture/rewrite-v0.3.md`](architecture/rewrite-v0.3.md) — clean-slate rewrite decision, disposition of the previous migration plan, development sequence, and retirement gates for v0.2.
 - [`architecture/source-representation.md`](architecture/source-representation.md) — raw/patched/projected source layers, XML.jl 0.4.x reader decision, source spans, transform mapping, and census.
 - [`architecture/adjudication-rendering.md`](architecture/adjudication-rendering.md) — authoritative adjudication store, examination and coverage records, semantic resolution, and TEI/SQLite renderer contracts.
+- [`architecture/adjudication-authoring.md`](architecture/adjudication-authoring.md) — authoring harness, adjudication projection and provenance map, LLM/human/rule interfaces, constituent span resolution, and failure policy.
 
 ### TEI Lex-0
 

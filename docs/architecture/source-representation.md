@@ -6,7 +6,7 @@ Status: **normative source-layer specification for v0.3**.
 
 The source layer represents what XMLittré contains before Deep-Littré decides what that content means.
 
-Source identity, source hierarchy, byte spans, patches, normalization, and the universal block census belong here. `SubLemma`, `VoiceVariant`, usage qualifications, ordinary senses, and other semantic conclusions do not.
+Source identity, source hierarchy, byte spans, patches, normalization, and the `SourceBlock` census belong here. `SubLemma`, `VoiceVariant`, usage qualifications, ordinary senses, and other semantic conclusions do not.
 
 The source representation is immutable after construction.
 
@@ -23,7 +23,9 @@ The decisive API is provided by the source-retaining readers `LazyNode` and `Fla
 
 This removes the v0.2 line-queue/scanner coupling. A parsed source node and its position are properties of the same parser object rather than two traversals that must remain synchronized.
 
-`FlatNode` is the preferred full-document reader because the pipeline visits essentially the entire tree. It is experimental in XML.jl 0.4.x, so the source layer must use only APIs shared with `LazyNode`; `LazyNode` is the correctness fallback. Switching readers must not change Deep-Littré source identities or spans.
+`FlatNode` is the required production reader because the pipeline visits essentially the entire tree and repeatedly needs complete element spans. Its stored span data makes this access appropriate for corpus-wide traversal. `FlatNode` is experimental in XML.jl 0.4.x, so the source layer should depend only on accessor semantics also available on `LazyNode`, but the readers are **not** treated as performance-interchangeable. `LazyNode` re-tokenizes on demand and is retained as a correctness/reference fallback for development and differential tests, not as the corpus-scale execution plan.
+
+In week one, benchmark full-corpus parse, traversal, and span extraction with the exact pinned `FlatNode` version. A `FlatNode` correctness defect is an early blocker to work around while the architecture is still cheap to change; it is not deferred until adjudication data exists.
 
 The old XML.jl 0.3 behavior is not preserved. In 0.4, whitespace text nodes between elements are retained; code that wants elements uses `elements`/`eachelement` rather than positional assumptions such as `doc[end]`.
 
@@ -105,7 +107,7 @@ This catches the case where a later patch or projection change alters what Deep-
 
 The projection is versioned independently of the patch set. An unrelated patch elsewhere in the file must not invalidate a judgment.
 
-The initial implementation must confirm what the adjudication UI actually displays. If it displays the pipeline's plain-text projection, that projection becomes `plain-v1`; if it displays TEI-normalized markup, that projection receives a different explicit name. `strip_tags` is not silently assumed merely because v0.2 used it for verdict checks.
+The adjudication surface uses an explicit, versioned projection defined by the authoring harness. A projection produces both the displayed text and a provenance map from displayed intervals back to parser-view/raw source intervals. The first production projection is named and versioned before any adjudication records are committed; `strip_tags` is not silently assumed merely because v0.2 used it for verdict checks. See `adjudication-authoring.md`.
 
 ## Source objects
 
@@ -136,28 +138,28 @@ SourceBlock
 
 `source_id` is a repository-internal convenience identifier, not adjudication identity and not a published TEI `xml:id`. The raw span and checks are the durability contract.
 
-A `SourceBlock` kind is source syntax, not semantic classification. Initial census-relevant kinds are:
+A `SourceBlock` kind is source syntax, not semantic classification. Initial `SourceBlock` kinds are:
 
 - `indent`;
 - `variante`;
 - rubrique-internal `indent`;
 - entry-header `nature`.
 
-`prononciation` is source data but is not part of the qualification-bearing adjudication census.
+`prononciation` is source data but is not a `SourceBlock` in this census. It remains represented by the source layer and handled by its own form/commentary path.
 
 Rubriques themselves are source objects with addressable spans because qualifications and relations may target a rubrique.
 
-## Universal census
+## SourceBlock census
 
-The source census is derived from the **patched parser view**, because patches can create blocks that the pipeline and adjudicators actually see.
+The `SourceBlock` census is derived from the **patched parser view**, because patches can create blocks that the pipeline and adjudicators actually see.
 
 Every census item retains its durable raw anchor through the transform map.
 
-The census is independent of semantic traversal. It must therefore include blocks even when no semantic pass currently supports them.
+The census is independent of semantic traversal. It must therefore include `SourceBlock`s even when no adjudication pass currently supports them.
 
-The universal census is the denominator from which versioned pass populations are selected. A pass may legitimately exclude a block kind, but it may not make that block disappear from the corpus count.
+The census is **universal over the defined `SourceBlock` population**, not over every byte or XML element in XMLittré. It answers “which adjudication-relevant source blocks exist?” rather than “what source material of every kind exists?”. Versioned pass populations are selected from this fixed denominator. A pass may legitimately exclude a block kind, but it may not make that `SourceBlock` disappear from the corpus count.
 
-The full-corpus census runs before semantic adjudication work begins and is reproducible from source plus committed patches/normalization rules.
+The full-corpus `SourceBlock` census runs before adjudication work begins and is reproducible from source plus committed patches/normalization rules.
 
 ## Parser verification
 
@@ -168,6 +170,7 @@ Before the first committed span-anchored adjudications, CI verifies at least:
 - source ranges refer to the exact string passed to `parse`;
 - `<résumé>` and other non-ASCII element names round-trip without coordinate or text changes;
 - `FlatNode` and `LazyNode` produce equivalent source objects on the development corpus;
+- the exact pinned `FlatNode` version completes full-corpus parse, traversal, and span extraction within an acceptable operational envelope;
 - full-corpus inputs satisfy the encoding/BOM/newline policy.
 
 These tests are assertions about the pinned XML.jl version. If the dependency changes, they run before any new release is accepted.

@@ -8,13 +8,13 @@ Hand, LLM, and deterministic adjudications are committed **inputs**. TEI and SQL
 
 ```text
 XMLittré + patches
-          ↓
-source representation + census
-          ↓
+        ↓
+source representation + SourceBlock census
+        ↓
 authoritative adjudication store
-          ↓
+        ↓
 resolved semantic representation
-         ↙ ↘
+       ↙ ↘
 TEI Lex-0   SQLite
 ```
 
@@ -53,7 +53,7 @@ Committed JSONL is deterministic:
 - arrays retain semantic order where order matters;
 - regeneration with identical inputs is byte-identical.
 
-Historical labeled TSV/CSV assets are not presumed to be records that must be migrated. They may instead remain evaluation sets or be imported later through the authoring harness once their role is decided.
+Historical tagged/labeled TSV/CSV assets are not presumed to be adjudicated records or evaluation ground truth. Their provenance is reviewed first; they may remain audit/reference data, become evaluation data, or be imported later through the authoring harness if their status is established.
 
 ## Examination record
 
@@ -75,6 +75,8 @@ source.synthetic_boundary Bool
 view.projection    String
 view.version       Int
 view.sha256        String
+context             optional 0..N ContextReference objects
+llm.input_sha256    optional String
 outcome            positive | negative | unresolved
 assertions         0..N typed assertions
 method             human | llm | rule
@@ -91,7 +93,24 @@ resolution_metadata optional object
 
 Absence of a record means the pass has not examined that eligible material.
 
-A record fails closed if either the raw-anchor check or adjudicated-view check fails.
+A record fails closed if either the raw-anchor check or adjudicated target-view check fails.
+
+Context does not participate in record identity, but context shown to an adjudicator participates in **validity**. Each `ContextReference` records at least a stable source reference plus projection name/version and projected-context hash. If referenced context changes, the record retains its identity but becomes `stale_context` and reviewable; it does not count as current completed coverage until reconfirmed.
+
+A `ContextReference` contains at least:
+
+```text
+source.file        String
+source.start_byte  Int
+source.end_byte    Int
+source.raw_sha256  String
+view.projection    String
+view.version       Int
+view.sha256        String
+role               optional String
+```
+
+For `method = llm`, `llm.input_sha256` hashes a canonical serialization of the fully rendered model input actually sent for that decision. The committed prompt definition/version, target projection, context references, output schema, model/runtime metadata, and other recorded pass inputs must be sufficient to reconstruct that input; the hash verifies that reconstruction even when context selection is dynamic.
 
 ## Semantic assertions
 
@@ -180,20 +199,20 @@ No adjudication pass owns the assertion "the remainder is an ordinary sense" mer
 v0.3 uses structural alternative-set version 1:
 
 ```text
-SubLemma
-VoiceVariant
-segmentation completeness
+{SubLemma, VoiceVariant}
 ```
 
-`segmentation_complete` is a block/span closure record, not a semantic class. It asserts that the current structural passes have produced a complete ordered partition of the eligible material into positive node spans and residual spans, with no unresolved structural boundary remaining.
+Closure protocol version 1 additionally requires `segmentation_complete`. It is a block/span closure record, not a semantic class or member of the alternative set. It asserts that the current structural passes have produced a complete ordered partition of the eligible material into positive node spans and explicit residual spans, with no unresolved structural boundary remaining.
+
+Structural pass examinations may establish exhaustive extraction over their target span. A positive examination can therefore contain several node assertions plus explicit residual spans; when exhaustive extraction is asserted, the harness may materialize a negative record for that same alternative on each residual without a second adjudication. Residuals are then examined under the other structural alternatives.
 
 For a residual span to derive as an ordinary `Sense`:
 
 - `SubLemma` is negative on that span;
 - `VoiceVariant` is negative on that span;
-- segmentation is complete;
+- `segmentation_complete` is true under closure protocol version 1;
 - the span was eligible for every alternative pass;
-- all records were evaluated against alternative-set version 1.
+- all records were evaluated against structural alternative-set version 1.
 
 If any condition is absent or unresolved, the semantic type remains underdetermined. The renderer may still serialize the material coarsely without claiming that a completed adjudication established an ordinary sense.
 
@@ -216,7 +235,7 @@ negative
 unresolved
 ```
 
-The universal source census is the denominator of record; each pass's eligible population is an explicit subset. A population hash is computed from the ordered durable source anchors so a changed denominator cannot masquerade behind the same count.
+The `SourceBlock` census is the denominator of record; each pass's eligible population is an explicit subset. A population hash is computed from the ordered durable source anchors so a changed denominator cannot masquerade behind the same count.
 
 For version 1, any qualification pass whose source phenomenon can occur at `<variante>` level includes variantes in its eligible population. This applies in particular to usage-label families such as `domain`, `meaningType`, `socioCultural`, `attitude`, and the other Lex-0 qualification axes when their markers occur there. Structural passes may define narrower populations when justified.
 
