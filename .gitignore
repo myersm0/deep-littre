@@ -12,3 +12,7 @@ data/
 bak/
 .DS_STORE
 test/reports/
+scripts/
+tutorials/
+sample/
+test/sampling/verdict_candidates.tsv
