@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="ÉCLAT">
+<entete>
+	<prononciation>é-kla</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Fragment détaché d'un corps dur.
+<indent>Rompre en éclats. <cit aut="MOL." ref="Mis. I, 1">Un morceau de bois</cit> Substantivement. Ce qui brille.
+</indent>
+</variante>
+<variante num="2">Bruit soudain et violent.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Voy. <a ref="eclater">ÉCLATER</a>.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

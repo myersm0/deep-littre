@@ -211,6 +211,31 @@ Structural adjudication passes are exhaustive extraction over their target span 
 
 Residual spans are then evaluated under the remaining structural alternatives. Positive and negative outcomes can therefore coexist within one enclosing source block while applying to different target spans.
 
+### Residuals are closure units, not node extents
+
+A residual span establishes the ordinary content of a closed structural container. It does not
+itself become a `Sense` node. For
+
+```text
+prose A [SubLemma] prose B
+```
+
+the resolved structure is one contiguous enclosing `Sense` whose span contains the positive
+child node:
+
+```text
+Sense span:  [-------------------------]
+SubLemma:              [-------]
+```
+
+with `prose A` and `prose B` supplying the definition content. This is what laminarity permits
+and what the Lex-0 nesting of `<entry type="relatedEntry"> `inside `<sense>` requires. Deriving a
+separate `Sense` per residual would manufacture discontinuous senses merely because a nested
+entry interrupts the definition.
+
+Closure may therefore derive one enclosing `Sense` containing positive child nodes; residual
+spans themselves need not become separate `Sense` nodes.
+
 The derivation is valid only where the residual span was eligible for every alternative pass and no result is unresolved. `segmentation_complete` asserts that all structural boundaries and residuals have been accounted for under the current alternative set and closure protocol.
 
 If a future release adds a new structural alternative, it defines a new alternative-set version. Older derived senses do not silently inherit the stronger claim.

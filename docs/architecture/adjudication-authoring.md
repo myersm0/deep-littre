@@ -226,15 +226,19 @@ Rule-produced positive, negative, and unresolved outcomes are first-class adjudi
 
 A rule may not translate `detector did not fire` into `negative` unless the rule's specification proves that non-detection establishes absence over that population. Heuristic silence is not adjudication.
 
-Bulk rule records retain pass version, population version, method, rule/adjudicator identifier, anchors, and hashes exactly like human or LLM records.
+Bulk rule outcomes are committed as bulk assertion sets rather than as one record per target, and
+retain pass version, population version, method, rule identifier, population hash, and input hash.
+See `adjudication-rendering.md`.
 
-This is how exhaustion remains economically viable for the ordinary case: coverage may contain hundreds of thousands of explicit negatives without requiring hundreds of thousands of human decisions.
+This is how exhaustion remains economically viable for the ordinary case: coverage may assert
+hundreds of thousands of negatives without requiring hundreds of thousands of human decisions or
+hundreds of thousands of committed records.
 
 ## Segmentation completeness
 
 `segmentation_complete` belongs to closure protocol version 1, not to the structural alternative set. It is authored only after the structural adjudication state for the target span supports the claim that no unresolved structural boundary remains under the current alternative-set version.
 
-The harness may derive and write this closure record mechanically when its prerequisites are satisfied; it is not a free-form LLM judgment.
+Closure is derived by the resolver from adjudication state rather than committed as a record per block; it is not a free-form LLM judgment and is not authored by hand.
 
 Structural alternative-set version 1 is `{SubLemma, VoiceVariant}`. Closure protocol version 1 checks the applicable results for both alternatives, the ordered positive structural spans, explicit residual spans, population eligibility, exhaustive-extraction status, and absence of structural-conflict records.
 
@@ -263,6 +267,23 @@ The harness fails closed on:
 - rule output that violates the rule pass's declared decision contract.
 
 A target-anchor or target-view failure does not fall through to heuristic classification and does not silently become `negative`. A context-hash mismatch is handled separately as `stale_context`: identity is retained, but the record is reviewable and excluded from current completed coverage until reconfirmed.
+
+### Build-time failure policy
+
+Failing closed governs whether a judgment is **applied**, not necessarily whether the build
+terminates:
+
+- **raw-anchor/hash mismatch → fatal.** The store no longer names the corpus it claims to name.
+  This is a source/store integrity failure and aborts the build.
+- **target-view mismatch → quarantine.** The adjudication is not applied, a review item is
+  created, and an ordinary development build continues.
+- **context-view mismatch → `stale_context`,** with the same quarantine behavior.
+- **release build → coverage gates still fail** if quarantining leaves a required population
+  incomplete.
+
+A quarantined record therefore never falls through to a heuristic answer, which is the original
+requirement, while a single stale judgment does not prevent rebuilding the rest of the corpus. A
+`--strict-adjudications` flag makes any quarantine fatal.
 
 Review items preserve enough provenance to reproduce the attempted adjudication: item id, pass/version, source anchor, projection/version, method, prompt/model or rule identifier, returned answer, and failure category.
 

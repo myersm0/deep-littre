@@ -12,7 +12,9 @@ The source representation is immutable after construction.
 
 ## XML reader decision
 
-v0.3 uses **XML.jl 0.4.x**, pinned to an exact package version.
+v0.3 uses **XML.jl, pinned to exactly 0.4.6** (`XML = "=0.4.6"`). `FlatNode` remains
+experimental and XML.jl warns that its API may change within 0.4.x, so the constraint is an
+exact pin rather than a `0.4` range.
 
 The decisive API is provided by the source-retaining readers `LazyNode` and `FlatNode`:
 
@@ -35,11 +37,24 @@ The pipeline distinguishes three representations:
 
 1. **raw source** — immutable upstream XMLittré bytes as distributed;
 2. **patched source** — raw source after committed editorial source corrections;
-3. **parser view** — patched source after the minimal normalization still required by the v0.3 reader/renderer.
+3. **parser view** — patched source after any normalization still required by the v0.3 reader/renderer.
 
 The parser is handed the parser view. XML.jl `sourcespan` therefore identifies a span in that view, not directly in raw source.
 
 The durable adjudication anchor remains the raw source.
+
+**All three v0.2 text normalizations are retired**, so in v0.3 the parser view is the patched
+source, byte for byte:
+
+- `xml:space="preserve"` injection is unnecessary because XML.jl 0.4.x retains inter-element whitespace;
+- `nom="PROVERBE"`/`nom="REMARQUES"` rewriting becomes attribute canonicalization performed by
+  the reader, leaving source bytes untouched;
+- `<span lang="la">` rewriting becomes element equivalence recognized at read time, which also
+  retires the cross-line `s` flag and preserves the line-local invariant.
+
+The position map is therefore exercised only by patches. The three-view vocabulary is retained
+because a future normalization would reintroduce the distinction, and the layer is written
+against the general contract rather than against the current identity.
 
 ## Canonical span
 
@@ -138,14 +153,28 @@ SourceBlock
 
 `source_id` is a repository-internal convenience identifier, not adjudication identity and not a published TEI `xml:id`. The raw span and checks are the durability contract.
 
-A `SourceBlock` kind is source syntax, not semantic classification. Initial `SourceBlock` kinds are:
+A `SourceBlock` kind is source syntax, not semantic classification. `SourceBlock` kinds are:
 
 - `indent`;
 - `variante`;
-- rubrique-internal `indent`;
-- entry-header `nature`.
+- `resume_variante` — a `<variante option="résumé">` inside `<résumé>`;
+- `rubrique_indent` — an `<indent>` with a `<rubrique>` ancestor;
+- `rubrique_variante` — a `<variante>` with a `<rubrique>` ancestor;
+- `entete_nature` — `<nature>` inside `<entete>`.
+
+`resume_variante` is a distinct kind rather than an attribute on `variante` so that accidental
+inclusion in a pass population is harder. `rubrique_variante` exists because `<variante>` occurs
+inside rubriques in the development corpus; rubrique containment is decided by ancestry, not by
+element name.
 
 `prononciation` is source data but is not a `SourceBlock` in this census. It remains represented by the source layer and handled by its own form/commentary path.
+
+`<nature>` appearing inline inside an eligible `<indent>` or `<variante>` is **not** a
+`SourceBlock`. It is markup within that block and may become one or more grammatical
+qualification markers.
+
+Kinds are modeled as singleton types rather than an enumeration, so that an unhandled kind
+raises at the dispatch site instead of falling through a catch-all branch.
 
 Rubriques themselves are source objects with addressable spans because qualifications and relations may target a rubrique.
 

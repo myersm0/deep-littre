@@ -1,0 +1,11 @@
+[[patches]]
+file = "split.xml"
+line = 10
+old = "</cit> Substantivement."
+new = "</cit></indent><indent>Substantivement."
+
+[[patches]]
+file = "split.xml"
+line = 16
+old = "ÉTYMOLOGIE"
+new = "ETYMOLOGIE"

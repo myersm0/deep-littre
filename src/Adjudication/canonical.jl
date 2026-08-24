@@ -1,0 +1,139 @@
+"""
+Canonical JSONL serialization. Key order is fixed by the writers below rather than by dictionary
+iteration, so regeneration from identical inputs is byte-identical. Output is UTF-8 with only the
+escapes JSON requires; non-ASCII characters are written literally.
+"""
+function write_json_string(io::IO, text::AbstractString)
+	write(io, '"')
+	for character in text
+		if character == '"'
+			write(io, "\\\"")
+		elseif character == '\\'
+			write(io, "\\\\")
+		elseif character == '\n'
+			write(io, "\\n")
+		elseif character == '\r'
+			write(io, "\\r")
+		elseif character == '\t'
+			write(io, "\\t")
+		elseif character < ' '
+			write(io, "\\u", string(UInt16(character); base = 16, pad = 4))
+		else
+			write(io, character)
+		end
+	end
+	write(io, '"')
+	nothing
+end
+
+write_json(io::IO, value::AbstractString) = write_json_string(io, value)
+write_json(io::IO, value::Symbol) = write_json_string(io, String(value))
+write_json(io::IO, value::Integer) = write(io, string(value))
+write_json(io::IO, value::Bool) = write(io, value ? "true" : "false")
+write_json(io::IO, ::Nothing) = write(io, "null")
+
+function write_json(io::IO, values::AbstractVector)
+	write(io, '[')
+	for (index, value) in enumerate(values)
+		index == 1 || write(io, ',')
+		write_json(io, value)
+	end
+	write(io, ']')
+	nothing
+end
+
+mutable struct ObjectWriter
+	io::IO
+	started::Bool
+end
+
+function object(build, io::IO)
+	write(io, '{')
+	build(ObjectWriter(io, false))
+	write(io, '}')
+	nothing
+end
+
+function field!(writer::ObjectWriter, key::AbstractString, value)
+	writer.started && write(writer.io, ',')
+	write_json_string(writer.io, key)
+	write(writer.io, ':')
+	write_json(writer.io, value)
+	writer.started = true
+	nothing
+end
+
+write_json(io::IO, span::RawSpan) = object(io) do writer
+	field!(writer, "file", span.file)
+	field!(writer, "start_byte", span.start_byte)
+	field!(writer, "end_byte", span.end_byte)
+end
+
+write_json(io::IO, constituent::Constituent) = object(io) do writer
+	field!(writer, "name", constituent.name)
+	field!(writer, "span", constituent.span)
+end
+
+write_json(io::IO, assertion::NodeAssertion) = object(io) do writer
+	field!(writer, "node_id", assertion.node_id)
+	field!(writer, "node_type", node_type_name(assertion.node_type))
+	field!(writer, "span", assertion.span)
+	field!(writer, "parent", assertion.parent)
+	field!(writer, "constituents", assertion.constituents)
+end
+
+write_json(io::IO, reference::ContextReference) = object(io) do writer
+	field!(writer, "span", reference.span)
+	field!(writer, "raw_sha256", reference.raw_sha256)
+	field!(writer, "projection", reference.projection)
+	field!(writer, "projection_version", reference.projection_version)
+	field!(writer, "view_sha256", reference.view_sha256)
+	field!(writer, "role", reference.role)
+end
+
+write_json(io::IO, record::ExaminationRecord) = object(io) do writer
+	field!(writer, "record_id", record.record_id)
+	field!(writer, "pass", record.pass)
+	field!(writer, "pass_version", record.pass_version)
+	field!(writer, "population", record.population)
+	field!(writer, "population_version", record.population_version)
+	field!(writer, "source", record.source)
+	field!(writer, "raw_sha256", record.raw_sha256)
+	field!(writer, "synthetic_boundary", record.synthetic_boundary)
+	field!(writer, "projection", record.projection)
+	field!(writer, "projection_version", record.projection_version)
+	field!(writer, "view_sha256", record.view_sha256)
+	field!(writer, "context", record.context)
+	field!(writer, "llm_input_sha256", record.llm_input_sha256)
+	field!(writer, "outcome", record.outcome)
+	field!(writer, "exhaustive", record.exhaustive)
+	field!(writer, "assertions", record.assertions)
+	field!(writer, "residuals", record.residuals)
+	field!(writer, "method", record.method)
+	field!(writer, "adjudicator", record.adjudicator)
+	field!(writer, "model", record.model)
+	field!(writer, "created", record.created)
+	field!(writer, "notes", record.notes)
+end
+
+write_json(io::IO, assertion::BulkAssertion) = object(io) do writer
+	field!(writer, "bulk_id", assertion.bulk_id)
+	field!(writer, "pass", assertion.pass)
+	field!(writer, "pass_version", assertion.pass_version)
+	field!(writer, "rule", assertion.rule)
+	field!(writer, "rule_version", assertion.rule_version)
+	field!(writer, "population", assertion.population)
+	field!(writer, "population_version", assertion.population_version)
+	field!(writer, "population_hash", assertion.population_hash)
+	field!(writer, "input_hash", assertion.input_hash)
+	field!(writer, "outcome", assertion.outcome)
+	field!(writer, "method", assertion.method)
+	field!(writer, "adjudicator", assertion.adjudicator)
+	field!(writer, "created", assertion.created)
+end
+
+function canonical_json(value)::String
+	buffer = IOBuffer()
+	write_json(buffer, value)
+	String(take!(buffer))
+end

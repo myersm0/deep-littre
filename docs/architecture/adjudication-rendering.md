@@ -10,13 +10,27 @@ Hand, LLM, and deterministic adjudications are committed **inputs**. TEI and SQL
 XMLittré + patches
         ↓
 source representation + SourceBlock census
-        ↓
-authoritative adjudication store
-        ↓
-resolved semantic representation
-       ↙ ↘
-TEI Lex-0   SQLite
+        ↓                              ↓
+explicit markup                 authoritative
+    ↓ deterministic             adjudication store
+normalized facts                       ↓
+        ↘                            ↙
+        resolved semantic representation
+                   ↙ ↘
+            TEI Lex-0   SQLite
 ```
+
+Resolve consumes two qualitatively different inputs and does not conflate them. Facts XMLittré
+states explicitly — `<semantique type="indicateur">Fig.</semantique>`, `<nature>loc. adv.</nature>`,
+author attribution, etymology segmentation — are reconstructed every build from source, code, and
+the committed normalization tables. They are not durable judgments and do not occupy the store.
+The store holds examinations whose positive/negative/unresolved state and provenance must survive:
+structural decomposition, qualifications inferred from prose rather than markup, and ambiguous
+scope.
+
+The resulting test boundary: deleting the adjudication store entirely must still produce a coarse
+corpus containing every safely recoverable explicit XMLittré fact, and adding adjudications must
+enrich structure monotonically rather than recreate facts that were already present.
 
 The generated database mirrors adjudication/provenance data for querying but is never the sole home of an expensive judgment.
 
@@ -87,7 +101,7 @@ release             optional String
 resolution_metadata optional object
 ```
 
-`negative` means the pass examined the eligible material and found that its semantic class does not apply. It is not represented by absence. Negative outcomes may be emitted in bulk by a deterministic rule pass and are first-class adjudications; they do not imply individual human deliberation. A rule may emit a negative only when its logic is entitled to establish absence for that class over the declared population. Mere failure of a heuristic detector is not evidence of a negative.
+`negative` means the pass examined the eligible material and found that its semantic class does not apply. It is not represented by absence. Negative outcomes may be established in bulk by a deterministic rule pass and are first-class adjudications; they do not imply individual human deliberation. Bulk outcomes are recorded as **bulk assertion sets** rather than as one committed record per target — see below. A rule may emit a negative only when its logic is entitled to establish absence for that class over the declared population. Mere failure of a heuristic detector is not evidence of a negative.
 
 `unresolved` means the pass examined the material but declined to make a positive or negative claim.
 
@@ -111,6 +125,54 @@ role               optional String
 ```
 
 For `method = llm`, `llm.input_sha256` hashes a canonical serialization of the fully rendered model input actually sent for that decision. The committed prompt definition/version, target projection, context references, output schema, model/runtime metadata, and other recorded pass inputs must be sufficient to reconstruct that input; the hash verifies that reconstruction even when context selection is dynamic.
+
+## Bulk assertion sets
+
+Per-target records are the right shape for human and LLM judgments, unresolved cases, and
+exceptions. They are wasteful for a deterministic rule that establishes the same outcome over a
+versioned population: materializing per-block structural negatives plus closure across the
+corpus would commit on the order of 10⁶ records dominated by hash fields.
+
+A bulk assertion set is therefore a second authoritative construct:
+
+```text
+bulk_id
+pass
+pass_version
+rule
+rule_version
+population
+population_version
+population_hash
+input_hash
+outcome = negative
+method = rule
+```
+
+`population_hash` identifies the ordered target population. `input_hash` additionally covers the
+ordered per-target raw and view checks the rule operated on, so a bulk assertion cannot survive a
+change to the material it ranged over. Bulk sets are sharded by source letter, so one source
+change does not invalidate a corpus-wide assertion.
+
+At resolution:
+
+```text
+explicit per-target adjudications
+        +
+applicable bulk assertion sets
+        +
+deterministic resolver-side facts
+        ↓
+logical per-target adjudication state
+```
+
+The resolver reasons over that logical state without caring which of the three produced the
+evidence. SQLite may materialize the expanded state for querying.
+
+`segmentation_complete` is likewise **resolver-derived rather than stored**. Given exhaustive-pass
+status, residual geometry, applicable negatives, and the absence of unresolved or conflict
+records, closure is a deterministic predicate. A closure record is committed only if empirical
+work reveals an independent segmentation judgment that cannot be derived.
 
 ## Semantic assertions
 
