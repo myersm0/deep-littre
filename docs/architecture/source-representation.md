@@ -124,6 +124,8 @@ The projection is versioned independently of the patch set. An unrelated patch e
 
 The adjudication surface uses an explicit, versioned projection defined by the authoring harness. A projection produces both the displayed text and a provenance map from displayed intervals back to parser-view/raw source intervals. The first production projection is named and versioned before any adjudication records are committed; `strip_tags` is not silently assumed merely because v0.2 used it for verdict checks. See `adjudication-authoring.md`.
 
+Projection provenance is not restricted to one-to-one byte copies. Literal text maps byte-for-byte; decoded XML entity and character references map the projected character to the complete source reference (for example projected `&` to source `&amp;`); collapsed layout whitespace may be synthetic. A selection touching a decoded reference therefore anchors the whole reference rather than inventing byte-level correspondence inside it.
+
 ## Source objects
 
 The source layer exposes at least:
@@ -157,15 +159,21 @@ A `SourceBlock` kind is source syntax, not semantic classification. `SourceBlock
 
 - `indent`;
 - `variante`;
+- `resume_indent` — an `<indent>` with a `<résumé>` ancestor;
 - `resume_variante` — a `<variante option="résumé">` inside `<résumé>`;
 - `rubrique_indent` — an `<indent>` with a `<rubrique>` ancestor;
 - `rubrique_variante` — a `<variante>` with a `<rubrique>` ancestor;
 - `entete_nature` — `<nature>` inside `<entete>`.
 
-`resume_variante` is a distinct kind rather than an attribute on `variante` so that accidental
-inclusion in a pass population is harder. `rubrique_variante` exists because `<variante>` occurs
-inside rubriques in the development corpus; rubrique containment is decided by ancestry, not by
-element name.
+Résumé and rubrique material are distinct kinds rather than attributes on `indent`/`variante` so
+that accidental inclusion in a pass population is harder. Containment is decided by ancestry, not
+by element name, and résumé ancestry is consulted for `<indent>` and `<variante>` alike.
+
+`resume_indent` exists because the full corpus contains three `<indent>` elements directly inside
+`<résumé>`, in FAIRE, LAISSER, and PRENDRE. PRENDRE's carries a `<semantique>` marker and is
+otherwise indistinguishable from ordinary sense material; only its ancestry identifies it as a
+summary of senses represented elsewhere in the entry. The 25-entry development corpus contains no
+such case, so this was invisible until the full-corpus census.
 
 `prononciation` is source data but is not a `SourceBlock` in this census. It remains represented by the source layer and handled by its own form/commentary path.
 

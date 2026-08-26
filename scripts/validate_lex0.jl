@@ -1,246 +1,237 @@
 #!/usr/bin/env julia
 
+# Validates a rendered corpus against the pinned TEI Lex-0 schema as a complete document and
+# entry by entry, and checks the validator harness itself against the committed probe. A probe disagreement means the harness is
+# wrong, not the corpus, so the probe runs first and a mismatch aborts.
+#
+#   julia --project=. scripts/validate_lex0.jl data/littre.tei.xml
+#   julia --project=. scripts/validate_lex0.jl data/littre.tei.xml --baseline test/lex0_baseline.tsv
+
 module ValidateLex0
 
-const schema_path = get(ENV, "lex0_rng", joinpath(@__DIR__, "..", "vendor", "tei-lex0-0.9.5", "lex-0.rng"))
-const jing_jar = get(ENV, "jing_jar", joinpath(@__DIR__, "..", "vendor", "jing.jar"))
-const chunk_size = parse(Int, get(ENV, "validate_chunk", "4000"))
+using ArgParse
+using XML
 
-const wrapper_head = """
-<?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="validation-wrapper" type="lex-0">
-<teiHeader><fileDesc>
-<titleStmt><title>t</title></titleStmt>
-<publicationStmt><publisher>p</publisher></publicationStmt>
-<sourceDesc><listBibl type="dictionaries"><biblStruct><monogr>
-<title level="m">t</title><imprint><publisher>p</publisher><date>2026</date></imprint>
-</monogr></biblStruct></listBibl></sourceDesc>
-</fileDesc><profileDesc><langUsage>
-<language ident="fr" role="objectLanguage">French</language>
-</langUsage></profileDesc></teiHeader>
-<text><body>
-"""
+const repository_root = normpath(joinpath(@__DIR__, ".."))
+const schema_path = joinpath(repository_root, "vendor", "tei-lex0-0.9.5", "lex-0.rng")
+const jing_path = joinpath(repository_root, "vendor", "jing.jar")
 
-const wrapper_foot = "\n</body></text>\n</TEI>\n"
-
-# jing prints "PATH:line:col: level: message"; attribution keys on basename.
-# jing is the sole well-formedness authority: XML.jl 0.3.x accepts mis-nested
-# input, so an in-process gate cannot be trusted. jing aborts the remaining
-# argument list on the first fatal error, so run_jing re-runs each batch tail
-# past a fatal until the whole set is covered. Fatal lines are normalized to a
-# single malformed_signature so the not-well-formed population ranks as one row.
-const path_pattern = r"^(.*?\.xml):"
-const message_pattern = r"^.*?\.xml:\d+:\d+:\s*(?:error|fatal(?:\s+error)?):\s*(.*)$"
-const entry_boundary = r"<entry\b|</entry>"
-const id_pattern = r"xml:id=\"([^\"]*)\""
-const fatal_line = r"^(.*?\.xml):\d+:\d+:\s*fatal"
-const malformed_signature = "not well-formed XML"
-
-struct EntryResult
-	id::String
-	errors::Vector{String}
-end
-
-struct Report
-	total::Int
-	valid::Int
-	results::Vector{EntryResult}
-	signatures::Vector{Pair{String, Int}}
-	document_errors::Vector{String}
-end
-
-function top_level_entries(corpus_path::String)::Vector{Tuple{String, String}}
-	text = read(corpus_path, String)
-	entries = Tuple{String, String}[]
-	depth = 0
-	start = 0
-	for m in eachmatch(entry_boundary, text)
-		if m.match == "</entry>"
-			depth -= 1
-			if depth == 0
-				fragment = text[start:(m.offset + ncodeunits(m.match) - 1)]
-				push!(entries, (extract_id(fragment), fragment))
-			end
-		else
-			depth == 0 && (start = m.offset)
-			depth += 1
-		end
+function settings()
+	specification = ArgParseSettings(
+		prog = "validate_lex0",
+		description = "Per-entry TEI Lex-0 validation with the committed probe as arbiter",
+	)
+	@add_arg_table! specification begin
+		"corpus"
+			help = "rendered TEI corpus"
+			required = true
+		"--gate"
+			help = "fail if more than this many entries are invalid"
+			arg_type = Int
+			default = nothing
+		"--baseline"
+			help = "write a baseline TSV to this path"
+			arg_type = String
+			default = nothing
+		"--probe"
+			help = "probe corpus"
+			arg_type = String
+			default = joinpath(repository_root, "test", "probe_lex0.xml")
+		"--expected"
+			help = "expected probe verdicts"
+			arg_type = String
+			default = joinpath(repository_root, "test", "probe_expected.tsv")
 	end
-	entries
+	parse_args(specification)
 end
 
-function extract_id(fragment::AbstractString)::String
-	matched = match(id_pattern, fragment)
-	matched === nothing ? "" : matched.captures[1]
-end
+document_prologue(text::AbstractString)::String = text[1:(first(findfirst("<body>", text)) - 1)] * "<body>\n"
 
-function invoke_jing(paths)
-	buffer = IOBuffer()
-	command = `java -jar $jing_jar $schema_path $paths`
-	process = run(pipeline(ignorestatus(command); stdout = buffer, stderr = buffer))
-	output = String(take!(buffer))
-	process.exitcode > 1 && error("jing failed (exit $(process.exitcode)) on a batch of $(length(paths)) files:\n$(first(output, 1000))")
-	split(output, '\n'; keepempty = false)
-end
-
-function fatal_index(lines, paths)::Union{Nothing, Int}
-	for line in lines
-		matched = match(fatal_line, line)
-		matched === nothing && continue
-		key = basename(matched.captures[1])
-		index = findfirst(path -> basename(path) == key, paths)
-		index === nothing || return index
+function find_element(node::XML.FlatNode, name::AbstractString)::Union{Nothing, XML.FlatNode}
+	for child in XML.children(node)
+		XML.nodetype(child) == XML.Element || continue
+		XML.tag(child) == name && return child
+		found = find_element(child, name)
+		found === nothing || return found
 	end
 	nothing
 end
 
-function run_jing(paths)::Vector{String}
-	messages = String[]
-	for group in Iterators.partition(collect(paths), chunk_size)
-		remaining = collect(group)
-		while !isempty(remaining)
-			lines = invoke_jing(remaining)
-			append!(messages, lines)
-			poison = fatal_index(lines, remaining)
-			poison === nothing && break
-			remaining = remaining[(poison + 1):end]
-		end
+function entry_texts(text::AbstractString)::Vector{Tuple{String, String}}
+	document = XML.parse(XML.FlatNode, text)
+	body = find_element(document, "body")
+	body === nothing && error("rendered TEI has no <body>")
+	entries = Tuple{String, String}[]
+	for child in XML.children(body)
+		XML.nodetype(child) == XML.Element && XML.tag(child) == "entry" || continue
+		fragment = String(XML.sourcetext(child))
+		identifier = get(child, "xml:id", "?")
+		push!(entries, (identifier, fragment))
 	end
-	messages
+	entries
 end
 
-function group_by_source(messages::Vector{<:AbstractString})::Dict{String, Vector{String}}
-	grouped = Dict{String, Vector{String}}()
-	for line in messages
-		path_match = match(path_pattern, line)
-		path_match === nothing && continue
-		key = basename(path_match.captures[1])
-		signature = if match(fatal_line, line) !== nothing
-			malformed_signature
-		else
-			sig_match = match(message_pattern, line)
-			sig_match === nothing ? "unparsed jing output: $(strip(line))" : sig_match.captures[1]
-		end
-		push!(get!(grouped, key, String[]), signature)
+function jing(paths::Vector{String})::Vector{String}
+	output = IOBuffer()
+	try
+		run(pipeline(`java -jar $(jing_path) $(schema_path) $(paths)`; stdout = output, stderr = output))
+	catch
 	end
-	grouped
+	filter(!isempty, strip.(split(String(take!(output)), '\n')))
 end
 
-function rank_signatures(results::Vector{EntryResult})::Vector{Pair{String, Int}}
-	counts = Dict{String, Int}()
-	for result in results, signature in result.errors
-		counts[signature] = get(counts, signature, 0) + 1
+validate_path(path::AbstractString)::Vector{String} = jing([String(path)])
+
+# One JVM start and one schema compile dominate a single-file run, so per-entry invocation costs
+# roughly a hundred times what the validation itself does. jing prefixes every diagnostic with its
+# file, so a batch keeps per-entry attribution.
+const batch_size = 500
+
+function attribute_errors(directory::AbstractString, count::Int)::Vector{Vector{String}}
+	paths = [joinpath(directory, string(index, ".xml")) for index in 1:count]
+	errors = [String[] for _ in 1:count]
+	lines = jing(paths)
+	# A not-well-formed document is fatal to the whole batch, and jing stops there. Falling back to
+	# one file at a time keeps every later entry from being scored valid by silence.
+	if any(line -> occursin("fatal:", line), lines)
+		@warn "a batch member is not well-formed; falling back to per-file validation" count
+		return [validate_path(path) for path in paths]
 	end
-	sort(collect(counts); by = pair -> (-pair.second, pair.first))
+	for line in lines
+		marker = findfirst(".xml:", line)
+		marker === nothing && continue
+		name = basename(line[1:(last(marker) - 1)])
+		index = tryparse(Int, name[1:(end - length(".xml"))])
+		index === nothing || push!(errors[index], line)
+	end
+	errors
 end
 
-# The per-entry pass replaces the real <teiHeader> with a synthetic wrapper, so
-# nothing in the header is visible to it. Whole-document messages are the only
-# check on the document scaffolding and are carried through to the report.
-function validate_document(path::String)::Vector{String}
-	filter(line -> match(message_pattern, line) !== nothing, run_jing([path]))
-end
-
-function validate_per_entry(corpus_path::String, document_errors::Vector{String} = String[])::Report
-	entries = top_level_entries(corpus_path)
+function validate_batch(prologue::AbstractString, entries)::Vector{Vector{String}}
 	directory = mktempdir()
-	basename_to_id = Dict{String, String}()
-	filenames = String[]
-	pre_results = EntryResult[]
-	for (index, (id, fragment)) in enumerate(entries)
-		label = isempty(id) ? "entry_$(index)" : id
-		if !occursin("<entry", fragment)
-			push!(pre_results, EntryResult(label, ["split error: fragment contains no entry element"]))
-			continue
+	try
+		for (index, (_, fragment)) in enumerate(entries)
+			open(joinpath(directory, string(index, ".xml")), "w") do handle
+				write(handle, prologue, fragment, "\n</body>\n</text>\n</TEI>\n")
+			end
 		end
-		name = "$(index).xml"
-		write(joinpath(directory, name), string(wrapper_head, fragment, wrapper_foot))
-		basename_to_id[name] = label
-		push!(filenames, name)
-	end
-
-	grouped = group_by_source(run_jing(joinpath.(directory, filenames)))
-	results = [EntryResult(basename_to_id[name], get(grouped, name, String[])) for name in filenames]
-	append!(results, pre_results)
-	rm(directory; recursive = true)
-
-	valid = count(result -> isempty(result.errors), results)
-	Report(length(results), valid, results, rank_signatures(results), document_errors)
-end
-
-function print_report(report::Report; io::IO = stdout)
-	println(io, "$(report.valid) of $(report.total) entries valid")
-	if !isempty(report.signatures)
-		println(io)
-		println(io, "ranked error signatures:")
-		for (signature, n) in report.signatures
-			println(io, "  $(lpad(n, 6))  $(signature)")
-		end
-	end
-	if !isempty(report.document_errors)
-		println(io)
-		println(io, "document-level errors (outside any entry, invisible to the per-entry pass):")
-		for message in report.document_errors
-			println(io, "  $(strip(message))")
-		end
+		attribute_errors(directory, length(entries))
+	finally
+		rm(directory; recursive = true, force = true)
 	end
 end
 
-function write_baseline(report::Report, path::String)
-	open(path, "w") do io
-		println(io, "total\t$(report.total)")
-		println(io, "valid\t$(report.valid)")
-		println(io, "invalid\t$(report.total - report.valid)")
-		println(io, "# ranked error signatures")
-		for (signature, n) in report.signatures
-			println(io, "$(n)\t$(signature)")
+function verdicts(
+	path::AbstractString; progress = nothing,
+)::Vector{Tuple{String, Bool, Vector{String}}}
+	text = read(path, String)
+	prologue = document_prologue(text)
+	entries = entry_texts(text)
+	results = Tuple{String, Bool, Vector{String}}[]
+	for start in 1:batch_size:length(entries)
+		batch = entries[start:min(start + batch_size - 1, length(entries))]
+		for ((identifier, _), errors) in zip(batch, validate_batch(prologue, batch))
+			push!(results, (identifier, isempty(errors), errors))
 		end
-		println(io, "# document-level errors")
-		for message in report.document_errors
-			println(io, strip(message))
-		end
-		println(io, "# invalid entries")
-		for result in sort(filter(r -> !isempty(r.errors), report.results); by = r -> r.id)
-			println(io, "$(result.id)\t$(join(result.errors, " | "))")
-		end
+		progress === nothing || progress(length(results), length(entries))
 	end
+	results
 end
 
-function main(arguments::Vector{String})
-	if isempty(arguments)
-		println(stderr, "usage: julia validate_lex0.jl <corpus.xml> [--baseline out.tsv] [--gate N]")
+function run_probe(probe::AbstractString, expected_path::AbstractString)::Bool
+	expected = Dict{String, String}()
+	for (index, line) in enumerate(eachline(expected_path))
+		index == 1 && continue
+		fields = split(strip(line), '\t')
+		length(fields) >= 2 && (expected[fields[1]] = fields[2])
+	end
+	agreed = true
+	for (identifier, valid, _) in verdicts(probe)
+		wanted = get(expected, identifier, nothing)
+		wanted === nothing && continue
+		observed = valid ? "valid" : "invalid"
+		if observed != wanted
+			agreed = false
+			println("probe disagreement: ", identifier, " expected ", wanted, ", observed ", observed)
+		end
+	end
+	agreed
+end
+
+function main()
+	arguments = settings()
+
+	println("== probe")
+	if !run_probe(arguments["probe"], arguments["expected"])
+		println("the validator harness disagrees with the committed probe; corpus results withheld")
 		return 2
 	end
-	corpus = arguments[1]
+	println("probe agrees with expected verdicts")
 
-	document_errors = validate_document(corpus)
-	report = validate_per_entry(corpus, document_errors)
-	print_report(report)
-
-	baseline_index = findfirst(==("--baseline"), arguments)
-	baseline_index === nothing || write_baseline(report, arguments[baseline_index + 1])
-
-	# The release criterion is whole-document validity, so a clean per-entry
-	# gate cannot pass a document that does not validate.
-	if !isempty(document_errors)
-		println(stderr, "regression: document does not validate ($(length(document_errors)) error(s) outside any entry)")
-		return 1
-	end
-
-	gate_index = findfirst(==("--gate"), arguments)
-	if gate_index !== nothing
-		limit = parse(Int, arguments[gate_index + 1])
-		invalid = report.total - report.valid
-		if invalid > limit
-			println(stderr, "regression: $(invalid) invalid entries exceeds baseline $(limit)")
-			return 1
+	println("\n== complete document")
+	document_errors = validate_path(arguments["corpus"])
+	if isempty(document_errors)
+		println("valid")
+	else
+		println("invalid")
+		for line in first(document_errors, min(20, length(document_errors)))
+			println("  ", line)
 		end
 	end
-	0
+
+	println("\n== corpus entries")
+	results = verdicts(arguments["corpus"]; progress = function (done, total)
+		total > batch_size && print("\r  ", done, " / ", total)
+		done == total && total > batch_size && println()
+	end)
+	valid = count(entry -> entry[2], results)
+	invalid = length(results) - valid
+	println("total   ", length(results))
+	println("valid   ", valid)
+	println("invalid ", invalid)
+
+	signatures = Dict{String, Int}()
+	for (_, ok, errors) in results
+		ok && continue
+		for line in errors
+			signature = replace(line, r"^.*error: " => "")
+			signatures[signature] = get(signatures, signature, 0) + 1
+		end
+	end
+	for (signature, total) in first(sort(collect(signatures); by = last, rev = true), 15)
+		println("  ", lpad(total, 6), "  ", first(signature, 100))
+	end
+
+	if arguments["baseline"] !== nothing
+		open(arguments["baseline"], "w") do handle
+			println(handle, "total\t", length(results))
+			println(handle, "valid\t", valid)
+			println(handle, "invalid\t", invalid)
+			println(handle, "# ranked error signatures")
+			for (signature, total) in sort(collect(signatures); by = last, rev = true)
+				println(handle, total, "\t", signature)
+			end
+			println(handle, "# document-level errors")
+			foreach(error -> println(handle, error), document_errors)
+			println(handle, "# invalid entries")
+			for (identifier, ok, _) in results
+				ok || println(handle, identifier)
+			end
+		end
+	end
+
+	gate = arguments["gate"]
+	if !isempty(document_errors)
+		println("\ngate: complete TEI document is invalid")
+		return 1
+	end
+	if gate !== nothing && invalid > gate
+		println("\ngate: $(invalid) invalid entries exceeds the committed floor of $(gate)")
+		return 1
+	end
+	(gate === nothing && invalid > 0) ? 1 : 0
 end
 
-end # module
-
-if abspath(PROGRAM_FILE) == @__FILE__
-	exit(ValidateLex0.main(ARGS))
 end
+
+exit(ValidateLex0.main())

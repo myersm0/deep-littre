@@ -1,138 +1,49 @@
-# DeepLittre Test Suite
+# Test suite
 
-This directory contains the full test suite for the Deep-Littré pipeline. The tests are organized to reflect the different levels of behavior in the system: end-to-end pipeline execution, structural classification and scoping, and TEI emission.
+```
+julia --project=. -e 'using Pkg; Pkg.test()'
+```
 
----
+Needs no build and no `data/source`. Everything it reads is committed: the development corpus in `corpus/`, the routing tables in `data/`, the fixtures in `fixtures/`, and the pinned schema in `vendor/`. Schema validation runs where `java` and `vendor/jing.jar` are present and skips cleanly where they are not.
 
-## Test Structure
+## Layout
 
-### 1. `test_pipeline.jl` — End-to-end pipeline test
+`runtests.jl` is the driver. It defines `corpus_source` and `corpus_adjudication`, the shared accessors, and the include order, which runs bottom-up: spans and encoding before parsing, parsing before the census, the census before adjudication, adjudication before resolution, resolution before the renderers. A failure low in that order usually explains the failures above it.
 
-This file exercises the full pipeline on a small fixture (`e.xml`):
+`source/` covers span arithmetic, the encoding and BOM policy, patch guards and their invariants, the transform map between raw and parser-view coordinates, and the XML.jl assertions in `test_parser.jl` — the ones that pin `sourcetext`/`sourcespan` behaviour to the exact version in `Project.toml`. Those are assertions about the dependency, not about Deep-Littré, and they run before any release that moves the pin.
 
-- parse → enrich → scope → emit
-- verifies TEI output structure
-- verifies SQLite emission
-- checks representative classification and scoping behavior
+`census/` checks block geometry, kind assignment by ancestry, and the population hash that fixes the adjudication denominator.
 
-This is the **integration test** for the system.
+`adjudication/` covers the projection and its provenance map, the authoring harness including its fail-closed cases, the canonical store writer, the committed development store, and the `voice_variant` and `qualification_scope` passes.
 
-It answers:
-> Does the pipeline produce coherent output for a known input?
+`resolve/` covers sense derivation and closure, etymology segmentation, and author resolution through the `ID.` anaphora chain. `render/` covers both renderers, their cross-output parity, and rubrique structure.
 
----
+## Reading the assertion count
 
-### 2. `test_classification_transitions.jl` — Classification behavior
+The total is around 28,400, which overstates behavioural coverage by a wide margin. Two files produce 91% of it:
 
-Tests how indents are classified, especially:
+| file | assertions |
+|---|---|
+| `census/test_census.jl` | 20,749 |
+| `source/test_parser.jl` | 5,063 |
+| everything else, 15 files | ~2,600 |
 
-- `VoiceTransition` (e.g. `Substantivement.`)
-- `NatureLabel` (e.g. `<nature>Substantivement.</nature>`)
-- `RegisterLabel` (e.g. `Familièrement`)
+Both are loops asserting an invariant over every block or node in the corpus. That is the right shape for an invariant and a poor proxy for how much behaviour is pinned. The adjudication core — harness, store, committed store, and the two passes beyond `sublemma` — is 138 assertions.
 
-Key distinction:
+Line coverage is a separate measurement and sits near 95%:
 
-- **bare text** → heuristic classification
-- **`<nature>`-wrapped text** → deterministic `NatureLabel`
+```
+julia --project=. -e 'using Pkg; Pkg.test(coverage = true)'
+```
 
-These tests document the current asymmetry between tagged and untagged forms.
+It is also a poor proxy here, and the reason is worth keeping in mind when adding tests. `<xr>` inside `<note><seg>` was schema-invalid for the whole corpus while the emitting line ran on all 58 rubriques in the development corpus, because none of them happened to contain a cross-reference. The gap was in the input space, not the line coverage. Twenty-five entries cannot span the input space, so a construct that matters should get a synthetic fixture rather than a hope that the corpus happens to carry it.
 
----
+## Test data
 
-### 3. `test_scope_synthetic.jl` — Synthetic scoping edge cases
+`corpus/` is the 25-entry development corpus and its adjudication store; see `corpus/README.md`.
 
-Handwritten fixtures designed to isolate specific structural patterns:
+`fixtures/synthetic/` holds hand-written entries isolating one construct each — a résumé indent, a bare register label, a nature-wrapped reflexive form, a cross-reference in rubrique prose. These are where a construct absent from the development corpus gets pinned. `fixtures/real/` holds entries lifted from XMLittré whose behaviour is worth keeping stable, and `fixtures/patching/` holds a split-patch case with its own patch file.
 
-- terminal transitions
-- non-terminal transitions
-- adjacent transitions
-- transitions with citations
+`probe_lex0.xml` isolates one Lex-0 construct per minimal entry, paired with controls, and `probe_expected.tsv` records the verdict each one should get. Seven are invalid by design. The probe is the arbiter for schema questions: when the validator and the schema appear to disagree, a new probe entry settles it before anyone debugs by hand. It runs through `scripts/validate_probe.jl` rather than through this suite, because it needs `jing`.
 
-These tests probe:
-
-- inter-sense scoping (`TransitionGroup`)
-- intra-sense grouping (indent children)
-- zero-scope behavior
-
-They answer:
-> What exactly does the pipeline do in edge cases?
-
----
-
-### 4. `test_scope_regression.jl` — Real-source regression tests
-
-Fixtures extracted from actual XMLittré entries:
-
-- `DEVANCIER`
-- `DROIT / DROITE`
-- `F`
-
-These tests ensure that behavior observed in real data remains stable.
-
-They are intentionally conservative:
-- only assert stable structural facts
-- avoid overfitting to incidental details
-
----
-
-### 5. `test_tei_bare_text_label_splitting.jl` — Bare-text label emission
-
-Covers indents with no `<nature>` tag where label and definition must be split from plain text:
-
-Examples:
-- `Substantivement, homme cruel...`
-- `Familièrement, se dit...`
-
-Verifies:
-- `<usg>` contains only the label phrase
-- `<def>` contains the definition
-- no long “mashed” `<usg>` elements remain
-
-This tests the fix described in:
-`bare_text_transition_splitting.md`
-
----
-
-### 6. `test_tei_nature_indent_emission.jl` — `<nature>`-tagged indent emission
-
-Covers indents where `<nature>` is present but not leading:
-
-Examples:
-- `S'ACCOUTUMER, <nature>v. réfl.</nature> ...`
-- `En l'air, <nature>loc. adv.</nature> ...`
-- `AIGRIR, <nature>v. n.</nature> ...`
-
-Verifies:
-
-- correct split into:
-  - `<form><orth>` (when appropriate)
-  - `<usg type="gram">`
-  - `<def>`
-- correct handling of:
-  - reflexive forms
-  - locution forms
-  - headword echoes
-  - label-only cases
-
-This tests the `GramSplit`-based emission logic.
-
----
-
-### 7. `test_tei_variante_register_labels.jl` — Variante-level labels (currently incomplete)
-
-Covers bare-text register labels at the `<variante>` level:
-
-Examples:
-- `Familièrement et par exagération. ...`
-- `Populairement. ...`
-
-These currently appear inside `<def>` and are **not yet split** into `<usg>` + `<def>`.
-
-Tests in this file are marked with `@test_broken` until the feature is implemented.
-
----
-
-## Fixtures
-
-Fixtures are located in:
-
+`lex0_baseline.tsv` records the committed validation totals, ranked error signatures, and invalid entry ids for the full corpus. `sampling/` holds v0.2-era calibration artifacts retained for provenance review; nothing in the suite reads them.

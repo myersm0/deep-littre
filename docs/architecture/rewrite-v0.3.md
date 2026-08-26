@@ -24,7 +24,7 @@ No dual v0.2/v0.3 pipeline is maintained on `main`. v0.2 remains runnable from i
 - historically tagged/labeled locution artifacts retained for provenance review, not presumed to be adjudicated ground truth;
 - the pinned TEI Lex-0 schema and `jing` validation harness;
 - the probe corpus and expected verdicts;
-- the 25-entry development corpus and useful golden fixtures;
+- the 25-entry development corpus (`test/corpus`) and useful golden fixtures;
 - v0.2 releases as a semantic-preservation oracle.
 
 ### Salvage conceptually and, where clean, substantially in code
@@ -158,5 +158,24 @@ v0.3 is allowed to break v0.2 query surfaces whose meaning depended on the old o
 - `ana="unclassified"` is removed from published TEI;
 - the old SQLite `senses.role` / `sense_type` vocabulary is not preserved as an architectural constraint;
 - published `xml:id` stability across pre-1.0 releases is not promised unless a later decision explicitly introduces such a promise.
+
+The preservation comparison against v0.2 will therefore surface differences that are intended
+rather than defects. The allowlist of expected divergences:
+
+- **`HISTORIQUE` no longer folds into `<etym>`.** v0.2 nested historical attestations inside the
+  etymology; v0.3 serializes them at entry level, structurally parallel to `<etym>`. This is a
+  fidelity decision — folding merges two distinct source rubriques, and an entry with two
+  `ÉTYMOLOGIE` rubriques (COTRET) has no principled choice of which to fold into. The v0.2 shape
+  also placed `<date>` beside `<cit>` inside `<etym>`, which the pinned RNG does not admit.
+- **`ana="attestation"` becomes `cit/@subtype="attestation"`.** `@ana` is narrowed to epistemic
+  provenance, with a whitelist test admitting only `resolved` and `suspect`.
+- **Rubrique citations appear that v0.2 dropped entirely.** `<note>` cannot hold `<cit>`, so v0.2's
+  `<note type="historical"><seg>` rendering destroyed every rubrique citation — 261 of the
+  development corpus's 818, with their authors and references, reached neither output. Citation
+  counts rising is the fix, not a regression.
+- **Sense and definition counts rise** because rubrique structure is emitted rather than swallowed.
+- **Print casing is preserved** in grammatical atoms where v0.2 lowercased it.
+- **Inline structure is queryable in SQLite** through `content_segments`; v0.2 flattened
+  cross-reference targets and source wrappers into plain text.
 
 These changes require release notes and matching README/query-documentation updates.

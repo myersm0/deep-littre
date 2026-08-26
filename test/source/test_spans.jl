@@ -1,5 +1,5 @@
 using DeepLittre.Source: RawSpan, ViewSpan, slice, segment, covers, disjoint, crosses,
-	laminar, is_boundary, validate_span, view_span, span_sha256
+	laminar, is_boundary, validate_span, view_span, text_sha256, span_sha256
 
 @testset "spans" begin
 	text = "abcéfg"
@@ -47,7 +47,10 @@ using DeepLittre.Source: RawSpan, ViewSpan, slice, segment, covers, disjoint, cr
 		@test slice(source, span) == source
 	end
 
-	@testset "hash covers exactly the span" begin
+	@testset "hashing" begin
+		@test text_sha256("abcéfg") == "bfec70d6fc19212149b950a680db521f230c825eb0ce33860fb35e6912c6ca7c"
+		@test text_sha256(SubString("XXabcéfgYY", 3, 9)) == text_sha256("abcéfg")
+
 		@test span_sha256(text, RawSpan("f", 1, 4)) == span_sha256("abcXY", RawSpan("f", 1, 4))
 		@test span_sha256(text, RawSpan("f", 1, 4)) != span_sha256(text, RawSpan("f", 1, 3))
 	end

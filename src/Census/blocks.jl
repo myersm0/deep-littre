@@ -7,6 +7,7 @@ abstract type BlockKind end
 
 struct Indent <: BlockKind end
 struct Variante <: BlockKind end
+struct ResumeIndent <: BlockKind end
 struct ResumeVariante <: BlockKind end
 struct RubriqueIndent <: BlockKind end
 struct RubriqueVariante <: BlockKind end
@@ -14,13 +15,14 @@ struct EnteteNature <: BlockKind end
 
 kind_name(::Indent) = "indent"
 kind_name(::Variante) = "variante"
+kind_name(::ResumeIndent) = "resume_indent"
 kind_name(::ResumeVariante) = "resume_variante"
 kind_name(::RubriqueIndent) = "rubrique_indent"
 kind_name(::RubriqueVariante) = "rubrique_variante"
 kind_name(::EnteteNature) = "entete_nature"
 
 const block_kinds = (
-	Indent(), Variante(), ResumeVariante(),
+	Indent(), Variante(), ResumeIndent(), ResumeVariante(),
 	RubriqueIndent(), RubriqueVariante(), EnteteNature(),
 )
 
@@ -78,7 +80,8 @@ descend(context::Context, parent_id::String) =
 
 function block_kind(name::AbstractString, context::Context)::BlockKind
 	if name == "indent"
-		context.within_rubrique ? RubriqueIndent() : Indent()
+		context.within_resume ? ResumeIndent() :
+			context.within_rubrique ? RubriqueIndent() : Indent()
 	elseif name == "variante"
 		context.within_resume ? ResumeVariante() :
 			context.within_rubrique ? RubriqueVariante() : Variante()
@@ -213,8 +216,16 @@ function census(document::Source.SourceDocument)::DocumentCensus
 	DocumentCensus(document.file, entries, anomalies)
 end
 
-census(documents::Vector{Source.SourceDocument})::CorpusCensus =
-	CorpusCensus([census(document) for document in documents])
+function census(documents::Vector{Source.SourceDocument}; progress = nothing)::CorpusCensus
+	results = DocumentCensus[]
+	for document in documents
+		elapsed = @elapsed result = census(document)
+		push!(results, result)
+		progress === nothing ||
+			progress(document.file, length(result.entries), length(all_blocks(result)), elapsed)
+	end
+	CorpusCensus(results)
+end
 
 function walk_blocks!(collected::Vector{SourceBlock}, blocks::Vector{SourceBlock})
 	for block in blocks

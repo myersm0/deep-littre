@@ -1,9 +1,10 @@
 using DeepLittre.Source: read_corpus, slice, covers, crosses
 using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, population_hash,
-	kind_name, Indent, Variante, ResumeVariante, RubriqueIndent, RubriqueVariante, EnteteNature
+	kind_name, Indent, Variante, ResumeIndent, ResumeVariante, RubriqueIndent, RubriqueVariante,
+	EnteteNature
 
 @testset "source block census" begin
-	documents = read_corpus(sample_source)
+	documents = read_corpus(corpus_source)
 	corpus = census(documents)
 	entries = all_entries(corpus)
 	blocks = all_blocks(corpus)
@@ -14,6 +15,7 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 		@test isempty(anomalies(corpus))
 		@test tally["indent"] == 181
 		@test tally["variante"] == 170
+		@test tally["resume_indent"] == 0
 		@test tally["resume_variante"] == 69
 		@test tally["rubrique_indent"] == 105
 		@test tally["rubrique_variante"] == 3
@@ -77,7 +79,7 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 	@testset "source ids are unique and deterministic" begin
 		ids = [block.source_id for block in blocks]
 		@test length(unique(ids)) == length(ids)
-		@test population_hash(blocks) == population_hash(all_blocks(census(read_corpus(sample_source))))
+		@test population_hash(blocks) == population_hash(all_blocks(census(read_corpus(corpus_source))))
 	end
 
 	@testset "population hash tracks the denominator" begin
@@ -94,5 +96,24 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 				@test covers(rubrique.raw_span, block.raw_span)
 			end
 		end
+	end
+
+	# The full corpus contains three <indent> elements directly inside <résumé> (FAIRE, LAISSER,
+	# PRENDRE). Résumé ancestry was consulted only on the <variante> branch, so those three were
+	# admitted to the structural population as ordinary indents. PRENDRE's carries a <semantique>
+	# marker and so looks entirely sense-like; only its ancestry distinguishes it.
+	@testset "résumé ancestry is consulted for indents as well as variantes" begin
+		directory = mktempdir()
+		cp(joinpath(fixture_root, "synthetic", "resume_indent.xml"), joinpath(directory, "p.xml"))
+		fixture = census(read_corpus(directory))
+		tally = counts(fixture)
+		@test tally["resume_indent"] == 1
+		@test tally["resume_variante"] == 1
+		@test tally["indent"] == 1
+		@test tally["variante"] == 1
+		resume = only(filter(block -> block.kind isa ResumeIndent, all_blocks(fixture)))
+		@test occursin("Faire impression", String(slice(
+			only(read_corpus(directory)).raw_text, resume.raw_span,
+		)))
 	end
 end

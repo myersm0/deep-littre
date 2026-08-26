@@ -1,8 +1,5 @@
 """
-The source layer represents what XMLittré contains before Deep-Littré decides what any of it
-means. Source identity, byte spans, patches, and the raw/parser-view relation live here;
-semantic conclusions do not. Everything a `SourceDocument` exposes is immutable after
-construction.
+What XMLittré contains, before anything decides what it means. See `src/Source/README.md`.
 """
 module Source
 
@@ -16,6 +13,6 @@ include("transform.jl")
 include("patches.jl")
 include("document.jl")
 
-export Span, RawSpan, ViewSpan, SourceDocument, Patch
+export Span, RawSpan, ViewSpan, SourceDocument, Patch, source_paths
 
 end

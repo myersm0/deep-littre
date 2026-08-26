@@ -52,7 +52,7 @@ The cross-reference is a relation. `Voy.` belongs inside the `<xr>` as `<lbl>`. 
 
 ## 3. One source block, several semantic facts: ANGOISSE
 
-The sample source contains:
+The development corpus contains:
 
 ```xml
 <indent><semantique type="indicateur">Familièrement.</semantique> Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.

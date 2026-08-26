@@ -27,7 +27,6 @@ const structural_alternative_set_version = 1
 const closure_protocol_version = 1
 
 const outcomes = (:positive, :negative, :unresolved)
-const methods = (:human, :llm, :rule)
 
 struct Constituent
 	name::String
@@ -42,18 +41,30 @@ struct NodeAssertion
 	constituents::Vector{Constituent}
 end
 
+"""
+A scope adjudication: this qualification marker governs that target, rather than the block that
+happens to contain it. The target is a raw span, not a node id, because the node it lands on may
+be derived at resolution time and have no durable identity.
+"""
+struct ScopeAssertion
+	assertion_id::String
+	marker::RawSpan
+	target::RawSpan
+end
+
+"""
+What the adjudicator was shown alongside the target. Provenance only: a reference must lie inside
+the record's own raw span, whose hash therefore already covers it.
+"""
 struct ContextReference
 	span::RawSpan
-	raw_sha256::String
-	projection::String
-	projection_version::Int
-	view_sha256::String
 	role::String
 end
 
 """
-One eligible source block or target span examined by one pass. `negative` means the pass looked
-and the class does not apply; an absent record means the pass has not looked.
+One eligible source block examined by one pass. `negative` means the pass looked and the class does
+not apply; an absent record means it has not looked. `decision_procedure` and `decision_reference`
+are opaque: how a verdict was reached is not interpreted here.
 """
 struct ExaminationRecord
 	record_id::String
@@ -68,39 +79,29 @@ struct ExaminationRecord
 	projection_version::Int
 	view_sha256::String
 	context::Vector{ContextReference}
-	llm_input_sha256::Union{Nothing, String}
 	outcome::Symbol
 	exhaustive::Bool
 	assertions::Vector{NodeAssertion}
+	scopes::Vector{ScopeAssertion}
 	residuals::Vector{RawSpan}
-	method::Symbol
-	adjudicator::String
-	model::Union{Nothing, String}
+	decision_procedure::String
+	decision_reference::Union{Nothing, String}
 	created::String
 	notes::String
 end
 
 """
-A deterministic rule establishing one outcome over a whole versioned population. Recorded once
-rather than as a record per target, so exhaustion stays economical without committing millions of
-hash-dominated lines. `input_hash` covers the ordered per-target raw and view checks the rule
-operated on, so the assertion cannot outlive a change to the material it ranged over.
+	with(record; field = value...)
+
+A copy of the record with named fields replaced. Tests and re-anchoring both need to alter one
+field of a committed record; doing that positionally breaks every time the schema grows a field.
 """
-struct BulkAssertion
-	bulk_id::String
-	pass::String
-	pass_version::Int
-	rule::String
-	rule_version::Int
-	population::String
-	population_version::Int
-	population_hash::String
-	input_hash::String
-	outcome::Symbol
-	method::Symbol
-	adjudicator::String
-	created::String
-end
+with(record::ExaminationRecord; overrides...) = ExaminationRecord(
+	(
+		get(NamedTuple(overrides), name, getfield(record, name))
+		for name in fieldnames(ExaminationRecord)
+	)...,
+)
 
 sort_key(record::ExaminationRecord) = (
 	record.source.file, record.source.start_byte, record.source.end_byte,

@@ -12,6 +12,7 @@ struct SourceDocument
 	parser_view_sha256::String
 	transform::TransformMap
 	document::XML.FlatNode
+	elements::Dict{Tuple{Int, Int}, XML.FlatNode}
 end
 
 function read_document(path::AbstractString; patches::Vector{Patch} = Patch[])::SourceDocument
@@ -20,22 +21,87 @@ function read_document(path::AbstractString; patches::Vector{Patch} = Patch[])::
 	(view, edits) = apply_patches(raw, file, patches)
 	assert_line_count_preserved(raw, view, file)
 	assert_untouched_lines(raw, view, Set(patch.line for patch in patches), file)
+	parsed = XML.parse(XML.FlatNode, view)
 	SourceDocument(
 		file,
 		path,
 		raw,
-		bytes2hex(sha256(codeunits(raw))),
+		text_sha256(raw),
 		view,
-		bytes2hex(sha256(codeunits(view))),
+		text_sha256(view),
 		TransformMap(file, edits),
-		XML.parse(XML.FlatNode, view),
+		parsed,
+		element_index(file, view, parsed),
 	)
 end
 
-function read_corpus(directory::AbstractString; patches_path::Union{Nothing, AbstractString} = nothing)
+"""
+	element_index(file, view, parsed)
+
+Map every element's parser-view interval to its node, built in one pass at construction.
+
+Without it, locating an element by span means searching from the document root, which at the top
+level scans every entry in the file. That is O(blocks × entries) across a build and is
+comfortably quadratic on a real letter file.
+"""
+function element_index(
+	file::AbstractString, view::AbstractString, parsed::XML.FlatNode,
+)::Dict{Tuple{Int, Int}, XML.FlatNode}
+	index = Dict{Tuple{Int, Int}, XML.FlatNode}()
+	function walk(node)
+		for child in XML.children(node)
+			if XML.nodetype(child) == XML.Element
+				range = XML.sourcespan(child)
+				index[(first(range), nextind(view, last(range)))] = child
+			end
+			walk(child)
+		end
+	end
+	walk(parsed)
+	index
+end
+
+element_at(document::SourceDocument, span::ViewSpan)::XML.FlatNode =
+	get(document.elements, (span.start_byte, span.end_byte)) do
+		error("$(document.file): no element at $(span)")
+	end
+
+"""
+	source_paths(directory)
+
+The corpus files in `directory`, in a deterministic order. Dotfiles are excluded: an editor swap
+file or a macOS AppleDouble sidecar can be named `._a.xml`, which would otherwise enter the census
+as another document and change the population hash. One function owns this selection so that
+nothing can disagree with the pipeline about which files the corpus contains.
+"""
+source_paths(directory::AbstractString)::Vector{String} = sort(filter(
+	path -> endswith(path, ".xml") && !startswith(basename(path), "."),
+	readdir(directory; join = true),
+))
+
+"""
+	read_corpus(directory; patches_path, progress)
+
+`progress` is called after each file with its name, byte count, patch count and elapsed seconds.
+A full-corpus build is long enough that a silent read looks like a hang, and per-file timings are
+what localize a slow file without a second run.
+"""
+function read_corpus(
+	directory::AbstractString;
+	patches_path::Union{Nothing, AbstractString} = nothing,
+	progress = nothing,
+)
 	grouped = patches_path === nothing ? Dict{String, Vector{Patch}}() : load_patches(patches_path)
-	paths = sort(filter(path -> endswith(path, ".xml"), readdir(directory; join = true)))
-	[read_document(path; patches = patches_for(grouped, basename(path))) for path in paths]
+	paths = source_paths(directory)
+	documents = SourceDocument[]
+	for path in paths
+		patches = patches_for(grouped, basename(path))
+		elapsed = @elapsed document = read_document(path; patches)
+		push!(documents, document)
+		progress === nothing ||
+			progress(document.file, ncodeunits(document.raw_text), length(patches), elapsed)
+	end
+	documents
 end
 
 function root_element(document::SourceDocument)::XML.FlatNode

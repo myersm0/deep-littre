@@ -14,7 +14,7 @@ function walk(action, node)
 end
 
 @testset "parser verification" begin
-	documents = read_corpus(sample_source)
+	documents = read_corpus(corpus_source)
 
 	@testset "pinned reader version" begin
 		@test pkgversion(XML) == v"0.4.6"
@@ -84,7 +84,9 @@ end
 	end
 
 	@testset "corpus satisfies the encoding policy" begin
-		for path in readdir(sample_source; join = true)
+		# The same selection the pipeline uses, so a stray editor or AppleDouble file in the source
+		# directory is neither read here nor read there.
+		for path in DeepLittre.Source.source_paths(corpus_source)
 			@test read(path) |> bytes -> begin
 				DeepLittre.Source.check_encoding(bytes, basename(path))
 				true

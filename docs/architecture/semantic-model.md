@@ -69,6 +69,52 @@ Containment is structural, not typal. A `VoiceVariant` may contain senses; a `Su
 
 There is no node type meaning "unclassified" or "not adjudicated". Those are workflow states represented by examination records.
 
+## Structural alternatives
+
+Structural alternative-set version 1 is `{SubLemma, VoiceVariant}`. Both are form-bearing;
+`Sense` is not.
+
+### VoiceVariant
+
+A `VoiceVariant` is **a separately presented form-bearing pronominal or reflexive alternant of the
+lemma that introduces or governs its own sense material.** Littré sometimes effectively opens a
+subsidiary entry under a verb — a printed `SE …` form followed by its own senses — which is what
+justifies giving it a node and serializing it entry-like.
+
+It is deliberately narrower than the general voice/construction category:
+
+- an explicit `SE + verb` form functioning as a new grammatical alternant → `VoiceVariant`;
+- a printed reflexive transition that actually introduces such a form and subsequent senses → `VoiceVariant`;
+- `v. réfl.` merely stating that the current lemma or sense is used reflexively → grammatical property;
+- `Se dit …` prose with no separately recoverable form-bearing alternant → grammatical information;
+- active, neutral, passive, impersonal and other construction shifts routed by `usg_gram_norms.toml` → grammatical `construction`, unless the source separately presents a new form-bearing variant.
+
+The operative distinction is not reflexive-versus-other-construction. It is:
+
+```text
+separately form-bearing grammatical alternant  → VoiceVariant node
+grammatical fact about a sense or form         → grammatical property
+```
+
+The two are orthogonal and routinely co-occur without duplication. `DISPENSER` variante 7 resolves as:
+
+```text
+VoiceVariant
+    form = "Se dispenser"
+    grammatical: pos=verb, valency=reflexive     (deterministic, from <nature>v. réfl.</nature>)
+    definition: Être départi. Les honneurs se dispensent quelquefois au hasard.
+```
+
+The structural adjudication says a separately form-bearing variant is present. The deterministic
+enrichment says what construction characterizes it. Neither is derivable from the other. By
+contrast `ÉVADER (S')`, whose entry-header `<nature>v. réfl.</nature>` describes the whole lemma,
+carries the grammatical property and no `VoiceVariant` node.
+
+The pass is therefore narrowed by its **question**, not by its population: it draws on the same
+`structural_blocks` population as `SubLemma` and asks whether the material introduces a separately
+form-bearing pronominal or reflexive variant rather than merely stating a grammatical construction
+or usage.
+
 ## Sub-lemma constituents
 
 A `SubLemma` may carry constituent spans such as:
@@ -78,9 +124,18 @@ A `SubLemma` may carry constituent spans such as:
 
 These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting.
 
+Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation
+that belongs to neither span. Because both constituents keep raw anchors and lie inside the node's
+span, that material is recoverable as the gap between them, and the resolver surfaces it as the
+node's `separator`. Constituent spans are therefore retained through resolution into both outputs
+rather than being reduced to their text, and no renderer may drop the separator or graft it onto a
+constituent it does not belong to. A constituent's semantic text is reconstructed through the same
+versioned projection used for adjudication rather than by slicing its raw interval, because a
+contiguous raw anchor may legitimately cover interior source markup.
+
 A block may contain more than one sub-lemma. A node's primary span is contiguous; if shared or discontinuous material later requires representation, attach multiple explicit constituent/source spans rather than silently redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
 
-Semantic node spans are laminar: two nodes are disjoint or one contains the other. Partial crossing overlap is a structural conflict requiring review; the resolver and renderers do not invent a precedence rule.
+Semantic node spans are laminar: two nodes are disjoint or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review; the resolver and renderers do not invent a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
 
 ## Qualifications
 
@@ -120,6 +175,23 @@ A qualification is never merely "on the block". Its scope is represented by an e
 - sibling-node range;
 - rubrique.
 
+Containment is the deterministic default: a marker governs the innermost resolved node whose span
+contains it. That is a stated geometric rule, not a heuristic guess, so it needs no adjudication
+and the absence of a record never becomes a claim.
+
+The `qualification_scope` pass records **departures** from that default. Its question is whether
+any marker in the material governs something other than the block containing it; a negative
+outcome is the positive statement that every marker here scopes by containment. A positive
+outcome carries scope assertions naming the printed marker and the raw span of the material it
+governs — a span rather than a node id, because the node it lands on may be derived at resolution
+and have no durable identity.
+
+A scope adjudication moves **where** a marker applies, never **what** it means. The type and norm
+stay deterministic products of the committed normalization tables, and a test asserts the full set
+of qualification facts is byte-identical before and after a scope record is applied. The marker
+selection must land on a printed `<semantique>` or `<nature>` element: an adjudicator may say how
+far a printed label reaches, not invent a label the source does not print.
+
 The transition-resolution labels inherited from v0.2 — strong, medium, intra-sense, zero, and citation veto — may survive as inference metadata for the voice/transition pass. They do not constitute the scope representation itself.
 
 ## Anchoring
@@ -139,7 +211,7 @@ Each adjudication stores:
 1. a raw-anchor hash proving that the same upstream material still occupies that span;
 2. a versioned adjudicated-view hash proving that the target material shown to the adjudicator has not changed semantically beneath a stable raw anchor.
 
-Context shown alongside the target does not enlarge the anchor or participate in record identity, but its versioned projection hashes participate in validity. A context change marks the adjudication stale/reviewable until reconfirmed. For LLM adjudication, the authoring harness also records a verification hash of the fully rendered model input.
+Context shown alongside the target does not enlarge the anchor or participate in record identity. It is recorded as provenance and must lie inside the record's own raw span, so the raw-anchor check already covers it; a separate context hash would only repeat that check.
 
 Line number, headword, source ordinal, and generated `xml:id` are useful navigation fields but do not bear adjudication identity.
 
@@ -149,7 +221,7 @@ Detailed transform mapping and XML.jl mechanics are defined in `source-represent
 
 An old judgment must never silently migrate onto different text.
 
-If either target check fails, application of the record is an error. The pipeline does not warn and fall back to a heuristic answer. A context-hash mismatch preserves record identity but changes validity to stale/reviewable.
+If either target check fails, application of the record is an error. The pipeline does not warn and fall back to a heuristic answer.
 
 Re-anchoring is an explicit maintenance operation that updates the record after confirmation. The record's opaque `record_id`/`node_id` may survive re-anchoring even though its source coordinates change.
 
@@ -176,8 +248,11 @@ Initial `SourceBlock` kinds include:
 
 - ordinary `<indent>`;
 - `<variante>`;
-- rubrique-internal `<indent>`;
+- `<résumé>`-internal `<indent>` and `<variante>`;
+- rubrique-internal `<indent>` and `<variante>`;
 - `<entete>/<nature>`.
+
+Containment is decided by ancestry, not element name, and résumé ancestry is consulted for both `<indent>` and `<variante>`. Résumé material summarizes senses represented elsewhere in the entry and is excluded from the structural population.
 
 `<prononciation>` is source data but is excluded from the `SourceBlock` census; it is form/commentary data handled by its own pipeline path.
 
@@ -207,9 +282,11 @@ segmentation_complete    true
 ordinary Sense           derivable
 ```
 
-Structural adjudication passes are exhaustive extraction over their target span when their pass contract declares the result exhaustive. A positive result may therefore establish one or more positive node spans **and** explicit residual target spans. When extraction is exhaustive, the harness may materialize the corresponding negative result for that same alternative on each residual span without a second deliberation. If extraction is unresolved or non-exhaustive, no such negative is implied.
+A persisted examination target is a census `SourceBlock`. Residual spans are closure regions, not independently addressable targets, and the store holds no per-residual records.
 
-Residual spans are then evaluated under the remaining structural alternatives. Positive and negative outcomes can therefore coexist within one enclosing source block while applying to different target spans.
+This loses no expressivity under alternative-set version 1. Each structural pass examines the whole block. A negative result establishes its alternative as absent throughout the block, residuals included. A positive exhaustive result establishes the alternative on its asserted node spans and absent everywhere else in the block, residuals included. The per-residual negatives that a naive reading would require are therefore derived facts rather than stored ones, and the harness does not materialize them.
+
+Residual spans do remain first-class in one respect: an exhaustive claim is checked, not trusted. The resolver projects the target and requires every source-visible character to be claimed by an asserted node span or by an explicit residual span. An exhaustive claim over unaccounted material yields no derived sense and a review finding naming the unaccounted text.
 
 ### Residuals are closure units, not node extents
 
@@ -236,7 +313,7 @@ entry interrupts the definition.
 Closure may therefore derive one enclosing `Sense` containing positive child nodes; residual
 spans themselves need not become separate `Sense` nodes.
 
-The derivation is valid only where the residual span was eligible for every alternative pass and no result is unresolved. `segmentation_complete` asserts that all structural boundaries and residuals have been accounted for under the current alternative set and closure protocol.
+The derivation applies to the block's **direct content** — what remains once asserted structural children are carved out — and is valid only where the block was eligible for every alternative pass and no result is unresolved. `segmentation_complete` asserts that all structural boundaries and residuals have been accounted for under the current alternative set and closure protocol.
 
 If a future release adds a new structural alternative, it defines a new alternative-set version. Older derived senses do not silently inherit the stronger claim.
 
@@ -279,6 +356,6 @@ If stable public ids become a requirement, that is a separate release-contract d
 
 There is no single corpus-wide "indent classification" task.
 
-There are independent **adjudication passes** for semantic classes and property families. Each can be human-, LLM-, or rule-driven, can be calibrated against ground truth, and adds facts monotonically without erasing facts from other passes. Bulk deterministic negative outcomes are first-class where a rule genuinely establishes absence; lack of a heuristic trigger is not by itself a negative adjudication.
+There are independent **adjudication passes** for semantic classes and property families. Each can be human-, LLM-, or rule-driven, can be calibrated against ground truth, and adds facts monotonically without erasing facts from other passes. Deterministic negative outcomes are first-class where a rule genuinely establishes absence; lack of a heuristic trigger is not by itself a negative adjudication.
 
 A historically reported population of 131 XMLittré locution-tagged items should be retained as an audit/reference artifact until its provenance and quality are reviewed. It is **not assumed to be human-adjudicated ground truth**. In any case, the 25-entry sample already demonstrates untagged multiword units embedded in ordinary definition prose, so XMLittré's locution tag count is not an estimate of the sub-lemma problem.

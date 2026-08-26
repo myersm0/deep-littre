@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="PRENDRE">
+<entete>
+	<prononciation>pran-dr'</prononciation>
+	<nature>v. a.</nature>
+</entete>
+<corps>
+<résumé>
+<variante num="1" option="résumé">Saisir.
+</variante>
+<indent><semantique type="indicateur">Fig.</semantique> Faire impression.
+</indent>
+</résumé>
+<variante num="1">Saisir, mettre en sa main.
+<indent>Prendre garde, faire attention.
+</indent>
+</variante>
+</corps>
+</entree>
+</xmlittre>

@@ -1,20 +1,27 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sublemma_pass,
-	canonical_json, write_pass!, read_pass, Store, sort_key, write_json_string
+using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemma_pass,
+	canonical_json, write_pass!, read_pass, Store, sort_key, write_json_string, ExaminationRecord,
+	StoreIntegrityError
 
 @testset "canonical store" begin
-	documents = read_corpus(sample_source)
+	documents = read_corpus(corpus_source)
 	corpus = census(documents)
 	harness = build_harness(documents, corpus)
 	block = angoisse_block(harness, corpus)
 	item = present(harness, sublemma_pass, block)
 
+	function fresh_store()
+		store = Store(mktempdir())
+		cp(joinpath(harness.store.root, "manifest.toml"), joinpath(store.root, "manifest.toml"))
+		store
+	end
+
 	record = commit(
 		harness, sublemma_pass, item,
 		Decision(:positive;
 			exhaustive = true,
-			selections = [SubLemmaSelection(
+			selections = [FormSelection(
 				"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.",
 				"Avaler des poires d'angoisse",
 				"subir des mortifications, de vifs déplaisirs.",
@@ -22,7 +29,7 @@ using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sub
 			residuals = ["Familièrement."],
 			notes = "quote \" and backslash \\ and tab \t",
 		);
-		adjudicator = "test",
+		decision_procedure = "test",
 	)
 
 	@testset "serialization is deterministic" begin
@@ -48,8 +55,12 @@ using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sub
 		@test String(take!(accented)) == "\"Familièrement\""
 	end
 
+	@testset "writer requires a declared store" begin
+		@test_throws StoreIntegrityError write_pass!(Store(mktempdir()), "sublemma", [record])
+	end
+
 	@testset "round trip through the store" begin
-		store = Store(mktempdir())
+		store = fresh_store()
 		write_pass!(store, "sublemma", [record])
 		recovered = read_pass(store, "sublemma")
 		@test length(recovered) == 1
@@ -60,7 +71,7 @@ using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sub
 	end
 
 	@testset "regeneration is byte-identical" begin
-		store = Store(mktempdir())
+		store = fresh_store()
 		write_pass!(store, "sublemma", [record])
 		path = joinpath(store.root, "sublemma", "a.jsonl")
 		before = read(path)
@@ -74,9 +85,9 @@ using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sub
 			candidate -> candidate.raw_span.start_byte < block.raw_span.start_byte,
 			DeepLittre.Adjudication.eligible(sublemma_pass, corpus),
 		)))
-		earlier = commit(harness, sublemma_pass, other, Decision(:negative); adjudicator = "test")
+		earlier = commit(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
 
-		store = Store(mktempdir())
+		store = fresh_store()
 		write_pass!(store, "sublemma", [record, earlier])
 		recovered = read_pass(store, "sublemma")
 		@test [entry.source.start_byte for entry in recovered] ==
@@ -85,7 +96,25 @@ using DeepLittre.Adjudication: present, commit, Decision, SubLemmaSelection, sub
 	end
 
 	@testset "a pass writes only its own records" begin
-		store = Store(mktempdir())
+		store = fresh_store()
 		@test_throws ErrorException write_pass!(store, "voice_variant", [record])
 	end
+	@testset "pass regeneration removes stale shards" begin
+		store = fresh_store()
+		other = present(harness, sublemma_pass, first(filter(
+			candidate -> candidate.raw_span.file != record.source.file,
+			DeepLittre.Adjudication.eligible(sublemma_pass, corpus),
+		)))
+		other_record = commit(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
+		write_pass!(store, "sublemma", [record, other_record])
+		stale_path = joinpath(store.root, "sublemma", first(splitext(other_record.source.file)) * ".jsonl")
+		@test isfile(stale_path)
+		write_pass!(store, "sublemma", [record])
+		@test !isfile(stale_path)
+		@test length(read_pass(store, "sublemma")) == 1
+		write_pass!(store, "sublemma", ExaminationRecord[])
+		@test isempty(read_pass(store, "sublemma"))
+		@test isempty(filter(name -> endswith(name, ".jsonl"), readdir(joinpath(store.root, "sublemma"))))
+	end
+
 end

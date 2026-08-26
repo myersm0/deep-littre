@@ -42,11 +42,13 @@ The harness:
 - resolves projected selections to durable raw source spans;
 - computes raw and projected-view hashes;
 - assigns stable opaque record/assertion ids;
-- records method/model/prompt provenance;
+- records the opaque decision-procedure identity supplied with the verdict;
 - emits canonical JSONL through the authoritative-store writer;
 - fails closed to a review queue when a decision cannot be mapped or validated unambiguously.
 
-The harness does **not** infer semantic answers that the selected adjudication method did not establish.
+The harness does **not** infer semantic answers that the verdict did not establish.
+
+Store initialization is explicit rather than a side effect of reading or building. `initialize_store!(harness)` creates `manifest.toml` only for a store that contains no adjudication records and has no existing manifest. Ordinary resolution never rewrites authoritative store metadata.
 
 ## Adjudication passes
 
@@ -61,10 +63,17 @@ population
 population_version
 projection
 projection_version
+exhaustive_extraction
 input_context_policy
 output_schema
-method_policy
 ```
+
+`exhaustive_extraction` declares whether a positive examination means "these are all of them within
+the target" or merely "here is one". It is a property of the question, not of an individual verdict,
+so the harness enforces it at commit: a pass that performs exhaustive extraction rejects a positive
+without the claim, and a pass that does not rejects the claim outright rather than storing a field
+nothing will read. Version 1 declares it true for `sublemma` and `voice_variant`, false for
+`qualification_scope`.
 
 The output schema defines the semantic answer space for that pass. For example, a `SubLemma` pass may allow:
 
@@ -112,6 +121,8 @@ projected [14, 39)   → raw [1071, 1102)
 
 The exact implementation may use a finer event map rather than storing this literal structure, but it must support deterministic translation of projected selections back to source.
 
+The event map distinguishes literal source copies from decoded XML references and synthetic layout. A decoded entity or numeric character reference is source-backed but non-linear: the projected character maps to the complete reference syntax in the parser view.
+
 A projection version changes whenever the material or normalization visible to the adjudicator changes in a way that can affect a judgment or selection. Formatting that is provably outside the adjudication surface need not create a new version.
 
 The record's `view.sha256` hashes the exact projected text for the adjudicated item under the named projection version.
@@ -127,11 +138,7 @@ The harness therefore distinguishes:
 
 Only the target projection bears the record's durable anchor and target-view hash and therefore determines record identity. Context does not enlarge the adjudicated span merely because it was visible.
 
-Context **does participate in validity** when it was shown to the adjudicator. Each context item records a stable source reference plus its projection name/version and projected-context hash. If that context later changes, the adjudication retains its identity but is marked `stale_context` and reviewable; it must be reconfirmed before counting as current completed coverage.
-
-For LLM adjudication, the harness also stores a hash of a canonical serialization of the fully rendered model input actually sent to the model. The committed prompt definition/version plus the recorded target projection, context references, output schema, and model/runtime metadata must be sufficient to reconstruct that input; the hash verifies the reconstruction. This complements `prompt_version` without making context part of source identity.
-
-This separates the stable identity question “what span was adjudicated?” from the validity question “was the evidence shown to the adjudicator still the same?”.
+Context is recorded as provenance — a source reference and a role — and must lie inside the record's own raw span. The record's raw-anchor hash therefore already covers the context bytes, so a change to them fails the record without a second check. Context drawn from outside the target span would not be covered and would need one; no pass draws context that way today.
 
 ## Constituent selections and sub-spans
 
@@ -170,9 +177,15 @@ For example:
 [sublemma A] [ordinary candidate remainder] [sublemma B]
 ```
 
-The positive examination records A and B plus the explicit residual span between them. If the adjudicator asserts `exhaustive = true`, the harness may mechanically materialize `SubLemma = negative` for that residual without asking the same question again. If the result is unresolved or `exhaustive = false`, no residual negative is implied.
+The positive examination records A and B plus the explicit residual span between them. The residual is **evidence for the exhaustion claim**, not a target of its own: no per-residual record is written, and none is needed. A block-level result already determines every residual within the block, since an exhaustive positive establishes its alternative on the asserted spans and absent everywhere else, and a negative establishes it absent throughout.
 
-Each residual remains a first-class target for the **other** structural alternatives. Positive and negative outcomes can therefore coexist inside one enclosing `SourceBlock` while applying to different spans. Nested or recursively selected targets use the same contract.
+Persisted examination targets are therefore census `SourceBlock`s. Positive and negative outcomes for *different alternatives* coexist over one block, and the resolver reads them together; they are not distributed across sub-block targets.
+
+Exhaustion is checked rather than trusted, and checked **at commit**. The harness requires every
+source-visible character of the projected target to be claimed by an asserted node span or an
+explicit residual span, and rejects the verdict otherwise — while there is still an item to
+re-author, rather than leaving a review row to be discovered at the next full build. The resolver
+repeats the check for records written by anything that bypassed the harness.
 
 This explicit residual contract makes exhaustion economical without weakening its semantics.
 
@@ -183,42 +196,47 @@ Before a positive structural record is committed, the harness validates node geo
 Semantic node spans must be laminar:
 
 - disjoint spans are valid;
-- containment is valid;
+- strict containment is valid and determines semantic parentage;
 - adjacency is valid;
+- coincident spans for distinct nodes are invalid;
 - partial crossing overlap is invalid.
 
-A new node that crosses an existing node creates a structural-conflict review item. The harness does not resolve the conflict by node-type precedence, and the renderer never receives unresolved crossing structure.
+Before commit, a structural pass is checked both internally and against the latest applicable record from every other structural pass on the same target. A new coincident or crossing node creates a `structural_conflict` review item. The harness does not resolve the conflict by node-type precedence, and the renderer never receives unresolved crossing structure.
 
 Qualification marker spans and qualification targets may overlap semantic nodes; the laminarity requirement applies to structural semantic nodes, not to all spans in the system.
 
-## Human authoring
+## Verdict producers
 
-The human interface may be terminal-, browser-, or editor-based; the architecture does not require a particular UI.
+The harness is method-agnostic by design. It presents an item and ingests a verdict; it does not
+know or record how the verdict was reached.
 
-It must nevertheless present the exact versioned target projection and return decisions through the same pass schema used by other methods. Human convenience fields such as headword, source line, entry context, and rendered neighboring senses are navigational only.
+A producer receives an ephemeral item id, the exact versioned target projection, and whatever
+context the pass permits. It returns a verdict expressed as selections in that projected text,
+against the pass's output schema. Raw source offsets are never exposed as something a producer is
+expected to manipulate.
 
-A human-authored record receives `method = "human"` and an adjudicator identifier. The harness, not the human, fills all mechanical provenance.
+The harness then anchors the verdict, resolves selections to raw spans, computes every hash, mints
+every identifier, validates geometry, and writes canonically. The record carries only
+`decision_procedure` — an opaque name for the producing process — and an optional opaque
+`decision_reference` into that process's own records.
 
-## LLM authoring
+Everything about *how* verdicts are produced lives outside this repository: question sets, prompt
+definitions and their versions, model identities and runtimes, per-question responses, and any
+deterministic combiner that turns responses into a verdict. That separation is deliberate. A
+producer may query language models and analyze their answers deterministically, may be a rule, may
+be a person, or may be a hat; the pipeline consumes the result identically. Re-deriving verdicts
+from retained evidence, and auditing how a verdict changed, are that process's responsibilities.
 
-LLM adjudication is mediated by a versioned prompt definition owned by the pass.
+Malformed producer output, schema violations, and unmappable constituent selections are execution
+failures and review cases, never implicit negative verdicts.
 
-The harness records at least:
+The store holds current verdicts, not their history. At most one record may exist per target per
+pass; a second is a store integrity failure rather than a revision. Superseding a verdict means
+regenerating the pass from the producer's current output.
 
-```text
-method          llm
-model           exact model identifier
-prompt_version  pass-controlled version
-runtime         optional runtime/backend identifier
-```
+Producer iteration should be evaluated against reviewed labeled data when such data exists. The historically reported locution-tag/label population is retained for provenance review and possible later evaluation use, but it is not assumed to be adjudicated ground truth until that provenance is established.
 
-The prompt contains an ephemeral item id, the target projection, permitted context, the semantic question, and a machine-validated output schema. It must not expose raw source offsets as something the model is expected to manipulate. The harness hashes a canonical serialization of the fully rendered model input actually sent and records that hash with the resulting adjudication.
-
-Malformed model output, schema violations, or unmappable constituent selections are execution failures/review cases, not implicit negative adjudications.
-
-Prompt/model iteration should be evaluated against reviewed labeled data when such data exists. The historically reported locution-tag/label population is retained for provenance review and possible later evaluation use, but it is not assumed to be human-adjudicated ground truth until that provenance is established.
-
-## Rule authoring and bulk negatives
+## Rule authoring and rule-established negatives
 
 Deterministic rules use the same harness and record schema.
 
@@ -226,13 +244,10 @@ Rule-produced positive, negative, and unresolved outcomes are first-class adjudi
 
 A rule may not translate `detector did not fire` into `negative` unless the rule's specification proves that non-detection establishes absence over that population. Heuristic silence is not adjudication.
 
-Bulk rule outcomes are committed as bulk assertion sets rather than as one record per target, and
-retain pass version, population version, method, rule identifier, population hash, and input hash.
-See `adjudication-rendering.md`.
-
-This is how exhaustion remains economically viable for the ordinary case: coverage may assert
-hundreds of thousands of negatives without requiring hundreds of thousands of human decisions or
-hundreds of thousands of committed records.
+Whether a rule's outcomes are committed one record per target or in some compressed form is
+deliberately unsettled; see `adjudication-rendering.md`. A compressed representation was specified
+and built before any rule pass existed to produce one, and was removed unused. The shape of the
+first real rule pass should determine it.
 
 ## Segmentation completeness
 
@@ -242,21 +257,39 @@ Closure is derived by the resolver from adjudication state rather than committed
 
 Structural alternative-set version 1 is `{SubLemma, VoiceVariant}`. Closure protocol version 1 checks the applicable results for both alternatives, the ordered positive structural spans, explicit residual spans, population eligibility, exhaustive-extraction status, and absence of structural-conflict records.
 
-Ordinary `Sense` remains a resolver derivation from this closure plus negative alternative results; the authoring harness does not ask an adjudicator to label residual material `Sense` merely because another class was absent.
+Ordinary `Sense` remains a resolver derivation from this closure plus negative alternative results; the authoring harness does not ask a producer to label residual material `Sense` merely because another class was absent. The derivation concerns the block's direct content, while the derived node's span is the enclosing block.
 
 ## Qualification passes and variantes
 
 A pass definition owns its eligible population explicitly.
 
-For version 1, qualification passes whose phenomena occur at `<variante>` level include variantes. This includes the Lex-0 usage-property families when corresponding source labels are present there. The authoring harness enumerates those items from the `SourceBlock` census rather than relying on an indent-only model traversal.
+A pass names its population; it does not inherit another pass's. Version 1 declares two:
 
-Structural passes may exclude variantes or rubrique internals only through an explicit versioned population definition.
+```text
+structural_blocks     v1   indent, variante
+qualification_blocks  v1   indent, variante
+```
+
+They coincide in extent today and are still named separately, because they answer different
+questions. Qualification markers also occur in rubrique-internal blocks, and widening the
+qualification population to reach them should be a population version bump rather than a change to
+what the structural passes mean.
+
+Both include variantes, since the phenomena of both occur there. Both exclude résumé material,
+which summarizes senses represented elsewhere in the entry, and rubrique internals, which are
+deferred rather than denied — the census continues to count them, so a deferred block never
+disappears from the denominator.
+
+The authoring harness enumerates a population from the `SourceBlock` census rather than from a
+model traversal. Excluding a census kind from a population requires naming it in that population's
+definition; a new census kind fails the build rather than being silently admitted or dropped.
 
 ## Review and failure policy
 
 The harness fails closed on:
 
 - raw-anchor or projected-view mismatch;
+- a context reference escaping the record's own raw span;
 - output-schema violation;
 - zero/ambiguous constituent match after permitted disambiguation;
 - invalid projection-to-source mapping;
@@ -266,7 +299,7 @@ The harness fails closed on:
 - stale pass/population/projection version;
 - rule output that violates the rule pass's declared decision contract.
 
-A target-anchor or target-view failure does not fall through to heuristic classification and does not silently become `negative`. A context-hash mismatch is handled separately as `stale_context`: identity is retained, but the record is reviewable and excluded from current completed coverage until reconfirmed.
+A target-anchor or target-view failure does not fall through to heuristic classification and does not silently become `negative`.
 
 ### Build-time failure policy
 
@@ -277,7 +310,6 @@ terminates:
   This is a source/store integrity failure and aborts the build.
 - **target-view mismatch → quarantine.** The adjudication is not applied, a review item is
   created, and an ordinary development build continues.
-- **context-view mismatch → `stale_context`,** with the same quarantine behavior.
 - **release build → coverage gates still fail** if quarantining leaves a required population
   incomplete.
 
@@ -285,7 +317,7 @@ A quarantined record therefore never falls through to a heuristic answer, which 
 requirement, while a single stale judgment does not prevent rebuilding the rest of the corpus. A
 `--strict-adjudications` flag makes any quarantine fatal.
 
-Review items preserve enough provenance to reproduce the attempted adjudication: item id, pass/version, source anchor, projection/version, method, prompt/model or rule identifier, returned answer, and failure category.
+Review items preserve enough provenance to reproduce the attempted adjudication: item id, pass/version, source anchor, projection/version, decision procedure, returned answer, and failure category.
 
 ## Canonical record writing
 

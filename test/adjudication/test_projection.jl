@@ -1,10 +1,10 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Indent
-using DeepLittre.Adjudication: project, locate, to_view, view_sha256, SelectionFailure,
+using DeepLittre.Adjudication: project, locate, to_view, projected_text, view_sha256, SelectionFailure,
 	block_text_projection, block_text_version
 
 @testset "adjudication projection" begin
-	documents = read_corpus(sample_source)
+	documents = read_corpus(corpus_source)
 	corpus = census(documents)
 	harness = build_harness(documents, corpus)
 	block = angoisse_block(harness, corpus)
@@ -21,9 +21,9 @@ using DeepLittre.Adjudication: project, locate, to_view, view_sha256, SelectionF
 		@test !occursin('\n', projection.text)
 	end
 
-	@testset "non-synthetic segments are byte-identical copies" begin
+	@testset "literal segments are byte-identical copies" begin
 		for candidate in projection.segments
-			candidate.synthetic && continue
+			(candidate.synthetic || !candidate.literal) && continue
 			projected = slice(projection.text, DeepLittre.Source.RawSpan(
 				projection.file, candidate.projected_start, candidate.projected_end,
 			))
@@ -31,6 +31,40 @@ using DeepLittre.Adjudication: project, locate, to_view, view_sha256, SelectionF
 				projection.file, candidate.view_start, candidate.view_end,
 			))
 			@test String(projected) == String(source)
+		end
+	end
+
+
+	@testset "entity references retain source provenance" begin
+		directory = mktempdir()
+		path = joinpath(directory, "entities.xml")
+		write(path, "<root><indent>A &amp; B &#233; C &#x26; D</indent></root>")
+		entity_document = DeepLittre.Source.read_document(path)
+		root = DeepLittre.Source.root_element(entity_document)
+		indent = only(DeepLittre.Source.element_children(root, "indent"))
+		entity_projection = project(entity_document, indent)
+
+		@test entity_projection.text == "A & B é C & D"
+		@test entity_projection.version == block_text_version
+
+		amp = locate(entity_projection, "A & B")
+		amp_source = String(slice(entity_document.parser_view, amp))
+		@test amp_source == "A &amp; B"
+		@test projected_text(entity_projection, amp) == "A & B"
+
+		eacute = locate(entity_projection, "é")
+		@test String(slice(entity_document.parser_view, eacute)) == "&#233;"
+		@test projected_text(entity_projection, eacute) == "é"
+
+		hex_amp = locate(entity_projection, "C & D")
+		@test String(slice(entity_document.parser_view, hex_amp)) == "C &#x26; D"
+		@test projected_text(entity_projection, hex_amp) == "C & D"
+
+		mapped = filter(candidate -> !candidate.synthetic && !candidate.literal, entity_projection.segments)
+		@test length(mapped) == 3
+		for candidate in mapped
+			@test candidate.view_end - candidate.view_start !=
+				candidate.projected_end - candidate.projected_start
 		end
 	end
 
@@ -53,6 +87,12 @@ using DeepLittre.Adjudication: project, locate, to_view, view_sha256, SelectionF
 			span = locate(projection, selection)
 			@test String(slice(document.parser_view, span)) == selection
 		end
+	end
+
+	@testset "a stored source interval recovers projected text rather than XML" begin
+		span = locate(projection, projection.text)
+		@test projected_text(projection, span) == projection.text
+		@test !occursin('<', projected_text(projection, span))
 	end
 
 	@testset "a selection spanning inline markup covers it" begin
@@ -79,7 +119,7 @@ using DeepLittre.Adjudication: project, locate, to_view, view_sha256, SelectionF
 		))
 	end
 
-	@testset "every eligible block projects without entity references" begin
+	@testset "every eligible corpus block projects" begin
 		for candidate in all_blocks(corpus)
 			candidate.kind isa Indent || continue
 			target = harness.documents[candidate.raw_span.file]

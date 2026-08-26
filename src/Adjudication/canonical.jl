@@ -82,12 +82,14 @@ write_json(io::IO, assertion::NodeAssertion) = object(io) do writer
 	field!(writer, "constituents", assertion.constituents)
 end
 
+write_json(io::IO, assertion::ScopeAssertion) = object(io) do writer
+	field!(writer, "assertion_id", assertion.assertion_id)
+	field!(writer, "marker", assertion.marker)
+	field!(writer, "target", assertion.target)
+end
+
 write_json(io::IO, reference::ContextReference) = object(io) do writer
 	field!(writer, "span", reference.span)
-	field!(writer, "raw_sha256", reference.raw_sha256)
-	field!(writer, "projection", reference.projection)
-	field!(writer, "projection_version", reference.projection_version)
-	field!(writer, "view_sha256", reference.view_sha256)
 	field!(writer, "role", reference.role)
 end
 
@@ -104,32 +106,15 @@ write_json(io::IO, record::ExaminationRecord) = object(io) do writer
 	field!(writer, "projection_version", record.projection_version)
 	field!(writer, "view_sha256", record.view_sha256)
 	field!(writer, "context", record.context)
-	field!(writer, "llm_input_sha256", record.llm_input_sha256)
 	field!(writer, "outcome", record.outcome)
 	field!(writer, "exhaustive", record.exhaustive)
 	field!(writer, "assertions", record.assertions)
+	field!(writer, "scopes", record.scopes)
 	field!(writer, "residuals", record.residuals)
-	field!(writer, "method", record.method)
-	field!(writer, "adjudicator", record.adjudicator)
-	field!(writer, "model", record.model)
+	field!(writer, "decision_procedure", record.decision_procedure)
+	field!(writer, "decision_reference", record.decision_reference)
 	field!(writer, "created", record.created)
 	field!(writer, "notes", record.notes)
-end
-
-write_json(io::IO, assertion::BulkAssertion) = object(io) do writer
-	field!(writer, "bulk_id", assertion.bulk_id)
-	field!(writer, "pass", assertion.pass)
-	field!(writer, "pass_version", assertion.pass_version)
-	field!(writer, "rule", assertion.rule)
-	field!(writer, "rule_version", assertion.rule_version)
-	field!(writer, "population", assertion.population)
-	field!(writer, "population_version", assertion.population_version)
-	field!(writer, "population_hash", assertion.population_hash)
-	field!(writer, "input_hash", assertion.input_hash)
-	field!(writer, "outcome", assertion.outcome)
-	field!(writer, "method", assertion.method)
-	field!(writer, "adjudicator", assertion.adjudicator)
-	field!(writer, "created", assertion.created)
 end
 
 function canonical_json(value)::String

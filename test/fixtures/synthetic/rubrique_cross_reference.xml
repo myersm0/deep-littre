@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="RENVOI">
+<entete>
+	<prononciation>ran-voi</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Action de renvoyer.
+</variante>
+<rubrique nom="REMARQUE">
+<indent>Sur ce point, voy. <a ref="notre">NOTRE</a>.
+</indent>
+</rubrique>
+</corps>
+</entree>
+</xmlittre>

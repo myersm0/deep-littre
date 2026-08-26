@@ -202,6 +202,17 @@ The pinned schema has a closed `cit/@type` vocabulary. Do not use bare `<cit>` m
 
 Resolved author information may be represented in `<author>` while retaining the printed abbreviation/provenance required by the data model.
 
+Littré writes `ID.` for a citation by the author most recently named. v0.3 resolves this by
+anaphora over the entry in **source** order — the semantic tree is built later and may reattach
+citations to nodes by containment, which would reorder them. No author table is involved: the
+antecedent is already printed in the source. A resolved name renders as
+`<author ana="resolved">MOL.</author>`, marking that the name was supplied rather than printed;
+the printed `ID.` is retained in SQLite and recoverable from the citation's raw anchor. An `ID.`
+with no antecedent keeps what Littré printed and becomes an `author_unresolved` review finding.
+
+`@ana` carries epistemic provenance only — `resolved`, `suspect`. It must never carry pipeline
+workflow state, and a test enforces the whitelist rather than banning the attribute.
+
 Bibliographic normalization beyond what can be established safely from Littré remains incremental; missing `biblScope/@unit` is not repaired by guessing.
 
 ## Cross-references
@@ -227,30 +238,16 @@ Cross-references are relations in the v0.3 semantic model, not usage qualificati
 
 ### Etymology and historique
 
-Historical attestations are folded into the entry's `<etym>` after the etymological account.
+`<etym>` carries the etymological account of the `ÉTYMOLOGIE` rubrique and nothing else. Historical
+attestations are **not** folded into it; `HISTORIQUE` serializes at entry level, structurally
+parallel to `<etym>` rather than subordinate to it. See *Rubriques do not fold into `<etym>`* below
+for the encoding and the reasoning.
 
-The validated v0.2/v0.3 project pattern is:
+Two July-era recommendations remain superseded here:
 
-```xml
-<etym>
-  ...etymological account...
-  <lbl>XVIe s.</lbl>
-  <cit type="example" ana="attestation">
-    <quote>...</quote>
-    <bibl>
-      ...
-      <date notBefore="1501" notAfter="1600">XVIe s.</date>
-    </bibl>
-  </cit>
-</etym>
-```
-
-This pattern deliberately differs from the July recommendation based on Bowers et al.:
-
-- direct `<date>` inside `<etym>` is not used because the pinned RNG rejects it;
-- historical citations retain a schema-admitted `type="example"` and use `ana="attestation"` to distinguish diachronic attestations from synchronic examples;
-- the century's human-readable marker is `<lbl>`;
-- the machine-readable date range is duplicated into each attestation's `<bibl>`.
+- direct `<date>` inside `<etym>` is not used, because the pinned RNG rejects it;
+- historical citations retain a schema-admitted `type="example"`; the diachronic distinction is
+  carried by `cit/@subtype`, not by `@ana`, which v0.3 reserves for epistemic provenance.
 
 ### Remarques and other notes
 
@@ -300,9 +297,62 @@ Unresolved suspicious tokens are preserved rather than silently corrected, for e
 
 The project may mirror these residues in the adjudication/review database, but the visible token remains in the corpus.
 
+In v0.3 the segmenter is deterministic enrichment, not adjudication. It is reconstructed every
+build from source plus the committed `etym_language_table.toml`, and a suspect token becomes a
+generated `etymology_suspect` review finding rather than a stored judgment. Segments whose position
+is known — form events and anchors — carry a raw anchor; connectors and prose are located by their
+containing rubrique block. Anchoring granularity follows adjudication need, so if an etymological
+fact later requires a durable judgment, it acquires its own span at that point.
+
+### Rubriques do not fold into `<etym>`
+
+v0.2 folded `HISTORIQUE` into `<etym>` with century markers and `ana="attestation"` citations. v0.3
+does not fold, on fidelity grounds. The v0.2 shape was never legal anyway — `<date>` may not sit
+beside `<cit>` inside `<etym>` — and the recorded fold decision is superseded.
+
+The enabling fact, verified against v0.9.5: `model.entryPart.top` admits `cit` and `lbl` directly,
+so entry content is `bibl, biblStruct, cit, entry, etym, figure, form, gramGrp, lbl, listBibl,
+metamark, note, num, pc, ref, sense, usg, xr`. A rubrique's citations therefore live at entry
+level, structurally parallel to `<etym>` rather than subordinate to it.
+
+This is not a refinement. `<note>` cannot hold `<cit>` — its content is phrase-level only — so the
+previous `<note type="historical"><seg>` rendering silently destroyed every rubrique citation:
+261 of the development corpus's 818 citations, with their authors and references, reached neither
+output. The no-fold encoding recovers all of them.
+
+Encoding:
+
+- citations are lifted to entry level as `<cit type="example" subtype="…">`, because `cit/@type` is
+  a closed list with no `attestation` value;
+- a century header becomes `<lbl type="dateRange">`, printed once over the group it introduces, as
+  the source prints it. `<date>` cannot sit at entry level, so the machine-readable range is
+  additionally written into each attestation's `<bibl>` as
+  `<date notBefore="1501" notAfter="1600">XVIe s.</date>`. This repeats per citation what Littré
+  prints once, and is emitted anyway: without it the century survives only as prose and neither
+  output is queryable by date. Years are `xsd:gYear`, so a tenth-century range is `0901`, not
+  `901`. The resolver computes the range and carries it to the citations the header introduces;
+  neither renderer infers it;
+- remaining prose stays in `<note type="…">`, since `<seg>` is **not** legal at entry level;
+- rubriques render in **source order**. Entry content is unordered, and Littré puts `HISTORIQUE`
+  before `ÉTYMOLOGIE` in some entries and after in others.
+
+`lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
+convention, committed in `rubrique_conventions`: `attestation`, `supplement`, `remark`, `proverb`,
+`synonym`, `other`.
+
+The cost: a rubrique that mixes prose and citations splits across a `<note>` and sibling `<cit>`s,
+and **the rubrique boundary is not expressed in TEI**. The `subtype` distinguishes the kind, and
+SQLite retains `origin`, `rubrique`, and the raw anchor, so the grouping stays fully recoverable.
+
+Two further findings from the same validation pass: `<dictScrap>` does not exist in Lex-0 v0.9.5,
+so the `remarque`-via-`dictScrap` plan is unimplementable and remarque citations take the same
+entry-level treatment; and the etymon-internal `<gloss>` accepts no attributes, so
+`<gloss xml:lang="fr">` is rejected and W4's specification of it is wrong. `<biblScope>` is valid
+alongside `<citedRange>`.
+
 ## Phrase-level source wrappers
 
-XMLittré source wrappers such as `<mentioned>`, `<foreign>`, and verbatim italic `<i>` are not assumed to be legal in every Lex-0 content model.
+XMLittré source wrappers such as `<exemple>`, `<mentioned>`, `<foreign>`, and verbatim italic `<i>` are not assumed to be legal in every Lex-0 content model.
 
 Where a wrapper represents only print emphasis and the richer source element is disallowed, v0.2 established a validated fallback to `<hi rend="italic">`, preserving `xml:lang` when available. Nested `<hi>` must respect the pinned content model; flatten redundant nesting rather than generating invalid markup.
 
@@ -326,16 +376,26 @@ Therefore:
 
 Project annotations that express a corpus fact or editorial epistemic claim may remain where the schema admits them, including:
 
-- `ana="attestation"` for historical citations;
+- `ana="resolved"` for an author name supplied by anaphora rather than printed at that citation;
 - `ana="suspect"` for explicitly preserved unresolved source tokens.
 
-Coverage, method, adjudicator, pass version, and unresolved workflow state live in the authoritative adjudication store and its SQLite mirror.
+`@ana` carries epistemic provenance only, and its permitted values are whitelisted by test so a new
+one must be consciously admitted. The diachronic distinction that v0.2 expressed as
+`ana="attestation"` is now `cit/@subtype="attestation"`.
+
+Coverage, pass version, decision procedure, and unresolved workflow state live in the authoritative
+adjudication store and its SQLite mirror.
 
 ## Identifier policy
 
 Every released entry and sense receives the `xml:id` required by the pinned schema.
 
-These ids are rendering identifiers. v0.3 does not promise stability across pre-1.0 releases while structural adjudication is still splitting and regrouping material.
+Sense identifiers are positional: `angoisse_s3` is the third sense of the entry, `angoisse_s3.2`
+the second sense inside it. Dots are legal, since `xml:id` is an `xsd:ID` and therefore an NCName.
+Every sense is numbered, including an only child. Uniqueness is guarded separately, for the cases
+where two entries normalize to the same headword slug, so the ordinal always means position.
+
+These ids are rendering identifiers. v0.3 does not promise stability across pre-1.0 releases while structural adjudication is still splitting and regrouping material. Readability is not durability: a positional id moves whenever adjudication regroups the material under it.
 
 Internal adjudication identity uses source anchors and opaque record/node ids instead.
 

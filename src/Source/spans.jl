@@ -51,7 +51,10 @@ crosses(left::Span{layer}, right::Span{layer}) where {layer} =
 
 laminar(left::Span{layer}, right::Span{layer}) where {layer} = !crosses(left, right)
 
-span_sha256(text::AbstractString, span::Span)::String = bytes2hex(sha256(codeunits(slice(text, span))))
+text_sha256(text::AbstractString)::String =
+	bytes2hex(sha256(Vector{UInt8}(codeunits(text))))
+
+span_sha256(text::AbstractString, span::Span)::String = text_sha256(slice(text, span))
 
 """
 	view_span(file, text, range)

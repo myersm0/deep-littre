@@ -53,3 +53,33 @@ function to_raw(transform::TransformMap, span::ViewSpan)::Tuple{RawSpan, Bool}
 	(end_byte, end_synthetic) = raw_position(transform, span.end_byte, :stop)
 	(RawSpan(transform.file, start_byte, max(start_byte, end_byte)), start_synthetic || end_synthetic)
 end
+
+"""
+	to_view(transform, span)
+
+Inverse of `to_raw`: the smallest parser-view interval covering the raw span. Used when an
+adjudicated raw anchor must be located in the current parser view.
+"""
+function view_position(transform::TransformMap, position::Int, side::Symbol)::Int
+	drift = 0
+	for edit in transform.edits
+		if side === :start
+			position < edit.raw_start && break
+			position == edit.raw_start && return edit.view_start
+			position < edit.raw_end && return edit.view_start
+		else
+			position <= edit.raw_start && break
+			position == edit.raw_end && return edit.view_end
+			position < edit.raw_end && return edit.view_end
+		end
+		drift += (edit.view_end - edit.view_start) - (edit.raw_end - edit.raw_start)
+	end
+	position + drift
+end
+
+function to_view(transform::TransformMap, span::RawSpan)::ViewSpan
+	span.file == transform.file ||
+		error("span file $(span.file) does not match transform file $(transform.file)")
+	start_byte = view_position(transform, span.start_byte, :start)
+	ViewSpan(transform.file, start_byte, max(start_byte, view_position(transform, span.end_byte, :stop)))
+end

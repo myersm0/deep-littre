@@ -51,6 +51,17 @@ function checksums(paths::Vector{String})::String
 	manifest
 end
 
+function report_coverage(path::AbstractString)
+	isfile(path) || return nothing
+	println("\n== adjudication coverage")
+	for (index, line) in enumerate(eachline(path))
+		index == 1 && continue
+		fields = split(line, '\t')
+		println("   ", rpad(fields[1], 22), lpad(fields[7], 8), " examined of ", fields[5])
+	end
+	nothing
+end
+
 function main()::Int
 	isdir(source_directory) || error("missing source directory: $(source_directory)")
 	mkpath(output_directory)
@@ -62,15 +73,21 @@ function main()::Int
 	corpus = joinpath(output_directory, corpus_name)
 	database = joinpath(output_directory, database_name)
 
+	coverage = joinpath(output_directory, "coverage.tsv")
+
+	# A release refuses quarantined adjudications: a stale judgment may be tolerated during
+	# development, where it simply is not applied, but not in a published artifact.
 	step(
 		"build corpus and database",
-		`julia --project=$(repo_root) $(joinpath(repo_root, "bin", "run_pipeline.jl")) $(source_directory) $(output_directory)`,
+		`julia --project=$(repo_root) $(joinpath(repo_root, "bin", "run_pipeline.jl")) $(source_directory) $(output_directory) --strict-adjudications --coverage $(coverage)`,
 	)
+	# validate_lex0.jl runs the committed probe as its arbiter before reporting on the corpus, so
+	# a separate probe step would duplicate it.
 	step(
 		"validate against the pinned Lex-0 schema",
 		`julia --project=$(repo_root) $(joinpath(repo_root, "scripts", "validate_lex0.jl")) $(corpus) --gate $(floor_value)`,
 	)
-	step("verify probe verdicts", `julia --project=$(repo_root) $(joinpath(repo_root, "scripts", "validate_probe.jl"))`)
+	report_coverage(coverage)
 
 	archives = [compress(corpus), compress(database)]
 	manifest = checksums(archives)
