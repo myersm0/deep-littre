@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="ÉVADER (S')">
+<entete>
+	<prononciation>é-va-dé</prononciation>
+	<nature>v. réfl.</nature>
+</entete>
+<corps>
+<variante num="1">S'échapper furtivement d'un lieu où l'on était retenu. Les prisonniers se sont évadés. 
+<cit aut="FONTEN." ref="Jug. de Plut.">Comme on ne le trouvait point, on croyait qu'il [Arétin] se fût évadé [hors de l'enfer], et on n'avait garde de s'imaginer qu'il était avec Auguste</cit>
+<indent>Simplement, quitter un lieu sans être vu. 
+<cit aut="J. J. ROUSS." ref="Émile, III">Nous nous évadons sans être aperçus, et nous nous renfermons dans notre chambre</cit>
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="MOL." ref="Amphit. I, 1">Je vois notre maison, et ma frayeur s'évade [s'en va]</cit>
+</indent>
+<indent>Absolument et avec ellipse du pronom personnel. 
+<cit aut="CORN" ref="Polyeucte, IV, 1">Ce n'est pas mon dessein qu'on me fasse évader</cit>
+<cit aut="MOL." ref="Georg. Dand. Il, 8">Si je rentre chez moi, je ferai évader le drôle ; et quelque chose que je puisse voir, moi-même, de mon déshonneur, je n'en serai point cru à mon serment et l'on me dira que je rêve</cit>
+</indent>
+</variante>
+<variante num="2"><semantique type="indicateur">Fig.</semantique> Se tirer d'embarras par une échappatoire. 
+<cit aut="MOL." ref="Amph. III, 5">Fourbe, tu crois par là peut-être t'évader</cit>
+</variante>
+<variante num="3">Il s'est employé comme verbe neutre, sans pronom personnel. 
+<cit aut="CORN." ref="Illus. com. IV, 9">Nous nous amusons trop, il est temps d'évader</cit>
+<cit aut="TH. CORN." ref="Galant doublé, I, 1">Comme après le coup fait vous étiez évadé</cit>
+<cit aut="BOSSUET" ref="2e serm. pour le 1er dim. de l'avent, II">De quelque côté que vous vous tourniez, il ne vous reste plus aucune défaite, aucun subterfuge, ni aucun moyen d'évader, vous êtes pris et convaincu</cit>
+</variante>
+</corps>
+<rubrique nom="SYNONYME">
+<indent>S'ÉVADER, S'ÉCHAPPER. S'échapper, c'est sortir de ce qui retient : le mercure s'échappe des doigts. S'évader ne se dit que de l'homme, ou de ce que l'on assimile à l'homme : Ce prisonnier s'est évadé ; mon moineau s'est évadé ou échappé de la cage.
+</indent>
+</rubrique>
+<rubrique nom="HISTORIQUE">
+<indent>XIVe s. 
+<cit aut="" ref="Modus, f° LXIII, verso">Ilz seront hors de foy, d'esperance et d'amour pour evader aux biens qui puent [peuvent] ensuire de la grace du Pere, du Fils et du Saint Esprit</cit>
+<cit aut="" ref="Ménagier, I, 8">Ainsi appert par ceste exemple que l'enfant, qui estoit jeune, sceut celer et taire et evada [trouva une évasion]</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="ALAIN CHART." ref="le Curial.">Lors suis-je esjoy de ton aise, et prens plaisir en ce que tu evades les miseres que je seuffre chacun jour</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="AMYOT" ref="Public. 7">Il ordonna à son frere, qu'il allast environner le palais du roy, pour garder que personne des serviteurs n'evadast</cit>
+<cit aut="CALV." ref="Instit. 612">Les subterfuges que cerchent ici les sorbonistes pour evader ne les dep eschent point</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Provenç. evazir ; du latin evadere, aller dehors, s'échapper, de e, et vadere, aller (voy. JE VAIS).
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

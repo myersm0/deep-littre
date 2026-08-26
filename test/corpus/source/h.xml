@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="HARDEAU">
+<entete>
+	<prononciation>har-dô</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Corde qui est au bout du frein d'un moulin.
+</variante>
+<variante num="2">Espèce de viorne.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Diminutif de hart.
+</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+HARDEAU. Ajoutez :
+<variante num="3">
+<cit ref="la Gazette des halles, p. 7, 1649, dans CH. NISARD, Parisianismes, p. 141">Vaurien, garnement,</cit>
+</variante>
+<rubrique nom="HISTORIQUE">
+<indent>XVIe s. 
+<cit aut="RAB." ref="Pant. III, 39">Il eut ung fils nommé Tenot Dandin, grand hardeau et galant homme, ainsi m'aist Dieu !</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Ajoutez : Hardeau, au sens de vaurien, est celui qui mérite la hart, la corde.
+</indent>
+</rubrique>
+</rubrique>
+</entree>
+<entree terme="HYPOCHILE ou HYPOCHILION">
+<entete>
+	<prononciation>i-po-ki-l' ou i-po-ki-li-on</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante><semantique type="domaine">Terme de botanique.</semantique> Partie inférieure du tablier des orchidées.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent><i>Hypo....</i>, et χεῖλος, lèvre.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

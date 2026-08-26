@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="REHUMER">
+<entete>
+	<prononciation>re-u-mé</prononciation>
+	<nature>v. a.</nature>
+</entete>
+<corps>
+<variante>Humer de nouveau.
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XVIe s. 
+<cit aut="DESPORTES" ref="Cléonice, LXXXIV">Je rehume à longs traits l'amoureuse poison</cit>
+</indent>
+</rubrique>
+</entree>
+<entree terme="RÈGNE">
+<entete>
+	<prononciation>rè-gn' ; au XVIe siècle, on prononçait rène, d'après Bèze</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Gouvernement d'un prince souverain, roi, reine, empereur, duc, etc. 
+<cit aut="ROTR." ref="Antig. IV, 1">D'un règne commençant la première action Fait dessus les esprits beaucoup d'impression</cit>
+<cit aut="ID." ref="Bélis. I, 6">J'ai malgré leurs efforts soumis à votre règne Ce que le Tibre lave et que le Gange baigne</cit>
+<cit aut="SACI" ref="Bible, Ecclésiastiq. XLVII, 17">Votre nom s'est rendu célèbre jusqu'aux îles les plus reculées, et vous avez été aimé dans votre règne de paix</cit>
+<cit aut="RAC." ref="Brit. IV, 2">Enfin, des légions l'entière obéissance Ayant de votre empire affermi la puissance, On vit Claude ; et le peuple, étonné de son sort, Apprit en même temps votre règne et sa mort</cit>
+<cit aut="FÉN." ref="Tél. XXIV">Un mauvais règne fait quelquefois la calamité de plusieurs siècles</cit>
+<cit aut="MONTESQ." ref="Lett. pers. 111">Le règne du feu roi [Louis XIV] a été si long, que la fin en avait fait oublier le commencement</cit>
+<cit aut="VOLT." ref="Mœurs, 1">Je crois qu'on ne peut mieux faire dans ce silence de la chronologie, que de recourir à la règle de Newton, qui, ayant composé une année commune des années qu'ont régné les rois des différents pays, réduit chaque règne à vingt-deux ans ou environ</cit>
+</variante>
+<variante num="2">Avant-règne, règne anticipé. 
+<cit aut="SAINT-SIMON" ref="t. IX, p. 288, édit. CHÉRUEL.">En un clin d'œil, ce pupille [de M. de Beauvilliers] devient Dauphin, en un autre.... il parvient à une sorte d'avant-règne</cit>
+</variante>
+<variante num="3"><semantique type="indicateur">Par extension,</semantique> il se dit de la domination d'un ministre, d'un favori, d'une compagnie. 
+<cit aut="BOSSUET" ref="Sermons, Septuag. préambule.">Les méchants et les impies qui ont leur règne sur la terre</cit>
+<cit aut="RAC." ref="Esth. III, 5">Tremble, son jour [de Dieu] approche, et ton règne est passé</cit>
+<cit aut="D'ALEMBERT" ref="Éloges, Crébillon.">Ils [les jésuites] eurent, dans les dernières années de leur trop long règne, le malheur ou la sottise d'attaquer....</cit>
+</variante>
+<variante num="4">Le règne de Dieu, le triomphe de la grâce. 
+<cit aut="MASS." ref="Carême, Tiéd. 1">Que le règne de Dieu s'accomplisse dans notre cœur</cit>
+<indent>Dans le style de l'Écriture sainte, le règne de Jésus-Christ sur les âmes. 
+<cit aut="PASC." ref="Pens. XVII, I, éd. HAVET.">Il eût été inutile à notre Seigneur Jésus-Christ, pour éclater dans son règne de sainteté, de venir en roi</cit>
+</indent>
+<indent>En théologie, le règne de la grâce, le pouvoir de la grâce. Le règne du péché, l'empire du péché sur les hommes.
+</indent>
+</variante>
+<variante num="5">Il se dit de ce que l'on compare à une autorité régnante. Le règne des lois. 
+<cit aut="BOSSUET" ref="Duch. d'Orl.">Aussitôt qu'on cesse pour nous de compter les heures.... sortis des figures qui passent et des ombres qui disparaissent, nous arrivons au règne de la vérité, où nous sommes affranchis de la loi des changements</cit>
+<cit aut="ID." ref="Comédie, 6">Cette tyrannie [de l'amour] qu'on y étale [sur le théâtre].... asservit l'un et l'autre [sexe] au règne des sens</cit>
+<cit aut="FLÉCH." ref="le Tellier.">Un roi dont la vie fut le règne de la religion</cit>
+<cit aut="VOLT." ref="Lett. d'Argental, 30 juill. 1776">J'ai vu finir le règne de la raison et du goût ; je vais mourir en laissant la France barbare [il s'agit de Shakespeare et des drames]</cit>
+<cit aut="J. J. ROUSS." ref="Hél. VI, 3">Le règne de l'amour est passé ; que celui de l'amitié commence</cit>
+<indent>On dit de même : être en règne (locution qui vieillit). 
+<cit aut="ID." ref="Ém. V">Le pays où les préjugés sont le plus en règne</cit>
+</indent>
+</variante>
+<variante num="6"><semantique type="domaine">Terme d'histoire naturelle.</semantique> Les grandes divisions qui comprennent tous les corps de la nature. Le règne minéral, le règne végétal, le règne animal ; ou bien le règne inorganique (minéraux) et le règne organique (animaux, végétaux). 
+<cit aut="J. J. ROUSS." ref="7e prom.">La terre offre à l'homme, dans l'harmonie des trois règnes, un spectacle plein de vie, d'intérêt et de charmes</cit>
+<cit aut="BONNET" ref="Contempl. nat. Œuv. t. VIII, p. 182, dans POUGENS">Le règne animal a aussi ses terres australes, où probablement ce n'est point la mode d'avoir un cerveau, un cœur, un estomac...</cit>
+<cit aut="MIRBEL" ref="Instit. Mém. scienc. 1809, p. 546">Théophraste est le premier qui ait parlé du règne végétal en philosophe et en naturaliste</cit>
+</variante>
+<variante num="7">La triple couronne du pape, dite aussi trirègne. 
+<cit aut="BALZ." ref="Socrate chrétien, X">Je vis mettre le règne sur la tête de Paul V, quand je le vis couronner à Rome</cit>
+<indent>Nom donné aussi aux couronnes qui sont suspendues sur le maître-autel des églises.
+</indent>
+</variante>
+<variante num="8">Il s'est dit autrefois pour royaume. 
+<cit aut="J. B. ROUSS." ref="Odes, III, 4">[Le sultan] Qui, paisible oppresseur de la Grèce abattue, Partage à notre vue La plus belle moitié du règne des Césars</cit>
+<indent>Particulièrement, le Règne, le royaume de Naples. 
+<cit aut="BALZAC" ref="Socrate chrét. X">Autrefois, à la cour, ceux qui italianisaient en français appelaient les coursiers de Naples les chevaux du Règne</cit>
+</indent>
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIe s. 
+<cit aut="" ref="Ch. de Rol. CCV">De plusors regnes viendront li home estrange</cit>
+</indent>
+<indent>XIIe s. 
+<cit aut="" ref="Ronc. p. 3">Chascun ira al reigne [pays] où il fu nez</cit>
+<cit aut="" ref="Th. le mart. 57">Teles lois volt [veut] li reis en sun regne establir</cit>
+</indent>
+<indent>XIIIe s. 
+<cit aut="VILLEH." ref="LXVI">Si a moult grant merveille pourquoi vos estes entrés en sa terre ne en son reigne</cit>
+<cit aut="" ref="Chr. de Rains, p. 3">Et se vous en faictes roi, li regnes en pora bien empirier</cit>
+<cit aut="" ref="Ren. 6760">Se tu es el regne terrestre, Je sui el paradis celestre</cit>
+<cit aut="" ref="la Rose 756">Si chantent li uns rotruenges, Li autres notes loherenges, Por ce qu'en set en Lohereigne [Lorraine] Plus cointes notes qu'en nul regne [royaume]</cit>
+</indent>
+<indent>XIVe s. 
+<cit aut="" ref="Chr. de St-Denis, t. I, f. 259, dans LACURNE">Ferry le duc d'Allemaigne, qui, nepveu à l'empereur Henry, voulut avoir le regne et l'empire après son oncle</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="MONSTREL." ref="2, 60">Esquels conseils estoit premiere appelée Jeanne la pucele, qui pour ce temps estoit en grand regne</cit>
+<cit aut="COMM." ref="IV, 11">Le roy Charles huytiesme, qui est au regne aujourdhuy [qui règne aujourd'hui]</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Provenç. regne ; espagn. regno ; ital. regno ; du lat. regnum : reg-num, de regere (voy. <a ref="régir">RÉGIR</a>), avec le suffixe participial num. L'ancien français avait aussi regné ou regnet, qui venait d'un mot fiotif regnatus, formé sur le modèle de principatus.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

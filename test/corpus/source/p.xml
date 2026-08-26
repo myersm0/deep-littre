@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="PATROUILLER" sens="1">
+<entete>
+	<prononciation>pa-trou-llé, ll mouillées, et non pa-trou-yé</prononciation>
+	<nature>v. n.</nature>
+</entete>
+<corps>
+<variante num="1">Marcher, s'agiter dans de l'eau bourbeuse. 
+<cit aut="SCARR." ref="Virg. IV">Ils patrouillèrent dans les crottes</cit>
+<cit aut="DU CERCEAU" ref="Poés. sur la nouvelle Eve">Elle entra dans la mare avec sa femme de chambre, et, y patrouillant de côté et d'autre, elle satisfit pleinement son envie</cit>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="LE MARQUIS DE MIRABEAU" ref="dans CH. NISARD, Conjectures étymologigues, Revue de l'Instruction publique, 20 sept. 1860">Il [Mirabeau le fils] étonne ceux-là même qui ont rôti le balai à Versailles ; je n'ai pas du tout l'intention qu'il y vive ou qu'il y fasse, comme les autres, métier d'arracher ou dérober sa subsistance au roi, de patrouiller dans les fanges de l'intrigue</cit>
+</indent>
+<indent>Il se conjugue avec l'auxiliaire avoir.
+</indent>
+</variante>
+<variante num="2"><nature>V. a.</nature> Manier malproprement.
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XVe s. 
+<cit aut="" ref="Les quinze joies de mariaige, p. 26">Le bon homme s'en va souper ; on luy apporte de la viande froide qui... est le demourant des matrones, qu'elles ont patrouillé à la journée en beuvant, Dieu scet comment</cit>
+<cit aut="" ref="ib. p. 27">Helas ! il n'y a gueres que je suis accouchée ; et il vous tarde bien que je sois jà à patrouiller par la meson</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="RAB." ref="Garg. I, 11">Il mourvoyt dedans sa soupe, et patrouilloyt par tous lieux</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Picard, patrouiller, marcher dans la boue, agiter l'eau ; champen. platrouiller. C'est le même que patouiller, avec insertion d'une r.
+</indent>
+</rubrique>
+</entree>
+<entree terme="PENCHANT, ANTE" sens="1">
+<entete>
+	<prononciation>pan-chan, chan-t'</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui penche, qui est incliné. 
+<cit aut="BOSSUET" ref="Réfut. catéch. Ferry, II, 5">Il y a une grande différence de relever une maison ruinée, et de la soutenir quand elle est penchante</cit>
+<cit aut="BOILEAU" ref="Ép. IV">Le Rhin.... Appuyé d'une main sur son urne penchante</cit>
+<cit aut="MALFIL." ref="Narcisse, I">Des monts, des rocs suspendus et penchants</cit>
+<cit aut="A. CHÉNIER" ref="Idylles, Hylas.">[Hylas] Se courbe, et, s'appuyant à la rive penchante, Dans le cristal sonnant plonge l'urne pesante</cit>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="BOSSUET" ref="Pensées chrétiennes, 2">Étrange aveuglement de l'homme, qui, tout penchant qu'il est à la mort, ne veut prendre qu'à l'extrémité les sentiments d'un mourant !</cit>
+</indent>
+<indent><semantique type="domaine">Terme de zoologie.</semantique> Se dit des ailes d'un insecte, quand le bord interne est plus élevé que l'externe.
+</indent>
+</variante>
+<variante num="2"><semantique type="indicateur">Fig.</semantique> Qui est dans le déclin, sur son déclin. 
+<cit aut="CORN." ref="Hor. IV, 2">Ô mon fils ! ô ma joie ! ô l'honneur de nos jours ! ô d'un état penchant l'inespéré secours !</cit>
+<cit aut="ID." ref="Pulch. V, 6">Rendez-vous, comme lui, digne de ce dépôt, Que son âge penchant vous remettra bientôt</cit>
+<cit aut="BOSSUET" ref="Panég. St Bernard, 1">Quand nous nous voyons penchants sur le retour de notre âge, que nous comptons déjà une longue suite de nos ans écoulés</cit>
+<cit aut="RAC." ref="Alex. II, 2">Si le monde penchant n'a plus que cet appui, Je le plains</cit>
+</variante>
+<variante num="3"><semantique type="indicateur">Fig.</semantique> Enclin. 
+<cit aut="PASC." ref="Jésus-Christ, 19, édit. FAUGÈRE.">Le cœur des hommes est étrangement penchant à la légèreté !</cit>
+</variante>
+</corps>
+</entree>
+<entree terme="PROROGATION">
+<entete>
+	<prononciation>pro-ro-ga-sion ; en vers, de cinq syllabes</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Délai, remise. On leur a accordé une prorogation de tant de jours.
+</variante>
+<variante num="2"><semantique type="domaine">Terme de jurisprudence.</semantique> Prorogation d'enquête, autorisation donnée par le juge de continuer une enquête au delà du terme prescrit par la loi.
+<indent>Prorogation de juridiction, action de se soumettre, pour le jugement d'une affaire, à la juridiction d'un tribunal dont on n'est pas justiciable.
+</indent>
+</variante>
+<variante num="3"><semantique>Terme de législation politique.</semantique> Acte de l'autorité du pouvoir exécutif qui suspend les séances des chambres et en remet la continuation à un certain jour.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Prov. prorrogation ; espagn. prorogacion ; ital. prorogazione ; du lat. prorogationem, de prorogare, proroger.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

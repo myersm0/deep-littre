@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="SERRET">
+<entete>
+	<prononciation>sè-rè</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante>Nom, dans le département de la Drôme, d'un fromage volumineux, blanc et tendre qu'on laisse mûrir dans une épaisse enveloppe de foin.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Serrer.
+</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+<indent>SERRET. Ajoutez : - HIST. XVIe s. 
+<cit aut="J. PELETIER DU MANS" ref="la Savoye (1572), Chambéry, 1856, p. 260">Mais le tiers gaing, qu'en Savoye ilz en tirent [du bétail], Est le serat que du latin ilz dirent.... Ilz font tremper la racine d'ortie En la liqueur du fourmage sortie, Qu'on dit lait clair.... Puis au chaudron ou boult d'autre lait maigre Avec lait franc, ilz getent de cet aigre Ce qu'il en faut ; ces trois mistionnez Font le serat.... Second fourmage et de grosse substance, Des povres gens ordinaire pitance</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Ajoutez : Le Dictionnaire dérive serret de serrer ; mais la forme serat indique une tout autre origine, à savoir le lat. serum, petit-lait (voy. <a ref="sérum">SÉRUM</a> au Dictionnaire, et comp. <a ref="séret">SÉRET</a>).
+</indent>
+</rubrique>
+</entree>
+<entree terme="SUR" sens="1">
+<entete>
+	<prononciation>sur</prononciation>
+	<nature>prép.</nature>
+</entete>
+<résumé>
+<variante num="1" option="résumé">Il marque la situation d'une chose à l'égard d'une autre qui la soutient.
+</variante>
+<variante num="2" option="résumé">Il marque simplement qu'un objet est au-dessus d'un autre, sans que pour cela celui de dessous le soutienne.
+</variante>
+<variante num="3" option="résumé">Il marque la position d'un objet par rapport à son élévation.
+</variante>
+<variante num="4" option="résumé">Joignant, tout proche.
+</variante>
+<variante num="5" option="résumé">Il se dit du lieu dans lequel on se trouve.
+</variante>
+<variante num="6" option="résumé">Il se dit en parlant de ce que l'on touche, de ce que l'on frappe.
+</variante>
+<variante num="7" option="résumé">En suivant par derrière.
+</variante>
+<variante num="8" option="résumé">Il se dit de ce qui est écrit, gravé, imprimé à la surface de quelque chose.
+</variante>
+<variante num="9" option="résumé">Lire sur.
+</variante>
+<variante num="10" option="résumé">Mettre sur.
+</variante>
+<variante num="11" option="résumé">Être toujours sur les livres.
+</variante>
+<variante num="12" option="résumé">Il se dit de ce qui se montre sur le visage.
+</variante>
+<variante num="13" option="résumé">Il se dit de ce qui recouvre.
+</variante>
+<variante num="14" option="résumé">Précédé et suivi du même mot, il exprime l'accumulation, la succession rapide.
+</variante>
+<variante num="15" option="résumé">Vers, du côté de.
+</variante>
+<variante num="16" option="résumé">Il se dit d'un mouvement en arrière.
+</variante>
+<variante num="17" option="résumé">Parmi.
+</variante>
+<variante num="18" option="résumé">Il exprime des rapports d'étendue.
+</variante>
+<variante num="19" option="résumé">Par-dessus.
+</variante>
+<variante num="20" option="résumé">Plus que. De plus que.
+</variante>
+<variante num="21" option="résumé">Il sert dans plusieurs locutions à exprimer une manière d'être habituelle ou passagère.
+</variante>
+<variante num="22" option="résumé"><semantique type="indicateur">Fig.</semantique> Il se dit de toute sorte d'impositions levées sur les personnes ou sur les choses.
+</variante>
+<variante num="23" option="résumé">Il se dit de tout prélèvement.
+</variante>
+<variante num="24" option="résumé">Il se dit de l'effet du temps qui passe.
+</variante>
+<variante num="25" option="résumé">On s'en sert pour signifier l'empiétement, la conquête.
+</variante>
+<variante num="26" option="résumé">Au delà de, en avance de.
+</variante>
+<variante num="27" option="résumé"><semantique type="indicateur">Fig.</semantique> Il marque la supériorité, la domination, l'excellence, l'influence.
+</variante>
+<variante num="28" option="résumé">Touchant, concernant, à l'égard de, quant à.
+</variante>
+<variante num="29" option="résumé">D'après, en conséquence, moyennant, en considération de.
+</variante>
+<variante num="30" option="résumé">En s'appuyant sur.
+</variante>
+<variante num="31" option="résumé">Il se dit en parlant de gage, d'assurance.
+</variante>
+<variante num="32" option="résumé">Il sert à marquer l'affirmation, la garantie, le serment.
+</variante>
+<variante num="33" option="résumé">Conformément à.
+</variante>
+<variante num="34" option="résumé">En faisant ceci ou cela. Sur ce.
+</variante>
+<variante num="35" option="résumé">Il sert à indiquer l'objet du travail.
+</variante>
+<variante num="36" option="résumé">Dans la personne de.
+</variante>
+<variante num="37" option="résumé">Durant, environ, vers, en parlant de temps.
+</variante>
+<variante num="38" option="résumé"><semantique type="indicateur">Fig.</semantique> Il indique un acheminement vers.
+</variante>
+<variante num="39" option="résumé">On l'emploie pour marquer une sanction.
+</variante>
+<variante num="40" option="résumé">Sur devant un infinitif.
+</variante>
+<variante num="41" option="résumé">De sur, préposition composée.
+</variante>
+<variante num="42" option="résumé">Sur entrant dans la composition de plusieurs mots.
+</variante>
+<variante num="43" option="résumé">Sur toute chose.
+</variante>
+<variante num="44" option="résumé">Sur et tant moins.
+</variante>
+<variante num="45" option="résumé">Sur le tout.
+</variante>
+</résumé>
+<corps>
+<variante num="1">Il marque la situation d'une chose à l'égard d'une autre qui la soutient. S'asseoir sur une chaise. 
+<cit aut="CORN." ref="Rodog. v, 4">Sur un lit de gazon, de faiblesse étendu</cit>
+<cit aut="ID." ref="ib. v, 4">Sa tête sur un bras languissamment penchée</cit>
+<cit aut="LA FONT." ref="Fabl. I, 2">Maître corbeau, sur un arbre perché, Tenait dans son bec un fromage</cit>
+<cit aut="ID." ref="ib. IX, 14">À ces mots, sur un arbre il grimpa bel et bien</cit>
+<cit aut="SÉV." ref="152">Le chevalier de Nantouillet [au passage du Rhin].... trouve la queue d'un cheval, il s'y attache ; ce cheval le mène à bord, il monte sur le cheval, se trouve à la mêlée</cit>
+<cit aut="ROLLIN" ref="Hist. anc. Œuvr. t. II, p. 530, dans POUGENS">[à Sparte] une mère recommandait à son fils qui partait pour une campagne, de revenir avec son bouclier, ou sur son bouclier</cit>
+<cit aut="MARIV." ref="Pays. parv. 4e part.">Nous nous étions arrêtés, la jeune dame et moi, sur l'escalier</cit>
+<cit aut="LAMART." ref="Médit. I, 13">Ne pourrons-nous jamais sur l'océan des âges Jeter l'ancre un seul jour ?</cit>
+<cit aut="ID." ref="ib. I, 29">Feuillages jaunissants sur les gazons épars !</cit>
+<cit aut="ID." ref="ib. II, 8">J'aimerais à glisser sous la nuit des rameaux, à dormir sur les prés, à flotter sur les eaux</cit>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="SÉV." ref="19 juin 1695">En voyant entrer de certaines gens annoncés sous de grands noms.... moi qui hais mortellement les grands noms sur de petits sujets</cit>
+</indent>
+<indent>Être sur pied, être debout, levé, marchant. Je suis sur pied depuis cinq heures du matin. J'ai été sur pied toute la journée.
+</indent>
+<indent>Cet oiseau se soutient sur ses ailes, il plane.
+</indent>
+<indent>Se soutenir sur l'eau, revenir sur l'eau, se soutenir, revenir à la surface de l'eau.
+</indent>
+<indent>Passer le balai, l'éponge sur quelque chose, nettoyer avec le balai, frotter avec l'éponge la surface de quelque chose.
+</indent>
+<indent>Appliquer un enduit sur un mur, étendre du beurre sur du pain etc. enduire de mortier la surface d'un mur, couvrir de beurre une tranche de pain.
+</indent>
+<indent>Avoir, porter une chose sur sol, l'avoir, la porter dans sa poche. 
+<cit aut="BARON" ref="Homme à bon. fort. II, 7">Heureusement j'avais celle-ci [lettre] sur moi, elle suffit</cit>
+<cit aut="COLLIN D'HARLEV." ref="M. de Crac, sc. 17">Voyez un peu ! sur moi je n'ai pas cette somme</cit>
+</indent>
+<indent>Avoir sur soi, se dit aussi de ce qu'on porte avec soi, des vêtements dont on est couvert. Il porte sur lui toute sa garde-robe. 
+<cit aut="DUCLOS" ref="Œuvr. t. II, p. 415">Le bâtard de Bourbon ... avait fait rassembler les effets qui avaient été pris sur les sujets du duc [de Bourgogne]</cit>
+</indent>
+<indent><semantique type="indicateur">Populairement.</semantique> La clef est sur la porte, elle est dans la serrure.
+</indent>
+</variante>
+<variante num="2">Il marque simplement qu'un objet est au-dessus d'un autre, sans que pour cela celui de dessous le soutienne. Un nuage orageux plane sur la ville. Il a le bras levé sur lui. 
+<cit aut="LA FONT." ref="Fabl. II, 12">Le long d'un clair ruisseau buvait une colombe, Quand sur l'eau se penchant une fourmis y tombe</cit>
+<cit aut="SÉV." ref="27 avr. 1671">Ce jardin où je suis étourdie de trois ou quatre rossignols qui sont sur ma tête</cit>
+<indent>Être sur l'horizon, être visible dans la portion du ciel que l'observateur embrasse.
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> La main sur, se dit de la vengeance de Dieu. 
+<cit aut="SACI" ref="Bible, Rois, I, VII, 13">La main du Seigneur fut sur les Philistins</cit>
+<cit aut="RAC." ref="Ath. I, 2">Dieu dont le bras vengeur, bour un temps suspendu, Sur cette race impie est toujours étendu</cit>
+</indent>
+<indent><semantique type="domaine">Terme de marine.</semantique> Un bâtiment est sur la sonde ou sur le fond, lorsqu'il est dans un parage où il peut sonder. Il est sur une ou plusieurs ancres, lorsqu'il est amarré. Il chasse sur ses ancres, lorsque, poussé par le vent ou la marée, il entraîne ses ancres et leur fait labourer le fond.
+</indent>
+</variante>
+<variante num="3">Il marque la position d'un objet par rapport à son élévation. 
+<cit aut="DIDER." ref="Lettre à Mlle Voland, 30 déc. 1765">Elle est logée sur le Palais-Royal</cit>
+<cit aut="BEAUMARCH." ref="Barb. de Sév. I, 3">Ceci doit vous apprendre à ne jamais ouvrir de jalousies sur la rue</cit>
+<cit aut="ID." ref="ib. II, 4">Rosine : Murez les fenêtres tout d'un coup....Bartholo : Pour celles qui donnent sur la rue, ce ne serait peut-être pas si mal</cit>
+</variante>
+<variante num="4">Joignant, tout proche. Les places fortes sur les frontières. Une maison sur le bord de la mer. Cet hôtel ouvre sur deux rues. 
+<cit aut="SÉV." ref="20 mai 1672">On dit qu'on va prendre trois places, l'une sur le Rhin, l'autre sur l'Yssel, et la troisième tout auprès</cit>
+<cit aut="CHAULIEU" ref="Réponse à l'Épître de M. d'Hamilton">Sur la Tamise, Melpomène Ne veut qu'horreur et que combats</cit>
+<cit aut="FONT." ref="Czar Pierre.">Au bout de quatre ans le czar avait déjà fait d'assez grands progrès dans la Livonie et dans l'Ingrie, pour être en état de songer à bâtir une place dont le port situé sur la mer Baltique pût contenir une flotte</cit>
+<cit aut="DUCLOS" ref="Œuvr. t. III, p. 59">Le roi [Louis XI] était obligé de céder au duc de Bourgogne toutes les villes sur la rivière de Somme....</cit>
+</variante>
+<variante num="5">Il se dit du lieu dans lequel on se trouve. Voyager sur terre et sur mer. Je vais me promener sur l'eau. Vous me suivrez sur le terrain, et nous nous battrons. 
+<cit aut="SÉV." ref="354">Enfin, me voilà sur votre route de Lyon</cit>
+<cit aut="LA FAY." ref="Princ. de Clèves, t. II, p. 10, dans POUGENS">Le roi demeura sur la frontière</cit>
+<cit aut="LA BRUY." ref="VII">Cet homme est laborieux, infatigable ; il lit, il travaille jusque dans les rues et sur la route</cit>
+<cit aut="FÉN." ref="Tél. I">Souvent elle demeurait immobile sur le rivage de la mer</cit>
+<cit aut="ID." ref="ib.">La grotte de la déesse était sur le penchant d'une colline</cit>
+<cit aut="MASS." ref="Pet. carême, Human. des grands.">Les grands seraient inutiles sur la terre, s'il ne s'y trouvait des pauvres et des malheureux</cit>
+<cit aut="VOLT." ref="Mél. hist. Mens. imprim. conspir. contre les Juifs.">Une horde de croisés fit vœu d'égorger tous les juifs qu'ils rencontreraient sur leur route</cit>
+<cit aut="Mme DE TENCIN" ref="Œuvr. t. III, p. 77, dans POUGENS">Nous débarquâmes sur les côtes de la Picardie</cit>
+<cit aut="LAMART." ref="Médit. II, 21">[Mer] sur quelque plage Que tu me fasses dériver....</cit>
+<indent>Être sur les lieux, être présent en un certain endroit. 
+<cit aut="MAINTENON" ref="Lett. à Mme d'Aubigné, 1er déc. 1682">Vous êtes sur les lieux : vous trouverez plus de facilité que moi</cit>
+<cit aut="D'ALEMB." ref="Lett. à Voltaire, 6 mai 1760">Je suis sur les lieux, et mieux à portée que vous de juger de l'effet que cette demande produira</cit>
+</indent>
+</variante>
+<variante num="6">Il se dit en parlant de ce que l'on touche, de ce que l'on frappe. Donner un coup sur la tête. Frapper sur l'enclume. Il a porté la main sur son supérieur.
+</variante>
+<variante num="7">En suivant par derrière. 
+<cit aut="LA FAY." ref="Princ. de Clèves, Œuvr. t. II, p. 214">Et lui ordonna de partir sur les pas de M. de Nemours</cit>
+<cit aut="LESAGE" ref="Crisp. riv. de son maître, sc. 6">M. Damis.... vient d'arriver de Chartres : il marche sur mes pas ; j'ai pris les devants pour vous avertir</cit>
+<cit aut="BEAUMARCH." ref="Barb. de Sév. II, 8">Je veux fermer sur vous la porte de la rue</cit>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="RAC." ref="Bérén. I, 3">Un prince qui, jadis témoin de vos combats, Vous vit chercher la gloire et la mort sur ses pas</cit>
+</indent>
+</variante>
+<variante num="8">Il se dit de ce qui est écrit, gravé, dessiné, imprimé à la surface de quelque chose. Graver sur le cuivre. Peindre sur porcelaine, sur toile. Écrire sur le sable, sur une ardoise, sur du papier. 
+<cit aut="LA FONT." ref="Fabl. XI, 8">Et, pleurés du vieillard, il grava sur leur marbre Ce que je viens de raconter</cit>
+<cit aut="LA BRUY." ref="VI">Que les Phidias et les Zeuxis de votre siècle déploient toute leur science sur vos plafonds et sur vos lambris</cit>
+<cit aut="ID." ref="ib. VII">Ils [les Sannions] ont avec les Bourbons sur une même couleur un même métal ; ils portent comme eux deux et une ; ce ne sont pas des fleurs de lis, mais ils s'en consolent</cit>
+<cit aut="ROLLIN" ref="Hist. anc. Œuv. t. IV, p. 129, dans POUGENS">Ce que Sylla fit mettre sur le sien [tombeau] : que jamais personne ne l'avait surpassé ni à faire du bien à ses amis, ni à faire du mal à ses ennemis</cit>
+<cit aut="CHAPTAL" ref="Instit. Mém. scienc. t. VI, p. 496">L'acide sulfureux n'altère point le bleu sur soie</cit>
+<indent>On dit de même : Écrivez cela sur votre agenda. Son nom est sur la liste des pensions. Il l'a mis sur son testament.
+</indent>
+<indent>Il se dit de la matière sur laquelle on travaille. Il travaille sur l'or, sur l'argent. Peintre sur porcelaine.
+</indent>
+</variante>
+<variante num="9">Lire sur, lire ce qui est écrit sur une surface. Lire une inscription sur un mur. Lire sur une affiche.
+</variante>
+<variante num="10">Mettre sur, signifie quelquefois ajouter l'effort d'un travailleur. Cet imprimeur a mis deux ouvriers sur la même feuille pour aller plus vite. Mettre trois chevaux sur une voiture.
+</variante>
+<variante num="11">Être toujours sur les livres, être sans cesse à lire, à étudier.
+<indent>On dit de même : pâlir sur les livres.
+</indent>
+</variante>
+<variante num="12">Il se dit de ce qui se montre sur le visage. 
+<cit aut="SÉV." ref="198">Je vis hier Mme la Grand' Duchesse.... l'ennui est écrit et gravé sur son visage</cit>
+<cit aut="MARIV." ref="Pays. parv. 4e part.">C'était, pour ainsi dire, une âme qu'on voyait sur ce visage</cit>
+</variante>
+<variante num="13">Il se dit de ce qui recouvre. Un tapis sur le parquet. 
+<cit aut="LAMART." ref="Méd. II, 22">Le souffle se taisait dans son sein endormi [d'une morte], Et sur l'œil sans regard la paupière affaissée Retombait à demi</cit>
+<indent><semantique type="indicateur">Par extension.</semantique> La gelée a passé sur les nèfles.
+</indent>
+</variante>
+<variante num="14">Précédé et suivi du même mot, il exprime l'accumulation, la succession rapide. 
+<cit aut="RÉGNIER" ref="Épît. I">Et malheur sur malheur à chaque heure te vient</cit>
+<cit aut="PELLISSON" ref="Lett. hist. t. I, p. 402">Il est certain qu'on a vu arriver courrier sur courrier de divers côtés</cit>
+<cit aut="SACI" ref="Bible, Osée, XII, 1">Il ajoute tous les jours mensonges sur mensonges et violences sur violences</cit>
+<cit aut="LA FONT." ref="Fabl. III, 1">Après maints quolibets coup sur coup renvoyés</cit>
+<cit aut="SÉV." ref="32">Je crains plus que vous mon voyage de Bretagne ; il me semble que ce sera encore une autre séparation, une douleur sur une douleur, et une absence sur une absence</cit>
+<cit aut="TH. CORN." ref="Comt. d'Orgueil, III, 1">Lucrèce : Et que vous a-t-il dit ? - Arbate : Sottise sur sottise</cit>
+<cit aut="RAC." ref="Alex. v, 1">Mais quoi, seigneur, toujours guerre sur guerre ?</cit>
+<cit aut="VOLT." ref="Louis XIV, 37">On imprimait volume sur volume, lettres sur lettres</cit>
+<cit aut="ID." ref="Pauvre diable.">Il entassait adage sur adage</cit>
+<cit aut="DELILLE" ref="Parad. perdu, II">J'ai vu, j'en tremble encor, tomber ces fiers esprits, Phalange sur phalange, et débris sur débris</cit>
+</variante>
+<variante num="15">Vers, du côté de. Tourner sur la droite, sur la gauche. Tirer un coup de fusil sur quelqu'un. Il plaça la cavalerie sur les ailes. Il opéra sa retraite sur telle ville. L'humeur s'est portée sur les yeux. 
+<cit aut="SACI" ref="Bible, Machab. I, II, 24">Il [Mathathias] se jeta sur cet homme et le tua</cit>
+<cit aut="ID." ref="ib. Ecclésiastiq. XXXIV, 15">Les yeux de Dieu sont sur ceux qui l'aiment</cit>
+<cit aut="MARIV." ref="Marianne, 5e part.">Je regardais Valville, qui, de son côté et à son ordinaire, avait presque toujours les yeux sur moi</cit>
+<cit aut="VOLT." ref="Mœurs, 133">On courut sur eux [les anabaptistes] dans la basse Allemagne</cit>
+<indent><semantique type="domaine">Terme de commerce.</semantique> Tirer une lettre de change sur quelqu'un. Tirer sur quelqu'un, faire une lettre de change pour qu'il l'acquitte.
+</indent>
+<indent>On dit de même qu'une lettre de change est tirée d'un lieu sur un autre.
+</indent>
+</variante>
+<variante num="16">Il se dit d'un mouvement en arrière. Revenir sur ses pas.
+<indent><semantique type="indicateur">Fig.</semantique> Revenir sur le passé, ranimer de vieux souvenirs, de vieilles querelles.
+</indent>
+<indent>Il se dit d'une disposition circulaire, d'un mouvement de rotation. Une courbe qui revient sur soi. 
+<cit aut="BUFF." ref="1re ép. nat. Œuv. t. XII, p. 81">La matière qui compose le globe terrestre et les autres globes planétaires était en fusion, lorsqu'ils ont commencé à tourner sur eux-mêmes</cit>
+</indent>
+<indent>Il se dit d'un mouvement de haut en bas. Les météorites tombent sur la terre.
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="LA BRUY." ref="VI">Le ciel tout d'un coup s'ouvre en leur faveur [de certaines familles] ; les biens, les honneurs, les dignités fondent sur elles à plusieurs reprises</cit>
+</indent>
+</variante>
+<variante num="17">Parmi. Sur dix noisettes j'en ai trouvé cinq de mauvaises. Nous avons eu deux beaux jours sur huit. 
+<cit aut="BUFF." ref="Prob. de la vie, Œuvr. t. x, p. 551">Sur 13 189 [enfants], il en meurt dans les deux premières années de la vie, à Paris 4131, à Londres 4413</cit>
+<cit aut="PASTORET" ref="Instit. Mém. hist. et litt. anc. t. III, p. 324">Rome eut deux ans de paix sur sept cents ans de combats</cit>
+</variante>
+<variante num="18">Il exprime des rapports d'étendue. Cet édifice a tant de haut sur tant de long. 
+<cit aut="LEGRAND D'AUSSY" ref="Instit. sc. mor. et pol. t. v, 591">Après avoir traversé la montagne, on trouve une plaine de six milles de long sur deux de large</cit>
+</variante>
+<variante num="19">Pardessus. Il gelait la semaine passée a pierre fendre ; il a neigé sur cela. 
+<cit aut="SÉV." ref="15 sept. 1680">Il fallait me dire si vous vous guérissez des remèdes que vous avez faits, et si cette maigreur sur votre maigreur ordinaire ne vous laissera pas au moins comme vous étiez</cit>
+</variante>
+<variante num="20">Plus que. 
+<cit aut="MALH." ref="IV, 5">La vertu, qui de leur étude Est le fruit le plus précieux, Sur tous les actes vicieux Leur fait haïr l'ingratitude</cit>
+<cit aut="RÉGNIER" ref="Élég. IV">Jouir d'une beauté sur les autres aimable</cit>
+<cit aut="LA FONT." ref="Fabl. v, 18">Mes petits sont mignons, Beaux, bien faits et jolis sur tous leurs compagnons</cit>
+<cit aut="ID." ref="ib.">[Loi de nature] Qui veut qu'on trouve son semblable Beau, bien fait et sur tous aimable</cit>
+<cit aut="ID." ref="ib. VII, 12">En un lieu que devait la déesse bizarre [la Fortune] Fréquenter sur tout autre ; et ce lieu, c'est la cour</cit>
+<cit aut="ID." ref="Lett. à Mme de la Fontaine, 25 août 1663">Il a beaucoup d'endroits fort champêtres, et c'est ce que j'aime sur toutes choses</cit>
+<indent>De plus que. 
+<cit aut="SÉV." ref="7 oct. 1676">Je disais l'autre jour à Mme de Coulanges que Beaujeu avait sur elle l'extrême-onction, et qu'on lui avait crié : Jésus Maria</cit>
+<cit aut="LA BRUY." ref="IX.">Si un grand a quelque degré de bonheur sur les autres hommes, je ne devine pas lequel....</cit>
+<cit aut="RAYNAL" ref="Hist. phil. v, 16">Les Philippines ont sur les autres colonies européennes l'avantage de posséder de l'or</cit>
+</indent>
+</variante>
+<variante num="21">Il sert dans plusieurs locutions à exprimer une manière d'être habituelle ou passagère. Être sur la défensive, sur le qui-vive, sur le quant-à-moi. Marcher sur le bon pied. Vous le prenez sur un ton bien haut. 
+<cit aut="MOL." ref="Éc. des f. IV, 8">Et veulent, sur le pied de nous être fidèles, Que nous soyons tenus à tout endurer d'elles</cit>
+<cit aut="ID." ref="Mélic. I, 3">Mais, puisque sur le fier vous vous tenez si bien, Je garde ma nouvelle, et ne veux dire rien</cit>
+<cit aut="PIRON" ref="Métrom. IV, 9">Et sur ce ton plaintif on vous trouve toujours</cit>
+<indent><semantique type="indicateur">Fig.</semantique> Se coucher, se lever sur quelque chose, se coucher, se lever en étant préoccupé de quelque chose. 
+<cit aut="LA BRUY." ref="VIII">L'on se couche à la cour et l'on se lève sur l'intérêt</cit>
+<cit aut="MONTESQ." ref="Temple de Gnide, 6">Je me réveillais à chaque instant sur une infidélité de Thémise</cit>
+<cit aut="RAYNAL" ref="Hist. phil. XVII, 28">On se leva avec les mêmes projets ; on se coucha sur les mêmes sottises</cit>
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> Être sur quelque chose, s'occuper présentement de quelque chose. 
+<cit aut="SÉV." ref="398">Pendant que je suis sur les lettres, il faut dire un mot de celle de Pauline au coadjuteur</cit>
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> Être sur, être uniquement soucieux de. 
+<cit aut="SÉV." ref="15 janv. 1674">M. de Grignan n'est pas sur ses intérêts comme sur ceux du roi son maître</cit>
+</indent>
+<indent>Il est sur sa bouche, il est gourmand.
+</indent>
+<indent>Être sur, être au sujet de, être disposé pour. 
+<cit aut="SÉV." ref="Mardi gras, 1680">Ma fille est à Aix.... elle souffre toute la rigueur du carnaval ; vous savez comme elle est sur ces divertissements qu'il faut prendre par commandement</cit>
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> Prendre quelque chose sur soi, en prendre la responsabilité. 
+<cit aut="PELLISSON" ref="Lett. hist. t. III, p. 343">Les Hollandais ont pris sur eux de faire signer les Espagnols, comme nous avons pris sur nous de faire signer les Suédois</cit>
+<cit aut="MOL." ref="Tart. IV, 5">Je vous réponds de tout, et prends le mal sur moi</cit>
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> Prendre sur soi, se contraindre. 
+<cit aut="SÉV." ref="26 févr. 1890">Prenez encore cela sur vous avec tant d'autres choses</cit>
+</indent>
+</variante>
+<variante num="22"><semantique type="indicateur">Fig.</semantique> Il se dit de toute sorte d'impositions levées sur les personnes ou sur les choses. Lever des impôts sur le luxe. Lever des subsides sur le peuple.
+</variante>
+<variante num="23">Il se dit de tout prélèvement. Prendre sur sa nourriture, sur sa dépense, sur son nécessaire. On lui retiendra tant sur ses gages. Sur cette somme il faut retrancher tant. 
+<cit aut="MARIV." ref="Marianne, 11e part.">Elle ne vivait que sur la légitime de mon père</cit>
+<cit aut="MARMONTEL" ref="Mém. v.">J'eus une pension de douze cents livres sur le Mercure, et je fus content</cit>
+<indent><semantique type="indicateur">Fig.</semantique>
+<cit aut="SÉV." ref="426">Nous sommes dans un profond silence, parfaitement à notre aise, lisant, rêvant, dans un entier éloignement de toute sorte de nouvelles, et vivant enfin sur nos réflexions</cit>
+<cit aut="ID." ref="198">Vous subsistez encore sur l'air de Paris</cit>
+</indent>
+<indent>Vivre sur, vivre aux dépens de. Vivre sur le commun. Autrefois les gens de guerre vivaient sur le paysan. 
+<cit aut="BUFF." ref="Quadrup. t. II, p. 138">Il est nécessaire que les unes [espèces] vivent sur les autres</cit>
+</indent>
+</variante>
+<variante num="24">Il se dit de l'effet du temps qui passe. 
+<cit aut="LA BRUY." ref="VII">Deux années ne passent point sur une même coterie ; il y a toujours, dès la première année, des semences de division....</cit>
+<cit aut="ID." ref="VII">Je dirais volontiers aux Sannions : votre folie [être de vieille race] est prématurée ; attendez du moins que le siècle s'achève sur votre race</cit>
+</variante>
+<variante num="25">On s'en sert pour signifier l'empiétement, la conquête. Cet homme a empiété sur son voisin. Il a conquis un grand terrain sur le marais. 
+<cit aut="VOLT." ref="Mœurs, 191">Morosini, faisant sur les Turcs la conquête du Péloponnèse</cit>
+</variante>
+<variante num="26">Au delà de, en avance de. Le progrès sur l'antiquité est grand.
+</variante>
+<variante num="27"><semantique type="indicateur">Fig.</semantique> Il marque la supériorité, la domination, l'excellence, l'influence. Avoir autorité, juridiction sur quelqu'un. Avoir l'œil sur quelqu'un. On ne peut rien sur lui. Prendre le pas sur quelqu'un. Cela influe sur la santé. Son discours fit un grand effet sur les auditeurs. Les menaces ne font rien sur lui. 
+<cit aut="CORN." ref="Nicom. v, 2">Et sur lui la raison a repris son pouvoir</cit>
+<cit aut="SÉV." ref="13 oct. 1675">Je suis persuadée du soin de la Providence sur vous</cit>
+<cit aut="RAC." ref="Mithr. II, 4">Seigneur, vous pouvez tout : ceux par qui je respire Vous ont cédé sur moi leur souverain empire</cit>
+<cit aut="ID." ref="Poésies div. Le mardi à matines">Divin Sauveur, jette sur nous les yeux ; Répands sur nous le feu de ta grâce puissante</cit>
+<cit aut="LA BRUY." ref="VII">Il y a dans la ville la grande et la petite robe ; et la première se venge sur l'autre des dédains de la cour</cit>
+<cit aut="ROLLIN" ref="Hist. anc. Œuvr. t. VI, p. 252, dans POUGENS">Ils [Alexandre et Héphestion] étaient du même âge ; mais Héphestion avait sur lui l'avantage de la taille</cit>
+<cit aut="VOLT." ref="Henr. I">Je chante le héros qui régna sur la France, Et par droit de conquête et par droit de naissance</cit>
+<cit aut="ID." ref="Alz. IV, 1">Je vais, sur les vaincus étendant mes secours....</cit>
+<cit aut="GENLIS" ref="Ad. et Th. t. III, p. 487, dans POUGENS">Profitez de l'empire passager, mais sans bornes, que l'amour vous donnera sur lui</cit>
+</variante>
+<variante num="28">Touchant, concernant, à l'égard de. 
+<cit aut="MOL." ref="Fourb. II, 8">J'ai été trouver le frère de cette fille qui a été épousée.... je l'ai mis sur ce mariage</cit>
+<cit aut="SÉV." ref="4 nov. 1676">Je veux voir M. de Louvois sur votre frère, qui est toujours ici sans congé</cit>
+<cit aut="ID." ref="2 févr. 1676">Ils [Mme de Vins et Pompone] me viennent d'écrire tous deux sur ma maladie</cit>
+<cit aut="ID." ref="à Bussy, 27 août 1675">Vous avez sans doute entendu louer le chevalier de Grignan sur le passage du Rhin</cit>
+<cit aut="LA BRUY." ref="VI">Ce palais, ces meubles.... vous enchantent, et vous font récrier d'une première vue sur une maison si délicieuse</cit>
+<cit aut="FÉN." ref="Tél. XII">Il faut que je vous raconte comment on avait empoisonné mon cœur dès ma plus tendre enfance sur l'autorité des rois</cit>
+<cit aut="MASS." ref="Carême, Passion, I">La douleur de David sur les prévarications de la terre ; l'amertume et le zèle d'Élie, sur les scandales et l'idolâtrie d'Israël ; la tristesse et les larmes de Jérémie, sur les infidélités de Jérusalem</cit>
+<cit aut="VOLT." ref="Lett. Saurin, 28 déc. 1768">Pour moi, je vous avoue que je suis pour Mme du Deffant, qui disait que l'Esprit des lois était de l'esprit sur les lois</cit>
+<cit aut="BUFF." ref="Hist. nat. 2e disc.">Les résultats généraux des observations sur les différentes matières qui composent le globe terrestre, sur les éminences....</cit>
+<indent>Quant à. 
+<cit aut="SÉV." ref="317">Pour moi, je le trouve original sur l'économie, comme l'abbé de la Victoire sur l'avarice</cit>
+<cit aut="ID." ref="433">Cette mère est impérieuse, et d'une exactitude sur les heures qui ne convient point à de jeunes gens</cit>
+<cit aut="ID." ref="17 avr. 1682">Vous connaissez Corbinelli sur l'horreur qu'il a de ces sortes de dehors qu'il appelle des trahisons</cit>
+<cit aut="ID." ref="17 avr. 1682">Ils étaient Allemands sur le savoir-vivre</cit>
+<cit aut="ID." ref="7 juill. 1680">La jalousie [de Mme de Montespan].... est vive sur la confiance et l'amitié qu'on a pour l'autre [Mme de Maintenon]</cit>
+<cit aut="LA BRUY." ref="IX.">Philante a du mérite, de l'esprit, de l'agrément, de l'exactitude sur son devoir</cit>
+<cit aut="P. L. COUR." ref="2e lett. partic.">Sur les injures je me tais ; il en sait plus que moi ; je n'aurais pas beau jeu</cit>
+</indent>
+</variante>
+<variante num="29">D'après, en conséquence, moyennant, en considération de. 
+<cit aut="MAIRET" ref="Mort d'Asdr. III, 3">On le fouille, et l'on trouve enfin le passe-port ; Sur quoi je prononçai sa sentence de mort</cit>
+<cit aut="CORN." ref="la Veuve, au lecteur.">La comédie n'est qu'un portrait de nos actions et de nos discours, et la perfection des portraits consiste en la ressemblance ; sur cette maxime, je tâche de ne mettre en la bouche de mes acteurs....</cit>
+<cit aut="LA FONT." ref="Fabl. VII, 18">Mais aussi, si l'on rectifie L'image de l'objet sur son éloignement</cit>
+<cit aut="MOL." ref="Critique, 7">Comme un homme qui aurait trouvé une sauce excellente et qui voudrait examiner si elle est bonne, sur les préceptes du Cuisinier français</cit>
+<cit aut="SÉV." ref="5 janv. 1672">Langlée est fier et familier au possible.... le comte [de Gramont] lui dit, sur quelque manière un peu libre : Monsieur de Langlée, gardez ces familiarités-là pour quand vous jouerez avec le roi</cit>
+<cit aut="BOSSUET" ref="Lett. 275">J'ai approuvé ce choix sur sa réputation</cit>
+<cit aut="FLÉCH." ref="Hist. de Théodose, III, 69">Sur cette accusation, Théodose, l'ayant fait arrêter, commanda qu'on examinât rigoureusement cette affaire</cit>
+<cit aut="ID." ref="ib. III, 7">Sur cette espérance il se met en mer</cit>
+<cit aut="RAC." ref="Brit. I, 2">Sur le moindre discours qu'on pourra vous redire, Serez-vous toujours prête à partager l'empire ?</cit>
+<cit aut="MASS." ref="Carême, Injust. du monde.">Vous sauvez l'impie sur les signes les plus frivoles et les plus équivoques de la piété ; et vous damnez le juste sur les marques les plus légères et les plus excusables de l'humanité et de la faiblesse</cit>
+<cit aut="ID." ref="Panégyr. saint Jean-Baptiste.">Sur quoi vous croyez-vous dispensé de ce devoir ?</cit>
+<cit aut="VERTOT" ref="Révol. rom. XII, 211">Leur supplice [des complices de Catilina] fut résolu ; et Cicéron, sur l'arrêt seul du sénat, les fit exécuter dans la prison</cit>
+<cit aut="MARIV." ref="Sec. surpr. de l'am. II, 7">Sur cet air piqué, elle a pensé que je ne vous déplaisais pas</cit>
+<cit aut="VOLT." ref="Louis XV, 1">Un comte de Bonneval, qui avait quitté le service de France sur quelques mécontentements du ministère</cit>
+<cit aut="ID." ref="Russie, I, 4">Ils lui demandent où est son père ; le jeune homme, en tremblant, répond qu'il l'ignore ; et sur cette réponse il est égorgé</cit>
+<cit aut="GRESSET" ref="le Carême, Impromptu.">De grâce, censeur incrédule, Ne jugez point sur ce soupçon</cit>
+<cit aut="VAUVENARGUES" ref="Lentulus ou le factieux.">Ils l'excusent de ne pas se montrer plus souvent sur ce qu'il est très occupé</cit>
+<cit aut="DUCIS" ref="Hamlet, IV, 3">De vous, sur ces dehors, que voulez-vous qu'on pense ?</cit>
+</variante>
+<variante num="30">En s'appuyant sur. J'ai fait cela sur votre parole, sur la foi des traités. Je me décharge de cette affaire sur vous. Je m'en repose sur vous, sur votre prudence. Je compte sur vous. 
+<cit aut="CORN." ref="Cid, II, 1">Vous vous perdrez, monsieur, sur cette confiance</cit>
+<cit aut="BOSSUET" ref="Lett. abb. 109">Marchez en repos sur ma décision</cit>
+<cit aut="RAC." ref="Plaid. I, 1">Ma foi ! sur l'avenir bien fou qui se fiera !</cit>
+<indent>On dit dans le même sens : écrire, croire sur parole, écrire, croire sur la foi d'autrui.
+</indent>
+<indent>Se fonder sur une chose, s'en autoriser, la faire valoir à l'appui de ce qu'on avance.
+</indent>
+<indent>On dit de même : Je suis fondé sur de bonnes décisions, sur des précédents, sur une loi.
+</indent>
+</variante>
+<variante num="31">Il se dit en parlant de gage, d'assurance. Prêter sur gages, sur nantissement. Assigner une pension sur les produits d'une terre. 
+<cit aut="SÉV." ref="27 nov. 1689">Si notre Comtat eût été sur cette vie [du nouveau pape], il nous aurait duré plus longtemps</cit>
+</variante>
+<variante num="32">Il sert à marquer l'affirmation, la garantie, le serment. Sur mon honneur. Sur mon âme. Sur ma vie. 
+<cit aut="MOL." ref="Préc. 12">Mesdames, agréez que je vous présente ce gentilhomme-ci : sur ma parole, il est digne d'être connu de vous</cit>
+<cit aut="BOILEAU" ref="Sat. III">Ces pigeons sont dodus, mangez, sur ma parole</cit>
+<cit aut="C. DELAV." ref="D. Juan, III, 21">Devant Dieu, sur mon honneur de gentilhomme, je le jure</cit>
+<indent>Jurer sur, faire un serment en mettant les mains sur. Jurer sur les saints Évangiles. 
+<cit aut="VOLT." ref="Pol. et lég. Frag. hist. sur l'Inde, 12">L'un et l'autre, dans l'excès de leurs haines et de leurs défiances, se jurèrent sur l'Alcoran une amitié inviolable</cit>
+<cit aut="C. DELAV." ref="Louis XI, II, 11">Et malgré les serments que Louis de Valois, Que le roi Très Chrétien a prêtés sur la croix</cit>
+</indent>
+</variante>
+<variante num="33">Conformément à. 
+<cit aut="LA FONT." ref="Fabl. IX, 12">ôtez-vous de l'esprit Qu'aucun être ait été composé sur le vôtre</cit>
+<cit aut="SÉV." ref="10 juill. 1675">Je plaçai ma saignée brusquement, selon le besoin de mes affaires plutôt que sur celui de ma santé</cit>
+<cit aut="DUCLOS" ref="Œuvr. t. II, p. 319">Le témoignage d'auteurs même contemporains ne mérite pas toujours la même foi qu'une histoire écrite sur des mémoires authentiques et des titres publics</cit>
+<indent>Faire des paroles sur un air, accommoder des paroles à un air déjà fait. 
+<cit aut="MOL." ref="Fâch. I, 5">Il faut que je te chante Certain air que j'ai fait de petite courante, Qui de toute la cour contente les experts, Et sur qui plus de vingt ont déjà fait des vers</cit>
+</indent>
+</variante>
+<variante num="34">En faisant ceci ou cela. 
+<cit aut="PASC." ref="Prov. III">Sur cela il me quitta</cit>
+<cit aut="SÉV." ref="8 janv. 1676">Il me sembla bien plus fortement qu'à l'ordinaire que nous étions ensemble, et que vous étiez si douce, si aimable et si caressante pour moi, que j'en étais toute transportée de tendresse ; et sur cela je m'éveille</cit>
+<cit aut="MARIV." ref="Pays. parv. 3e part.">Sur ce propos nous arrivâmes dans cette rue qui m'avait été si fatale</cit>
+<indent>Sur cela signifie aussi avec cette raison, ce prétexte. 
+<cit aut="PASC." ref="dans COUSIN">Et sur cela, comme si la chose n'en valait pas la peine, ils négligent....</cit>
+</indent>
+<indent>Sur ce, formule de chancellerie, indiquant la fin d'une lettre officielle. Les lettres des rois se terminent par : Sur ce, je prie que Dieu vous tienne en sa sainte garde.
+</indent>
+<indent>Par imitation de cette formule royale. 
+<cit aut="VOLT." ref="Lett. Chabanon, 28 sept. 1770">Sur ce, je vous embrasse tendrement : ainsi font tous ceux qui habitent Ferney</cit>
+</indent>
+<indent>Sur ce que, en raison de. 
+<cit aut="J. J. ROUSS." ref="Lett. à M. de Luze, 27 novembre 1765">Je ne joins pas ici ma lettre à M. de Graffenried, sur ce que vous me marquez qu'elle court Paris</cit>
+</indent>
+</variante>
+<variante num="35">Il sert à indiquer l'objet d'un travail. Il a fait des commentaires sur tel auteur. Faire des notes sur un mémoire. 
+<cit aut="BUFF." ref="Ois. t. XVI, p. 301">L'ancien scoliaste sur Juvénal dit qu'il [le phénicoptère] est fréquent en Afrique</cit>
+</variante>
+<variante num="36">Dans la personne de. 
+<cit aut="SÉV." ref="25 août 1677">J'avais à y gronder.... j'avais commencé dès le matin à Époisse sur un pauvre paysan que je croyais être de Bourbilly</cit>
+<cit aut="RAC." ref="Andr. I, 3">Oui, les Grecs sur le fils persécutent le père</cit>
+<cit aut="ID." ref="Ath. I, 2">Il [Dieu] ne recherche point, aveugle en sa colère, Sur le fils qui le craint, l'iniquité du père</cit>
+</variante>
+<variante num="37">Durant, environ, vers, en parlant de temps. Il est sur son départ. J'ai été sur le point de vous faire une visite. 
+<cit aut="VAUGEL." ref="Q. C. 218">Sur le lever du soleil</cit>
+<cit aut="D'ABLANC." ref="Lucien, Mort de Peregrinus.">Un de mes compagnons m'ayant éveillé sur le minuit</cit>
+<cit aut="MOL." ref="Méd. mal. lui, II, 6">Je reviendrai voir sur le soir en quel état elle sera</cit>
+<cit aut="SÉV." ref="à Bussy, 28 août 1680">Elle [Mme de Grignan] ne voit encore rien d'assuré pour son retour ; je crois que le mien sera sur la fin de l'année</cit>
+<cit aut="LA FAY." ref="Princ. de Clèves, Œuv. t. II, p. 228, dans POUGENS.">Un des derniers jours de sa maladie, après avoir passé une nuit très fâcheuse, il dit sur le matin qu'il voulait reposer</cit>
+<cit aut="J. J. ROUSS." ref="Confess. II">Sur la fin de sa maladie elle prit une sorte de gaieté trop égale pour être jouée</cit>
+<cit aut="VADÉ" ref="les Troqueurs, 1">Quand sur ses vieux jours un garçon Devient le mari d'un tendron</cit>
+<indent>Sur l'heure, sans retard, tout de suite. 
+<cit aut="MILLEV." ref="Le beau Loïs.">Or une fleur pâle comme Loïs De son beau sang sur l'heure vint éclore</cit>
+</indent>
+<indent>Sur-le-champ, sur-le-champ que (voy. <a ref="champ.1#var13">CHAMP 1, n° 13</a>).
+</indent>
+<indent>Sur les.... avec un nombre d'heures, vers les...
+<cit aut="PELLISSON" ref="Lett. hist. t. II, p. 257">Il [Louis XIV] dort les après-dînées, remonte à cheval sur les cinq heures, soupe sur les huit, et se couche sur les dix pour se lever sur les deux ou trois au plus tard</cit>
+</indent>
+<indent>On a dit de même : sur le.... en parlant d'un quantième ; mais cela a vieilli. 
+<cit aut="CORN." ref="Poly. Abr. du mart. de St Poly.">Le martyrologe romain en fait mention sur le 12 de février</cit>
+<cit aut="ID." ref="Examen de Poly.">Ce martyre est rapporté par Surius sur le neuvième de janvier</cit>
+</indent>
+<indent>D'un jour sur l'autre, en reportant une chose du jour actuel sur celui qui suit. 
+<cit aut="LA FONT." ref="Fabl. VIII, 2">Ce n'est point ma manière De compter de la sorte ; et je n'entasse guère Un jour sur l'autre</cit>
+</indent>
+<indent>Déjà sur l'âge, déjà âgé. 
+<cit aut="BERN. DE ST-P." ref="Paul et Virg.">Un homme déjà sur l'âge vint à passer aux environs</cit>
+</indent>
+</variante>
+<variante num="38"><semantique type="indicateur">Fig.</semantique> Il indique un acheminement vers. Ma fille va sur dix ans. 
+<cit aut="VOLT." ref="Louis XIV, 25">Vous voyez dans les Mémoires de l'abbé de Choisi que le marquis de Louvois lui disait en lui parlant de Meudon : je suis sur le quatorzième million</cit>
+</variante>
+<variante num="39">On l'emploie pour marquer une sanction (construction où aujourd'hui on met plutôt sous). 
+<cit aut="ST-EVREM." ref="Conv. du P. Canaye.">Si mon fils a jamais des enfants, je veux qu'ils étudient à Clermont su peine d'être déshérités</cit>
+<cit aut="MOL." ref="Mis. IV, 1">Et lorsque d'en mieux faire [des vers] on n'a pas le bonheur, On ne doit de rimer avoir aucune envie, Qu'on n'y soit condamné sur peine de la vie</cit>
+<cit aut="PASC." ref="Prov. XVIII">Est-ce un article de foi qu'il faille croire, sur peine de damnation ?</cit>
+<cit aut="SÉV." ref="224">Le hoca est défendu à Paris sur peine de la vie, et on le joue chez le roi</cit>
+<indent>Sur la vie, au risque de perdre la vie. 
+<cit aut="LA FONT." ref="Fabl. IV, 15">Gardez-vous, sur votre vie, D'ouvrir que l'on ne vous die Pour enseigne et mot du guet : Foin du loup et de sa race</cit>
+</indent>
+</variante>
+<variante num="40">Sur devant un infinitif. 
+<cit aut="SÉV." ref="à Mme de Grignan, t. v, p. 517, édit. RÉGNIER.">Toutes les conversations avec Son Éminence [Retz] qui ont toujours roulé sur dire que vous aviez de l'aversion pour lui</cit>
+</variante>
+<variante num="41">De sur, préposition composée qui n'est plus en usage ; on dirait de dessus. 
+<cit aut="CORN." ref="Suite du Ment. III, 4">Ils ont vu tout cela de sur une éminence</cit>
+<indent>De sur est fait comme de par, et pourrait être admis.
+</indent>
+</variante>
+<variante num="42">Sur entre dans la composition de plusieurs mots où il apporte la signification qui lui est propre : surabonder, surdent, etc. Voyez ces composés à leur rang alphabétique.
+</variante>
+<variante num="43">Sur toute chose, <nature>loc. adv.</nature> principalement, par préférence à tout le reste. 
+<cit aut="CORN." ref="Cinna, v, 1">Prends un siége, Cinna, prends, et, sur toute chose, Observe exactement la loi que je t'impose</cit>
+</variante>
+<variante num="44">Sur et tant moins, en déduction. 
+<cit aut="VOIT." ref="Lett. 144">Je vous envoie cent pistoles sur et tant moins de la perte que vous pouvez avoir faite pour moi</cit> (voy. <a ref="moins#var14">MOINS, n° 14</a>).
+</variante>
+<variante num="45">Sur le tout, <nature>loc. adv.</nature> Surtout, avant tout.
+<cit aut="SÉV." ref="25 oct. 1686">Il [Ch. de Sévigné] s'en est retourné chez lui avec un fonds de philosophie chrétienne, chamarrée d'un brin d'anachorète, et, sur le tout, une tendresse infinie pour sa femme</cit>
+<indent>Sur le tout, en termes de blason, se dit en parlant d'un écusson qui se met au milieu d'une écartelure.
+</indent>
+<indent>Brochant sur le tout, voy. <a ref="brocher">BROCHER</a>.
+</indent>
+<indent>Sur le tout du tout, se dit en parlant d'un écusson placé sur le milieu de l'écartelure d'un autre écusson qui est déjà sur le tout.
+</indent>
+</variante>
+</corps>
+<rubrique nom="REMARQUE">
+<indent>1. Peut-on dire : J'ai lu cela sur le journal, comme on dit : lire une inscription sur un mur, lire sur une affiche ? On pourra bien dire sur, en parlant de ce qui est étendu sur une surface. Par conséquent, on peut dire : lire sur un journal, sur une page étendue devant soi. Autrement, on dira dans : lire dans un livre, lire dans un journal.
+</indent>
+<indent>2. Loger sur la rue, veut dire avoir un logement qui a vue sur la rue ; mais, si on veut dire qu'un tel habite dans telle rue, il faut employer la préposition dans : il loge dans la rue Saint-Honoré.
+</indent>
+</rubrique>
+<rubrique nom="SYNONYME">
+<indent>SUR, DANS, CHEZ. Ces prépositions sont souvent employées dans le langage scientifique : la circulation chez le fœtus ; les actions qui se passent dans le corps vivant ; les phénomènes observés sur l'homme malade. - On distingue d'abord sur des deux autres, en disant que sur s'applique aux cas qui comportent l'idée de superficie ; on ne dirait pas bien la circulation sur le fœtus. Quant à dans, et à chez, ils se distinguent en ce que dans est plus précis et chez plus vague. Dans se dit surtout quand la chose dont il s'agit est ou peut être considérée comme étant dans l'intérieur du sujet. Chez n'implique pas cette condition ; et il s'emploiera d'autant mieux que l'on parlera plus en général et avec moins de rapport à une situation déterminée.
+</indent>
+</rubrique>
+<rubrique nom="HISTORIQUE">
+<indent>Xe s. 
+<cit aut="" ref="Eulalie">Chi [qui] rex eret [était] à cels dis [à ces jours] sovre pagiens</cit>
+<cit aut="" ref="Fragm. de Valenc. p. 468">Un edre [un lierre] sore sen cheve [tête]</cit>
+</indent>
+<indent>XIe s. 
+<cit aut="" ref="Lois de Guill. 11">E li plaiez [blessé] jurra sur saintz que....</cit>
+<cit aut="" ref="Ch. de Rol. II">Sur un peron de marbre bloi [il] se culche</cit>
+<cit aut="" ref="ib. XXII">Sur mei avez turnet fals jugement</cit>
+<cit aut="" ref="ib. LXIII">Sur tuz les altres ert Carles anguissus</cit>
+<cit aut="" ref="ib. LXXVIII">Guarde [il regarde] suz destre parmi un val herbuz</cit>
+<cit aut="" ref="ib. CXXI">[Il] Tint Valeri et Envers sur le Rosne</cit>
+<cit aut="" ref="ib. CLXIII">Sur piez se dresse, mais il a grant dolur</cit>
+</indent>
+<indent>XIIe s. 
+<cit aut="" ref="Couci, VI">Sur toute joie est cele couronée Que j'ai d'amor ; Diex ! i faudrai je dont ?</cit>
+<cit aut="" ref="ib. XI">Quant li loussignols jolis Chante seur la flor d'esté</cit>
+</indent>
+<indent>XIIIe s. 
+<cit aut="" ref="Berte, II">Qui aloient jouant sur l'erbe qui verdie</cit>
+<cit aut="" ref="ib. XLV">Ne soufrez qu'enemi [le diable] ait sur moi poesté</cit>
+<cit aut="" ref="Chr. de Rains, p. 75">Et mandez secours, sour avoir et sour vie à perdre, et mandez que nus [nul] n'i demoure</cit>
+<cit aut="" ref="la Rose, 268">Envie ne fine nule hore D'aucun blasme as gens metre sore</cit>
+<cit aut="BEAUMANOIR" ref="XXX, 7">Femme efforcier, si est quant aucuns prent à force carnele compaignie à feme contre le [la] volonté de le [la] feme et sor ce qu'elle fet tout son pooir de deffendre soi</cit>
+<cit aut="JOINV." ref="199">Il [Louis IX] venoit au jardin de Paris, une cote de chamelot vestue, un mantel de cendal noir entour son col, moult bien pigné et sans coife, et un chapel de paon blanc sur sa teste</cit>
+<cit aut="ID." ref="226">Mons Jehan de Waleri le preudome vint au roy, et li dit que il looit [conseillait] que il se traisist [retirât] à main destre sur le flum</cit>
+<cit aut="ID." ref="288">Le commencement du sermon fu sur les gens de religion</cit>
+<cit aut="" ref="Hist. des trois Maries, ms. p. 387, dans LACURNE">À Rome sont les deux Maries Chier tenues et seignouries Sur [chez] Theodore leur hostesse</cit>
+<cit aut="DU CANGE" ref="Gloss. français.">Qu'il les m'estuet sus mon gré obeir [qu'il me faut contre mon gré leur obéir]</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="FROISS." ref="II, III, 72">On demande tailles sur tailles et aides sur aides</cit>
+<cit aut="ID." ref="I, I, 134">Et l'eust volontiers sauvé s'il l'eust pu, pour cause de pitié, car bien savoit qu'il estoit pris sur la teste</cit>
+<cit aut="ID." ref="I, I, 144">Et fut encore cette treve presentée et accordée sur cette condition que....</cit>
+<cit aut="ID." ref="II, III, 13">Je descendis à l'hostel de la Lune sur [chez] un escuyer du comte, lequel....</cit>
+<cit aut="ID." ref="I, I, 227">Si escripvit devers le comte de Pierregord.... que ils fussent, sur un jour qu'il leur assigna, devant Auberoche</cit>
+<cit aut="ID." ref="I, I, 222">Et first reparer la ville et la forteresse tellement qu'elle n'avoit garde d'assaut que on y fist sur un mois ou deux</cit>
+<cit aut="ID." ref="I, I, 151">Si le laissa entrer dedans et ses gens d'armes, et vint contre lui sur la rue</cit>
+<cit aut="ID." ref="I, I, 199">Et partirent par une poterne, et se mirent sur les champs pour eux sauver</cit>
+<cit aut="ID." ref="I, I, 138">Tant il estoit courroucé sur ceux de Saint Amand</cit>
+<cit aut="ID." ref="I, I, 60">Le bon jour du grand vendredy prescha le pape, devant les roys dessusdits, et exhorta grandement à prendre la croix sur les Sarrazins</cit>
+<cit aut="ID." ref="liv. IV, p. 226, dans LACURNE">Jugement et arrest du parlement fut rendu sur messire de Craon, lequel fut condamné à cent mille francs envers la royne de Naples et de Hierusalem</cit>
+<cit aut="ID." ref="liv. IV, p. 254">Alexandre de Macedoine qui fut roy, sur douze ans, de tout le monde</cit>
+<cit aut="E. DESCH." ref="Poésies mss. f° 311">Princes, tel art fait à loer Dont li enfant scevent ouvrer Qui en sont maistres sur trois jours</cit>
+<cit aut="AL. CHART." ref="Charles VII">Ils eurent moult à souffrir, pour ce que c'estoit sur l'yver, et qu'il ne fina de plouvoir durant ce temps</cit>
+<cit aut="" ref="Patelin">Très bien : et si ne voudrois pas Avoir sur moy de quoy payer</cit>
+<cit aut="COMM." ref="VI, 3">Si ung prince n'est doué de ceste vertu sur toutes les autres</cit>
+<cit aut="ID." ref="III, 1">Disant que le duc estendoit ses limites plus avant que le traicté ne portoit ; et sur ceste occasion alloient et venoient ambassadeurs de l'un à l'autre</cit>
+<cit aut="ID." ref="III, 11">Et se mist sur la mer, craignant de tumber entre les mains du roy</cit>
+<cit aut="ID." ref="IV, 12">Tenant ainsi ceste petite duché, il venoit de Hollande jusques auprès de Lyon, toujours sur luy [sans sortir de ses domaines]</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="MAROT" ref="I, 216">Sur le printemps de ma jeunesse folle, Je ressemblois l'arondelle qui vole</cit>
+<cit aut="MARG." ref="Lett. 86">Sur ce, mon nepveu, je pry Dieu qu'il vous doint le bien que vous desire vostre....</cit>
+<cit aut="ID." ref="ib. 83">Mon nepveu, encore suis je sus bout [non accouchée]</cit>
+<cit aut="ID." ref="ib. 127">Avecques le secours que vous m'envoyriés, j'entreprendrois bien sur ma vie, toute femme que je suis, de le garder [Charles Quint] de passer</cit>
+<cit aut="ID." ref="ib. 154">Je voy bien que le temps n'a point eu victoire sur vostre memoire</cit>
+<cit aut="MONT." ref="I, 30">Les seigneurs de Carthage, voyants que leur pays se despeuploit peu à peu, feirent desfense expresse, sur peine de mort, que nul n'eust plus à aller par là</cit>
+<cit aut="ID." ref="I, 18">Sur l'heure de sa fin</cit>
+<cit aut="ID." ref="I, 20">Descharger ses passions sur....</cit>
+<cit aut="ID." ref="II, 228">Valerius dict que Ciceron, sur sa vieillesse, commencea à....</cit>
+<cit aut="D'AUB." ref="Hist. II, 434">Ils avoient eleu sur eux Briandiere....</cit>
+<cit aut="AMYOT" ref="Solon, 11">Ilz defendirent, et ce sur peine de mort, que....</cit>
+<cit aut="ID." ref="ib. 4">Avec l'argent qu'il gaigna sur des huiles qu'il y vendit</cit>
+<cit aut="ID." ref="ib. 3">Estant ja sur son aage, il disoit....</cit>
+<cit aut="ID." ref="Thém. 49">On dit que vous estimez la liberté et l'egalité sur toutes autres choses</cit>
+<cit aut="ID." ref="Cor. 5">Il alloit adjoustant prouesses sur prouesses, et amassant despouilles sur despouilles</cit>
+<cit aut="ID." ref="Artax. 3">Aucuns disent que, sur ceste simple accusation verbale, Cyrus fut saisy au corps</cit>
+<cit aut="ID." ref="ib. 3">Il entra dedans le temple, là où s'estant caché, il fut pris sur le faict</cit>
+<cit aut="ID." ref="Brutus, 42">Ilz se retirerent à part en une petite chambre, et fermerent les portes sur eulx</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Wallon, sol, sor ; bourguig. et norm. su ; picard, seur, sus (prononcé su) ; Berry, sus (prononcé su) ; prov. sobre ; esp. et portug. sobre ; ital. sopra ; du lat. super, supra (voy. <a ref="super">SUPER</a>...).
+</indent>
+</rubrique>
+</entree>
+</xmlittre>
