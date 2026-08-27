@@ -66,7 +66,11 @@ struct EtymCrossReference
 	target::String
 	printed::String
 	range::UnitRange{Int}
+	resolved::Union{Nothing, RawSpan}
 end
+
+EtymCrossReference(label, target, printed, range) =
+	EtymCrossReference(label, target, printed, range, nothing)
 
 struct EtymProse
 	text::String

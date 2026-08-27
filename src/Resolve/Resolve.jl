@@ -5,6 +5,7 @@ resolved into the representation both renderers consume. See `src/Resolve/README
 module Resolve
 
 using TOML
+using Unicode
 using UUIDs
 using XML
 
@@ -16,6 +17,7 @@ using ..Adjudication
 include("norms.jl")
 include("etymology.jl")
 include("representation.jl")
+include("references.jl")
 include("inline.jl")
 include("derive.jl")
 

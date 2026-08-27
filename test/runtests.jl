@@ -49,6 +49,7 @@ end
 	include("adjudication/test_voice_variant.jl")
 	include("adjudication/test_scope.jl")
 	include("resolve/test_resolve.jl")
+	include("resolve/test_references.jl")
 	include("resolve/test_etymology.jl")
 	include("resolve/test_authors.jl")
 	include("render/test_render.jl")

@@ -54,13 +54,86 @@ the same headword slug, but no longer supplies the ordinal.
 sense_candidate(prefix::AbstractString, index::Int, nested::Bool)::String =
 	nested ? string(prefix, '.', index) : string(prefix, "_s", index)
 
+"""
+	assign_names(corpus)
+
+Every `xml:id` the document will carry, minted in render order and keyed by raw anchor. A
+cross-reference can only be pointed at a target whose identifier is already known, so naming
+happens in its own pass and the render walk does no minting at all.
+
+A form-bearing node needs two names: one for its nested `<entry>` and one for the `<sense>` inside
+it. Both are recorded, and a reference to that node resolves to the entry.
+"""
+struct NodeNames
+	entry::Union{Nothing, String}
+	sense::String
+end
+
+struct Names
+	entries::Dict{RawSpan, String}
+	nodes::Dict{RawSpan, NodeNames}
+end
+
+function name_node!(
+	names::Names, identifiers::Identifiers, node::Resolve.ResolvedNode,
+	prefix::AbstractString, index::Int, nested::Bool,
+)
+	if node.node_type isa Adjudication.SubLemma || node.node_type isa Adjudication.VoiceVariant
+		entry = mint!(identifiers, string(prefix, "_", slug(something(node.form, "")));
+			normalize = false)
+		inner = mint!(identifiers, sense_candidate(entry, 1, false); normalize = false)
+		names.nodes[node.span] = NodeNames(entry, inner)
+		for (position, child) in enumerate(node.children)
+			name_node!(names, identifiers, child, inner, position, true)
+		end
+	else
+		sense = mint!(identifiers, sense_candidate(prefix, index, nested); normalize = false)
+		names.nodes[node.span] = NodeNames(nothing, sense)
+		for (position, child) in enumerate(node.children)
+			name_node!(names, identifiers, child, sense, position, true)
+		end
+	end
+	nothing
+end
+
+function assign_names(corpus::Resolve.ResolvedCorpus)::Names
+	identifiers = Identifiers()
+	names = Names(Dict{RawSpan, String}(), Dict{RawSpan, NodeNames}())
+	for entry in corpus.entries
+		name = mint!(identifiers, entry.headword)
+		names.entries[entry.span] = name
+		for (position, node) in enumerate(entry.nodes)
+			name_node!(names, identifiers, node, name, position, false)
+		end
+	end
+	names
+end
+
+"""
+	target_name(names, resolved)
+
+The identifier a resolved cross-reference points at, or `nothing`. The compliance contract admits
+an internal `target="#xml-id"` only where the target is reliably resolved, and prefers a textual
+reference to a guessed pointer, so an unresolved reference emits `<ref>` without `@target`.
+"""
+function target_name(names::Names, resolved::Union{Nothing, RawSpan})::Union{Nothing, String}
+	resolved === nothing && return nothing
+	haskey(names.entries, resolved) && return names.entries[resolved]
+	haskey(names.nodes, resolved) || return nothing
+	node = names.nodes[resolved]
+	node.entry === nothing ? node.sense : node.entry
+end
+
 # `<def>` and `<quote>` admit `<xr>`; `<seg>` admits only the bare `<ref>`.
-function render_inline(io::IO, items::Vector{Resolve.Inline}; wrap_cross_reference::Bool = true)
+function render_inline(
+	io::IO, items::Vector{Resolve.Inline}, names::Names; wrap_cross_reference::Bool = true,
+)
 	for item in items
 		if item isa Resolve.CrossReference
+			name = target_name(names, item.resolved)
+			target = name === nothing ? "" : " target=\"#$(escape_attribute(name))\""
 			reference = string(
-				"<ref type=\"entry\" target=\"#", escape_attribute(slug(item.target)), "\">",
-				escape_xml(item.text), "</ref>",
+				"<ref type=\"entry\"", target, ">", escape_xml(item.text), "</ref>",
 			)
 			write(io, wrap_cross_reference ? "<xr type=\"related\">" * reference * "</xr>" : reference)
 		elseif item isa Resolve.Emphasis
@@ -92,14 +165,14 @@ function render_grammar(io::IO, qualifications::Vector{Resolve.Qualification})
 end
 
 function render_citation(
-	io::IO, citation::Resolve.Citation; subtype::AbstractString = "", depth::Int = 0,
+	io::IO, citation::Resolve.Citation, names::Names; subtype::AbstractString = "", depth::Int = 0,
 	date_text::AbstractString = "", not_before = nothing, not_after = nothing,
 )
 	attribute = isempty(subtype) ? "" : " subtype=\"$(escape_attribute(subtype))\""
 	write(io, "<cit type=\"example\"", attribute, ">")
 	newline(io, depth + 1)
 	write(io, "<quote>")
-	render_inline(io, citation.quotation)
+	render_inline(io, citation.quotation, names)
 	write(io, "</quote>")
 	dated = not_before !== nothing && not_after !== nothing
 	if dated || !isempty(citation.resolved_author) || !isempty(citation.author) ||
@@ -137,27 +210,24 @@ function render_citation(
 end
 
 """
-	render_node(io, node, identifiers, prefix, depth)
+	render_node(io, node, names, depth)
 
 A node with an underdetermined type is serialized as `<sense><def>…</def></sense>` without
 implying that an adjudicator positively established an ordinary sense. A positively asserted
 `SubLemma` becomes a nested `<entry type="relatedEntry">`, which is what lets a sub-lemma sit
 inside the sense that contains it.
 """
-function render_node(
-	io::IO, node::Resolve.ResolvedNode, identifiers::Identifiers, prefix::AbstractString,
-	depth::Int; index::Int = 1, nested::Bool = false,
-)
+function render_node(io::IO, node::Resolve.ResolvedNode, names::Names, depth::Int)
 	if node.node_type isa Adjudication.SubLemma
-		render_nested_entry(io, node, identifiers, prefix, "relatedEntry", depth)
+		render_nested_entry(io, node, names, "relatedEntry", depth)
 		return nothing
 	elseif node.node_type isa Adjudication.VoiceVariant
 		# A form-bearing pronominal alternant is entry-like: Littré effectively opens a subsidiary
 		# entry under the verb, so it serializes as a homonymic entry rather than a sense.
-		render_nested_entry(io, node, identifiers, prefix, "homonymicEntry", depth)
+		render_nested_entry(io, node, names, "homonymicEntry", depth)
 		return nothing
 	end
-	name = mint!(identifiers, sense_candidate(prefix, index, nested); normalize = false)
+	name = names.nodes[node.span].sense
 	number = node.number === nothing ? "" : " n=\"$(escape_attribute(node.number))\""
 	write(io, "<sense xml:id=\"", name, "\"", number, ">")
 	for qualification in node.qualifications
@@ -172,16 +242,16 @@ function render_node(
 	if !isempty(node.definition)
 		newline(io, depth + 1)
 		write(io, "<def>")
-		render_inline(io, node.definition)
+		render_inline(io, node.definition, names)
 		write(io, "</def>")
 	end
 	for citation in node.citations
 		newline(io, depth + 1)
-		render_citation(io, citation; depth = depth + 1)
+		render_citation(io, citation, names; depth = depth + 1)
 	end
-	for (position, child) in enumerate(node.children)
+	for child in node.children
 		newline(io, depth + 1)
-		render_node(io, child, identifiers, name, depth + 1; index = position, nested = true)
+		render_node(io, child, names, depth + 1)
 	end
 	newline(io, depth)
 	write(io, "</sense>")
@@ -189,11 +259,10 @@ function render_node(
 end
 
 function render_nested_entry(
-	io::IO, node::Resolve.ResolvedNode, identifiers::Identifiers, prefix::AbstractString,
-	entry_type::AbstractString, depth::Int,
+	io::IO, node::Resolve.ResolvedNode, names::Names, entry_type::AbstractString, depth::Int,
 )
 	form = something(node.form, "")
-	name = mint!(identifiers, string(prefix, "_", slug(form)); normalize = false)
+	name = something(names.nodes[node.span].entry, "")
 	write(io, "<entry xml:id=\"", name, "\" xml:lang=\"", object_language,
 		"\" type=\"", entry_type, "\">")
 	newline(io, depth + 1)
@@ -209,7 +278,7 @@ function render_nested_entry(
 		write(io, "<pc>", escape_xml(node.separator), "</pc>")
 	end
 	newline(io, depth + 1)
-	inner = mint!(identifiers, sense_candidate(name, 1, false); normalize = false)
+	inner = names.nodes[node.span].sense
 	write(io, "<sense xml:id=\"", inner, "\">")
 	for qualification in node.qualifications
 		qualification.channel == :usg || continue
@@ -219,16 +288,16 @@ function render_nested_entry(
 	if !isempty(node.definition)
 		newline(io, depth + 2)
 		write(io, "<def>")
-		render_inline(io, node.definition)
+		render_inline(io, node.definition, names)
 		write(io, "</def>")
 	end
 	for citation in node.citations
 		newline(io, depth + 2)
-		render_citation(io, citation; depth = depth + 2)
+		render_citation(io, citation, names; depth = depth + 2)
 	end
-	for (position, child) in enumerate(node.children)
+	for child in node.children
 		newline(io, depth + 2)
-		render_node(io, child, identifiers, inner, depth + 2; index = position, nested = true)
+		render_node(io, child, names, depth + 2)
 	end
 	newline(io, depth + 1)
 	write(io, "</sense>")
@@ -237,7 +306,7 @@ function render_nested_entry(
 	nothing
 end
 
-function render_etym_segment(io::IO, cit::Resolve.EtymCit)
+function render_etym_segment(io::IO, cit::Resolve.EtymCit, ::Names)
 	language = isempty(cit.language) ? "" : " xml:lang=\"$(escape_attribute(cit.language))\""
 	write(io, "<cit type=\"", String(cit.cit_type), "\"", language, ">")
 	if cit.cue !== nothing
@@ -257,33 +326,34 @@ function render_etym_segment(io::IO, cit::Resolve.EtymCit)
 	nothing
 end
 
-render_etym_segment(io::IO, connector::Resolve.EtymConnector) =
+render_etym_segment(io::IO, connector::Resolve.EtymConnector, ::Names) =
 	write(io, "<lbl>", escape_xml(connector.printed), "</lbl>")
 
 # The token is preserved rather than silently corrected; the epistemic claim rides on @ana.
-render_etym_segment(io::IO, suspect::Resolve.EtymSuspect) =
+render_etym_segment(io::IO, suspect::Resolve.EtymSuspect, ::Names) =
 	write(io, "<lbl ana=\"suspect\">", escape_xml(suspect.token), "</lbl>")
 
-render_etym_segment(io::IO, prose::Resolve.EtymProse) =
+render_etym_segment(io::IO, prose::Resolve.EtymProse, ::Names) =
 	write(io, "<seg>", escape_xml(prose.text), "</seg>")
 
-function render_etym_segment(io::IO, reference::Resolve.EtymCrossReference)
+function render_etym_segment(io::IO, reference::Resolve.EtymCrossReference, names::Names)
 	isempty(reference.label) ||
 		write(io, "<lbl>", escape_xml(reference.label), "</lbl>")
-	write(io, "<ref type=\"entry\" target=\"#", escape_attribute(slug(reference.target)), "\">",
-		escape_xml(reference.printed), "</ref>")
+	name = target_name(names, reference.resolved)
+	target = name === nothing ? "" : " target=\"#$(escape_attribute(name))\""
+	write(io, "<ref type=\"entry\"", target, ">", escape_xml(reference.printed), "</ref>")
 	nothing
 end
 
 """
-	render_rubrique(io, rubrique, depth)
+	render_rubrique(io, rubrique, names, depth)
 
 `<note>` cannot hold `<cit>` under Lex-0, so a rubrique's citations are lifted to entry level while
 its prose stays in a note. Items are emitted in source order, which keeps a century label adjacent
 to the attestations it introduces. The rubrique boundary is therefore not expressed in TEI; the
 `subtype` and the rubrique's raw anchor in SQLite carry that association instead.
 """
-function render_rubrique(io::IO, rubrique::Resolve.ResolvedRubrique, depth::Int)
+function render_rubrique(io::IO, rubrique::Resolve.ResolvedRubrique, names::Names, depth::Int)
 	started = false
 	function next_item!()
 		if started
@@ -298,7 +368,7 @@ function render_rubrique(io::IO, rubrique::Resolve.ResolvedRubrique, depth::Int)
 		write(io, "<etym>")
 		for anchored in rubrique.etymology
 			newline(io, depth + 1)
-			render_etym_segment(io, anchored.segment)
+			render_etym_segment(io, anchored.segment, names)
 		end
 		newline(io, depth)
 		write(io, "</etym>")
@@ -306,34 +376,34 @@ function render_rubrique(io::IO, rubrique::Resolve.ResolvedRubrique, depth::Int)
 	note_type = Resolve.conventions_for(rubrique.name).note
 	for item in rubrique.items
 		next_item!()
-		render_rubrique_item(io, item, note_type, depth)
+		render_rubrique_item(io, item, names, note_type, depth)
 	end
 	nothing
 end
 
-render_rubrique_item(io::IO, label::Resolve.RubriqueLabel, ::AbstractString, ::Int) =
+render_rubrique_item(io::IO, label::Resolve.RubriqueLabel, ::Names, ::AbstractString, ::Int) =
 	write(io, "<lbl type=\"", escape_attribute(label.kind), "\">", escape_xml(label.text), "</lbl>")
 
-render_rubrique_item(io::IO, citation::Resolve.RubriqueCitation, ::AbstractString, depth::Int) =
+render_rubrique_item(
+	io::IO, citation::Resolve.RubriqueCitation, names::Names, ::AbstractString, depth::Int,
+) =
 	render_citation(
-		io, citation.citation;
+		io, citation.citation, names;
 		subtype = citation.subtype, depth = depth, date_text = citation.date_text,
 		not_before = citation.not_before, not_after = citation.not_after,
 	)
 
 function render_rubrique_item(
-	io::IO, prose::Resolve.RubriqueProse, note_type::AbstractString, ::Int,
+	io::IO, prose::Resolve.RubriqueProse, names::Names, note_type::AbstractString, ::Int,
 )
 	write(io, "<note type=\"", escape_attribute(note_type), "\"><seg>")
-	render_inline(io, prose.content; wrap_cross_reference = false)
+	render_inline(io, prose.content, names; wrap_cross_reference = false)
 	write(io, "</seg></note>")
 	nothing
 end
 
-function render_entry(
-	io::IO, entry::Resolve.ResolvedEntry, identifiers::Identifiers, depth::Int,
-)
-	name = mint!(identifiers, entry.headword)
+function render_entry(io::IO, entry::Resolve.ResolvedEntry, names::Names, depth::Int)
+	name = names.entries[entry.span]
 	write(io, "<entry xml:id=\"", name, "\" xml:lang=\"", object_language, "\" type=\"mainEntry\">")
 	newline(io, depth + 1)
 	write(io, "<form type=\"lemma\"><orth>", escape_xml(entry.headword), "</orth>")
@@ -349,16 +419,16 @@ function render_entry(
 		newline(io, depth + 1)
 		render_qualification(io, qualification)
 	end
-	for (position, node) in enumerate(entry.nodes)
+	for node in entry.nodes
 		newline(io, depth + 1)
-		render_node(io, node, identifiers, name, depth + 1; index = position)
+		render_node(io, node, names, depth + 1)
 	end
 	# Source order: Littré puts HISTORIQUE before ÉTYMOLOGIE in some entries and after in others,
 	# and entry content is unordered under Lex-0, so nothing is gained by imposing a house order.
 	for rubrique in entry.rubriques
 		isempty(rubrique.items) && isempty(rubrique.etymology) && continue
 		newline(io, depth + 1)
-		render_rubrique(io, rubrique, depth + 1)
+		render_rubrique(io, rubrique, names, depth + 1)
 	end
 	newline(io, depth)
 	write(io, "</entry>\n")
@@ -368,7 +438,7 @@ end
 function render_tei(
 	corpus::Resolve.ResolvedCorpus, path::AbstractString; header::AbstractString = tei_header(),
 )
-	identifiers = Identifiers()
+	names = assign_names(corpus)
 	open(path, "w") do handle
 		write(handle, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 		write(handle, "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\" xml:id=\"littre\" type=\"lex-0\">\n")
@@ -376,7 +446,7 @@ function render_tei(
 		write(handle, "\n  <text>\n    <body>\n")
 		for entry in corpus.entries
 			indent(handle, 3)
-			render_entry(handle, entry, identifiers, 3)
+			render_entry(handle, entry, names, 3)
 		end
 		write(handle, "    </body>\n  </text>\n</TEI>\n")
 	end

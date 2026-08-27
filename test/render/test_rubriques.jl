@@ -93,15 +93,17 @@ using DeepLittre.Render: render_tei, render_sqlite
 	end
 
 	@testset "a cross-reference in rubrique prose stays inside what <seg> admits" begin
-		directory = mktempdir()
-		cp(joinpath(fixture_root, "synthetic", "rubrique_cross_reference.xml"),
-			joinpath(directory, "r.xml"))
-		local_documents = read_corpus(directory)
+		local_documents = read_corpus(joinpath(fixture_root, "synthetic", "references"))
 		local_resolved = resolve(build_harness(local_documents, census(local_documents)))
 		tei_path = render_tei(local_resolved, joinpath(mktempdir(), "littre.tei.xml"))
 		text = read(tei_path, String)
 
-		@test occursin("<ref type=\"entry\" target=\"#notre\">NOTRE</ref>", text)
+		# The lemma NOTRE is the headword NOTRE, NÔTRE, which no slug of the source ref would reach.
+		@test occursin("<ref type=\"entry\" target=\"#notre_notre\">NOTRE</ref>", text)
+		# Nothing carries this lemma, so a textual reference rather than a guessed pointer.
+		@test occursin("<ref type=\"entry\">INTROUVABLE</ref>", text)
+		# A variante number reaches the sense minted for that variante.
+		@test occursin("<ref type=\"entry\" target=\"#zero_s2\">ZÉRO</ref>", text)
 		for segment in eachmatch(r"<seg\b.*?</seg>"s, text)
 			@test !occursin("<xr", segment.match)
 		end

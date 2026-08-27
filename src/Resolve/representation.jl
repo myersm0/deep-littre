@@ -9,7 +9,11 @@ struct CrossReference <: Inline
 	text::String
 	span::RawSpan
 	target::String
+	resolved::Union{Nothing, RawSpan}
 end
+
+CrossReference(text::String, span::RawSpan, target::String) =
+	CrossReference(text, span, target, nothing)
 
 struct Emphasis <: Inline
 	text::String

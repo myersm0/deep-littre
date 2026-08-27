@@ -112,6 +112,10 @@ create table content_segments (
 	kind text not null,
 	text text not null,
 	target text,
+	resolved_entry text,
+	resolved_file text,
+	resolved_start_byte integer,
+	resolved_end_byte integer,
 	source_element text,
 	language text,
 	file text not null,
@@ -168,6 +172,13 @@ node_type_column(value::Adjudication.NodeType) = Adjudication.node_type_name(val
 # keys rather than fresh ones.
 anchored_id(span::RawSpan)::String = string(span.file, ':', span.start_byte, ':', span.end_byte)
 
+# A cross-reference keeps what the source printed and, where the resolver could establish it, the
+# anchor it names. Unresolved stays null rather than guessing, which is the same contract the TEI
+# renderer applies when it declines to emit @target.
+resolved_columns(::Nothing) = (missing, missing, missing, missing)
+resolved_columns(span::RawSpan) =
+	(anchored_id(span), span.file, span.start_byte, span.end_byte)
+
 """
 	insert_segments!(database, owner_kind, owner_id, items)
 
@@ -189,12 +200,13 @@ function insert_segments!(
 		else
 			("text", missing, missing, missing)
 		end
+		resolved = item isa Resolve.CrossReference ? item.resolved : nothing
 		DBInterface.execute(
 			database,
-			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?)",
+			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
 				owner_kind, owner_id, offset + index, kind, Resolve.inline_text(item),
-				target, source_element, language,
+				target, resolved_columns(resolved)..., source_element, language,
 				item.span.file, item.span.start_byte, item.span.end_byte,
 			),
 		)

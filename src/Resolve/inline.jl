@@ -6,6 +6,7 @@ in place rather than removed, so a cross-reference stays inside the definition.
 """
 mutable struct InlineBuilder
 	document::Source.SourceDocument
+	references::Union{Nothing, CrossReferenceIndex}
 	items::Vector{Inline}
 	buffer::IOBuffer
 	start_byte::Int
@@ -13,8 +14,8 @@ mutable struct InlineBuilder
 	pending_space::Union{Nothing, ViewSpan}
 end
 
-InlineBuilder(document::Source.SourceDocument) =
-	InlineBuilder(document, Inline[], IOBuffer(), 0, 0, nothing)
+InlineBuilder(document::Source.SourceDocument, references = nothing) =
+	InlineBuilder(document, references, Inline[], IOBuffer(), 0, 0, nothing)
 
 function flush_run!(builder::InlineBuilder)
 	text = String(take!(builder.buffer))
@@ -167,10 +168,13 @@ function gather_node!(builder::InlineBuilder, child::XML.FlatNode, excluded::Vec
 		else
 			name = XML.tag(child)
 			if name == "a"
+				reference = something(Source.attribute(child, "ref"), "")
 				push_item!(builder, CrossReference(
 					collapse_inline(document, child),
 					Source.to_raw(document.transform, span)[1],
-					something(Source.attribute(child, "ref"), ""),
+					reference,
+					builder.references === nothing ? nothing :
+						resolve_reference(builder.references, reference),
 				))
 			elseif name in ("i", "exemple", "mentioned", "foreign")
 				language = Source.attribute(child, "lang")
@@ -196,8 +200,10 @@ Inline content assembled from an explicit run of sibling nodes rather than from 
 Rubrique prose arrives as the material between citations, which is a slice of a paragraph's
 children, not a subtree.
 """
-function inline_from(document::Source.SourceDocument, nodes::Vector{XML.FlatNode})::Vector{Inline}
-	builder = InlineBuilder(document)
+function inline_from(
+	document::Source.SourceDocument, nodes::Vector{XML.FlatNode}, references = nothing,
+)::Vector{Inline}
+	builder = InlineBuilder(document, references)
 	for node in nodes
 		gather_node!(builder, node, ViewSpan[])
 	end
@@ -214,8 +220,9 @@ end
 
 function inline_content(
 	document::Source.SourceDocument, node::XML.FlatNode, excluded::Vector{ViewSpan},
+	references = nothing,
 )::Vector{Inline}
-	builder = InlineBuilder(document)
+	builder = InlineBuilder(document, references)
 	gather_inline!(builder, node, excluded)
 	flush_run!(builder)
 	trim_inline(builder.items)
