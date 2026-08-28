@@ -60,14 +60,13 @@ The underlying principle survives: every successor enumeration or closed union m
 
 ### Still required because it hardens the source substrate
 
-Before span-anchored adjudications are committed:
+Before large-scale adjudications are committed:
 
-- reject newline-bearing patch replacements;
-- require each patch's `old` text to occur exactly once on its target line;
-- assert line-count preservation after patching and after normalization;
-- assert byte identity outside the patched line set after patching;
+- require each patch's `old` text to begin exactly once on its configured source line;
+- allow replacements to change byte length and line count, with coordinate drift carried by the transform map;
 - audit each normalization rule against the full corpus rather than carrying it forward by inertia;
-- verify source encoding/newline/BOM assumptions used by the span layer.
+- verify source encoding/newline/BOM assumptions used by the span layer;
+- freeze the classifier-facing projection and stale-verdict contract before producing expensive verdicts.
 
 The Latin `<span lang="la">` normalization should not retain a cross-line `s`-flag merely for compatibility. First inventory the full corpus; if no legitimate multiline instance exists, constrain the rewrite to the actual syntax and preserve the line-local invariant.
 
@@ -112,20 +111,18 @@ Before structural coverage work scales up, implement the versioned adjudication 
 - `SubLemma`;
 - `VoiceVariant`.
 
-The implementation must also support `segmentation_complete` under closure protocol version 1. A block or residual span is derivable as an ordinary `Sense` only when the frozen structural alternatives have been exhausted with no unresolved result and closure is complete.
-
-For v0.3, structural alternative-set version 1 is:
+For v0.3, the current structural alternatives are:
 
 - `SubLemma`;
 - `VoiceVariant`.
 
-Closure protocol version 1 additionally requires `segmentation_complete`. Structural passes perform exhaustive extraction over their target span and expose explicit residual spans, so positive and negative outcomes can coexist within one enclosing source block while applying to different targets.
+A block is derivable as an ordinary `Sense` only after every current structural pass has an applicable non-unresolved verdict and the resulting assertions are structurally compatible. Positive structural passes perform exhaustive extraction over their projected target and expose explicit residual spans; the authoring/application path verifies that node plus residual spans account for the full target.
 
 ### 5. Validate one complete adjudication path
 
 Before importing any legacy classification artifact or settled ruling, demonstrate on real sample material:
 
-`source anchor → SourceBlock → examination record → semantic assertion → target reference → semantic resolution → TEI → SQLite`
+`source block → classification surface → examination record → projected assertion → materialized runtime span → semantic resolution → TEI → SQLite`
 
 The point is to discover record-shape mistakes before the most expensive hand-made data is converted.
 
@@ -133,7 +130,7 @@ The point is to discover record-shape mistakes before the most expensive hand-ma
 
 There is no assumed legacy verdicts CSV population to migrate. Audit provenance before treating any historical locution tag/label artifact as an adjudication; the reported population is retained for review and may later become an evaluation asset if its quality warrants it, but it is not ground truth by default.
 
-Only judgments whose provenance establishes that they are actual settled human/LLM/rule adjudications are re-anchored into the authoritative store. Settled cabinet rulings and similar cases can be imported after the end-to-end path above is stable; unverified legacy tags remain reference/audit data rather than authoritative records.
+Only judgments whose provenance establishes that they are actual settled human/LLM/rule adjudications are imported into the authoritative store. Settled cabinet rulings and similar cases can be imported after the end-to-end path above is stable; unverified legacy tags remain reference/audit data rather than authoritative records.
 
 ## Retirement gate for v0.2 code
 

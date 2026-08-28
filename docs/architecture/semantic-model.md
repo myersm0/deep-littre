@@ -63,7 +63,7 @@ The initial structural node types are:
 - `SubLemma` — form-bearing;
 - `VoiceVariant` — form-bearing.
 
-The model may grow additional node types only by versioning the structural alternative set used for exhaustion.
+The model may grow additional structural node types, but adding one also changes the set of passes closure must exhaust before an ordinary `Sense` can be derived. Existing verdicts for the older passes remain valid; blocks simply remain structurally open until the new alternative has been examined.
 
 Containment is structural, not typal. A `VoiceVariant` may contain senses; a `SubLemma` may or may not; rubriques may contain semantic nodes. Node type does not encode whether a node can contain children.
 
@@ -71,7 +71,7 @@ There is no node type meaning "unclassified" or "not adjudicated". Those are wor
 
 ## Structural alternatives
 
-Structural alternative-set version 1 is `{SubLemma, VoiceVariant}`. Both are form-bearing;
+The current structural alternatives are `{SubLemma, VoiceVariant}`. Both are form-bearing;
 `Sense` is not.
 
 ### VoiceVariant
@@ -125,13 +125,14 @@ A `SubLemma` may carry constituent spans such as:
 These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting.
 
 Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation
-that belongs to neither span. Because both constituents keep raw anchors and lie inside the node's
-span, that material is recoverable as the gap between them, and the resolver surfaces it as the
-node's `separator`. Constituent spans are therefore retained through resolution into both outputs
-rather than being reduced to their text, and no renderer may drop the separator or graft it onto a
+that belongs to neither span. Durable adjudication stores their intervals in projected classifier
+text. When a valid verdict is applied, those intervals are materialized to current raw spans inside
+the node's raw extent; the material between the materialized form and gloss is therefore recoverable
+as the node's `separator`. Constituent spans are retained through resolution into both outputs rather
+than being reduced to their text, and no renderer may drop the separator or graft it onto a
 constituent it does not belong to. A constituent's semantic text is reconstructed through the same
-versioned projection used for adjudication rather than by slicing its raw interval, because a
-contiguous raw anchor may legitimately cover interior source markup.
+projection used for adjudication rather than by blindly slicing its raw interval, because a
+contiguous source interval may legitimately cover interior markup.
 
 A block may contain more than one sub-lemma. A node's primary span is contiguous; if shared or discontinuous material later requires representation, attach multiple explicit constituent/source spans rather than silently redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
 
@@ -182,9 +183,10 @@ and the absence of a record never becomes a claim.
 The `qualification_scope` pass records **departures** from that default. Its question is whether
 any marker in the material governs something other than the block containing it; a negative
 outcome is the positive statement that every marker here scopes by containment. A positive
-outcome carries scope assertions naming the printed marker and the raw span of the material it
+outcome carries scope assertions naming the printed marker and the projected span of the material it
 governs — a span rather than a node id, because the node it lands on may be derived at resolution
-and have no durable identity.
+and have no durable identity. Valid records materialize both projected intervals to current raw
+spans before resolution.
 
 A scope adjudication moves **where** a marker applies, never **what** it means. The type and norm
 stay deterministic products of the committed normalization tables, and a test asserts the full set
@@ -194,36 +196,35 @@ far a printed label reaches, not invent a label the source does not print.
 
 The transition-resolution labels inherited from v0.2 — strong, medium, intra-sense, zero, and citation veto — may survive as inference metadata for the voice/transition pass. They do not constitute the scope representation itself.
 
-## Anchoring
+## Adjudication identity and stale detection
 
-Durable adjudication identity is based on immutable raw source spans, not generated sense ids or line numbers.
+Durable adjudication identity is semantic rather than positional. A record stores the current raw block
+span `(file, start_byte, end_byte)` only as a fast locator and stores one `surface_sha256` over the
+canonical material actually presented for classification.
 
-The canonical anchor is:
+The classification surface includes the projected target text, target kind, explicit qualification
+markers, and deterministic citation context. Context is therefore evidence: changing a citation can
+make a structural verdict stale even when the target block text itself is unchanged. This is
+intentionally conservative.
 
-```text
-(file, start_byte, end_byte)
-```
+Semantic selections inside the target — node, form, gloss, residual, scope marker, and scope target —
+are stored as half-open byte intervals in projected classifier text. They are translated to current
+parser-view/raw coordinates only after the record's classification surface has been validated.
 
-with a half-open raw UTF-8 interval `[start_byte, end_byte)`.
+Application proceeds conservatively:
 
-Each adjudication stores:
+1. inspect the block at the stored locator;
+2. if it is still an eligible block, require its classification surface hash to match;
+3. if the old locator no longer names a block, recover only a unique same-file eligible block with
+   the same surface hash;
+4. otherwise mark the verdict stale.
 
-1. a raw-anchor hash proving that the same upstream material still occupies that span;
-2. one classification-surface hash proving that the material shown to the adjudicator has not changed; the raw block span is only a locator.
+If an eligible block still occupies the old locator but its surface changed, no fallback search is
+performed. A development build reports and skips stale verdicts; a strict release rejects them.
+Malformed record geometry is a store-integrity error, not a stale verdict.
 
-Context shown alongside the target does not enlarge the anchor or participate in record identity. It is recorded as provenance and must lie inside the record's own raw span, so the raw-anchor check already covers it; a separate context hash would only repeat that check.
-
-Line number, headword, source ordinal, and generated `xml:id` are useful navigation fields but do not bear adjudication identity.
-
-Detailed transform mapping and XML.jl mechanics are defined in `source-representation.md`.
-
-## Failing closed
-
-An old judgment must never silently migrate onto different text.
-
-If either target check fails, application of the record is an error. The pipeline does not warn and fall back to a heuristic answer.
-
-Re-anchoring is an explicit maintenance operation that updates the record after confirmation. The record's opaque `record_id`/`node_id` may survive re-anchoring even though its source coordinates change.
+Line number, headword, source ordinal, and generated `xml:id` remain useful navigation fields but do
+not bear adjudication identity. Detailed transform mapping is defined in `source-representation.md`.
 
 ## Authoritative adjudication records
 
@@ -264,29 +265,22 @@ A pass can therefore state honestly that it has completed all ordinary indents w
 
 No single pass asserts that whatever it did not recognize must be an ordinary sense.
 
-Ordinary `Sense` is derived only by exhaustion of the current structural alternatives.
-
-Structural alternative-set version 1 is:
+Ordinary `Sense` is derived only by exhaustion of the current structural alternatives, presently:
 
 ```text
 {SubLemma, VoiceVariant}
 ```
 
-`segmentation_complete` belongs to **closure protocol version 1**; it is not a structural alternative. For a residual span:
+A persisted examination target is a census `SourceBlock`. Each structural pass examines the whole
+block. A negative result establishes that alternative as absent throughout the block. A positive
+result is exhaustive: asserted node spans plus explicit residual spans must completely partition the
+projected target. The harness checks that partition when authoring and application revalidates the
+persisted geometry before resolution.
 
-```text
-SubLemma?                negative
-VoiceVariant?            negative
-segmentation_complete    true
-----------------------------------
-ordinary Sense           derivable
-```
-
-A persisted examination target is a census `SourceBlock`. Residual spans are closure regions, not independently addressable targets, and the store holds no per-residual records.
-
-This loses no expressivity under alternative-set version 1. Each structural pass examines the whole block. A negative result establishes its alternative as absent throughout the block, residuals included. A positive exhaustive result establishes the alternative on its asserted node spans and absent everywhere else in the block, residuals included. The per-residual negatives that a naive reading would require are therefore derived facts rather than stored ones, and the harness does not materialize them.
-
-Residual spans do remain first-class in one respect: an exhaustive claim is checked, not trusted. The resolver projects the target and requires every source-visible character to be claimed by an asserted node span or by an explicit residual span. An exhaustive claim over unaccounted material yields no derived sense and a review finding naming the unaccounted text.
+Residual spans are therefore closure evidence, not independently addressable adjudication targets,
+and the store holds no per-residual verdicts. For closure, every current structural pass must have an
+applicable non-unresolved result and the combined assertions must be structurally compatible. If any
+pass is absent, stale, unresolved, or conflicting, ordinary `Sense` is not derived.
 
 ### Residuals are closure units, not node extents
 
@@ -313,9 +307,9 @@ entry interrupts the definition.
 Closure may therefore derive one enclosing `Sense` containing positive child nodes; residual
 spans themselves need not become separate `Sense` nodes.
 
-The derivation applies to the block's **direct content** — what remains once asserted structural children are carved out — and is valid only where the block was eligible for every alternative pass and no result is unresolved. `segmentation_complete` asserts that all structural boundaries and residuals have been accounted for under the current alternative set and closure protocol.
+The derivation applies to the block's **direct content** — what remains once asserted structural children are carved out — and is valid only where the block is eligible for every current structural pass, every pass has an applicable non-unresolved verdict, and positive partitions have been validated.
 
-If a future release adds a new structural alternative, it defines a new alternative-set version. Older derived senses do not silently inherit the stronger claim.
+If a future release adds a new structural alternative, closure immediately requires that new pass as well. Existing verdict records for older passes do not become false or stale merely because the set grew; previously derived senses simply cease to close until the new alternative has been examined.
 
 ## Partial adjudication and coarse truth
 
@@ -331,7 +325,7 @@ Workflow state such as "unexamined" is not published as `ana="unclassified"`.
 
 Generated TEI `xml:id` values are rendering identifiers, not adjudication identities.
 
-v0.3 does not promise cross-release `xml:id` stability before 1.0. Adjudication proceeds by source anchors and opaque internal ids, so semantic work is not coupled to positional TEI identifiers.
+v0.3 does not promise cross-release `xml:id` stability before 1.0. Adjudication proceeds by classification surfaces, projected selections, a locator, and opaque internal ids, so semantic work is not coupled to positional TEI identifiers.
 
 If stable public ids become a requirement, that is a separate release-contract decision.
 

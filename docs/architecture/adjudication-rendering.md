@@ -39,3 +39,48 @@ Explicit `<semantique>` and `<nature>` facts are always reconstructed determinis
 ## Coverage
 
 Coverage is computed from the current code-defined population and applicable records. Each pass reports population size/hash, examined/positive/negative/unresolved counts, and the number of stale records.
+## Renderer contracts
+
+Both renderers consume only the resolved representation. They may serialize, escape, format, and mint output-local identifiers; they may not classify source material, infer a qualification or relation, repair an unresolved structural judgment, or publish workflow state as semantic markup.
+
+### Node extents and inline content
+
+A resolved node's raw span is a container extent, not exclusive ownership of every byte it covers. A parent may therefore span nested structural children. Direct textual content is carried separately as ordered inline segments; punctuation between form/gloss constituents is carried explicitly as a separator rather than silently attached to either constituent.
+
+This distinction is load-bearing across both outputs: containment comes from node extents, while textual ownership and inline structure come from the resolved content representation.
+
+### TEI renderer contract
+
+The TEI renderer:
+
+- serializes the node hierarchy already present in `Resolve`;
+- serializes `SubLemma` as nested `entry type="relatedEntry"` and form-bearing `VoiceVariant` as the corresponding entry-like variant representation;
+- emits resolved qualifications, grammatical facts, relations, rubriques, and citations on their resolved targets;
+- may introduce wrapper structure required by Lex-0, but must not turn an underdetermined workflow state into a semantic assertion;
+- emits no `ana="unclassified"` workflow marker;
+- must pass the pinned Lex-0 schema gate.
+
+Generated `xml:id` values are rendering identifiers only. They are not adjudication identity and need not remain stable when resolved structure changes.
+
+### SQLite renderer contract
+
+SQLite is a queryable mirror of the same resolved facts, not an independent interpretation. In particular:
+
+- `node_type` remains null where semantic type is underdetermined;
+- node raw spans are container extents;
+- ordered `content_segments` preserve direct inline content and its structure rather than flattening it away;
+- constituent spans, qualifications, relations, rubriques, citations, provenance, review findings, and coverage remain queryable;
+- output-local keys may use current raw anchors where appropriate, but those keys are not durable adjudication identity.
+
+### Cross-output invariants
+
+TEI and SQLite must agree on semantic content even though their serialization structures differ. Tests therefore require parity for:
+
+- resolved node types and containment;
+- qualification/grammatical axis, norm, and target;
+- cross-reference relations and resolved targets;
+- citation counts and resolved authors;
+- structural constituent content;
+- absence of semantic facts invented by either renderer.
+
+Schema validity is an additional TEI requirement, not a substitute for semantic parity.

@@ -383,8 +383,7 @@ Project annotations that express a corpus fact or editorial epistemic claim may 
 one must be consciously admitted. The diachronic distinction that v0.2 expressed as
 `ana="attestation"` is now `cit/@subtype="attestation"`.
 
-Coverage, pass version, decision procedure, and unresolved workflow state live in the authoritative
-adjudication store and its SQLite mirror.
+Pass version, decision procedure, and unresolved verdict state live in the authoritative adjudication records. Coverage is computed against the current census/pass definitions and mirrored into SQLite; none of this workflow state is serialized as TEI semantics.
 
 ## Identifier policy
 
@@ -397,7 +396,7 @@ where two entries normalize to the same headword slug, so the ordinal always mea
 
 These ids are rendering identifiers. v0.3 does not promise stability across pre-1.0 releases while structural adjudication is still splitting and regrouping material. Readability is not durability: a positional id moves whenever adjudication regroups the material under it.
 
-Internal adjudication identity uses source anchors and opaque record/node ids instead.
+Internal adjudication validity uses the canonical classification surface plus projected selections; the stored raw block span is only a locator. Opaque record/node ids identify authored objects without coupling them to positional TEI ids.
 
 ## Validation gates
 
