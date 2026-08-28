@@ -16,6 +16,13 @@ using DeepLittre.Resolve: resolve
 
 	records = Dict(pass.pass => read_pass(harness.store, pass.pass) for pass in current_passes)
 
+	@testset "committed store uses the simplified durable shape" begin
+		@test !isfile(joinpath(corpus_adjudication, "manifest.toml"))
+		positive = only(filter(record -> record.outcome == :positive, records["sublemma"]))
+		@test only(positive.assertions).span isa DeepLittre.Adjudication.ProjectedSpan
+		@test only(positive.residuals) isa DeepLittre.Adjudication.ProjectedSpan
+	end
+
 	@testset "every committed record applies" begin
 		for (pass, found) in records, record in found
 			@test applicable(check(harness, record))

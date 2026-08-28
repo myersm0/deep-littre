@@ -22,6 +22,23 @@ using DeepLittre.Adjudication: present, commit, check, materialize_record, Decis
 		residuals = ["Familièrement."],
 	)
 
+	function tiny_source(blocks::Vector{String}; shifted::Bool = false)
+		gap = shifted ? "\n" : ""
+		body = join(("<indent>$(text)</indent>" for text in blocks), "")
+		"<?xml version=\"1.0\" encoding=\"UTF-8\"?><xmlittre>$(gap)<entree terme=\"TEST\"><entete><nature>s. m.</nature></entete><corps><variante>$(body)</variante></corps></entree></xmlittre>"
+	end
+
+	function tiny_harness(source::String)
+		directory = mktempdir()
+		write(joinpath(directory, "a.xml"), source)
+		found_documents = read_corpus(directory)
+		found_corpus = census(found_documents)
+		(
+			DeepLittre.Adjudication.Harness(found_documents, found_corpus, Store(mktempdir())),
+			found_corpus,
+		)
+	end
+
 	@testset "absent store remains a supported coarse mode" begin
 		root = joinpath(mktempdir(), "missing")
 		empty = DeepLittre.Adjudication.Harness(documents, corpus, Store(root))
@@ -204,6 +221,46 @@ using DeepLittre.Adjudication: present, commit, check, materialize_record, Decis
 		@test applied !== nothing
 		@test applied.source != record.source
 		@test check(moved_harness, record) == :valid
+
+		document = moved_harness.documents[applied.source.file]
+		assertion = only(applied.assertions)
+		@test String(DeepLittre.Source.slice(document.raw_text, assertion.span)) ==
+			"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs."
+		constituents = Dict(candidate.name => candidate.span for candidate in assertion.constituents)
+		@test String(DeepLittre.Source.slice(document.raw_text, constituents["form"])) ==
+			"Avaler des poires d'angoisse"
+		@test String(DeepLittre.Source.slice(document.raw_text, constituents["gloss"])) ==
+			"subir des mortifications, de vifs déplaisirs."
+		@test String(DeepLittre.Source.slice(document.raw_text, only(applied.residuals))) ==
+			"Familièrement."
+	end
+
+	@testset "ambiguous surface recovery fails closed" begin
+		original_harness, original_corpus = tiny_harness(tiny_source(["Alpha beta."]))
+		original_block = only(filter(candidate -> candidate.kind isa DeepLittre.Census.Indent, eligible(sublemma_pass, original_corpus)))
+		record = commit(
+			original_harness, sublemma_pass, present(original_harness, sublemma_pass, original_block),
+			Decision(:negative); decision_procedure = "test",
+		)
+
+		changed_harness, _ = tiny_harness(tiny_source(["Alpha beta.", "Alpha beta."]; shifted = true))
+		@test check(changed_harness, record) == :stale
+		@test materialize_record(changed_harness, record) === nothing
+	end
+
+	@testset "changed occupied locator never falls back elsewhere" begin
+		original_harness, original_corpus = tiny_harness(tiny_source(["Alpha beta."]))
+		original_block = only(filter(candidate -> candidate.kind isa DeepLittre.Census.Indent, eligible(sublemma_pass, original_corpus)))
+		record = commit(
+			original_harness, sublemma_pass, present(original_harness, sublemma_pass, original_block),
+			Decision(:negative); decision_procedure = "test",
+		)
+
+		changed_harness, changed_corpus = tiny_harness(tiny_source(["Gamma zeta.", "Alpha beta."]))
+		blocks = filter(candidate -> candidate.kind isa DeepLittre.Census.Indent, eligible(sublemma_pass, changed_corpus))
+		@test first(blocks).raw_span == record.source
+		@test check(changed_harness, record) == :stale
+		@test materialize_record(changed_harness, record) === nothing
 	end
 
 	@testset "citation context participates in the surface hash" begin
