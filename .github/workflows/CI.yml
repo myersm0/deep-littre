@@ -39,5 +39,7 @@ jobs:
 
       - name: Build and validate the development corpus
         run: |
-          julia --project=. bin/run_pipeline.jl test/corpus/source /tmp/out --patches none --store test/corpus/adjudication --strict-adjudications
+          julia --project=. bin/run_pipeline.jl test/corpus/source /tmp/out --patches none --store test/corpus/adjudication --strict-adjudications --build-manifest /tmp/out/BUILD-MANIFEST.toml
+          test -s /tmp/out/BUILD-MANIFEST.toml
+          grep -Eq '^patched_source_sha256 = "[0-9a-f]{64}"$' /tmp/out/BUILD-MANIFEST.toml
           julia --project=. bin/validate_lex0.jl /tmp/out/littre.tei.xml
