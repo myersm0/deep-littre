@@ -14,7 +14,7 @@ Needs no build and no `data/source`. Everything it reads is committed: the devel
 
 `census/` checks block geometry, kind assignment by ancestry, and the population hash that fixes the adjudication denominator.
 
-`adjudication/` covers the projection and its provenance map, the authoring harness including its fail-closed cases, the canonical store writer, the committed development store, and the `voice_variant` and `qualification_scope` passes.
+`adjudication/` covers the projection and its provenance map, the authoring harness including stale-surface and geometry checks, the canonical store writer, the committed development store, and the `voice_variant` and `qualification_scope` passes.
 
 `resolve/` covers sense derivation and closure, etymology segmentation, and author resolution through the `ID.` anaphora chain. `render/` covers both renderers, their cross-output parity, and rubrique structure.
 
@@ -44,6 +44,6 @@ It is also a poor proxy here, and the reason is worth keeping in mind when addin
 
 `fixtures/synthetic/` holds hand-written entries isolating one construct each — a résumé indent, a bare register label, a nature-wrapped reflexive form, a cross-reference in rubrique prose. These are where a construct absent from the development corpus gets pinned. `fixtures/real/` holds entries lifted from XMLittré whose behaviour is worth keeping stable, and `fixtures/patching/` holds a split-patch case with its own patch file.
 
-`probe_lex0.xml` isolates one Lex-0 construct per minimal entry, paired with controls, and `probe_expected.tsv` records the verdict each one should get. Seven are invalid by design. The probe is the arbiter for schema questions: when the validator and the schema appear to disagree, a new probe entry settles it before anyone debugs by hand. It runs through `scripts/validate_probe.jl` rather than through this suite, because it needs `jing`.
+`probe_lex0.xml` isolates one Lex-0 construct per minimal entry, paired with controls, and `probe_expected.tsv` records the verdict each one should get. Seven are invalid by design. The probe is the arbiter for schema questions: when the validator and the schema appear to disagree, a new probe entry settles it before anyone debugs by hand. It runs through `test/validate_probe.jl` rather than through this suite, because it needs `jing`.
 
 `lex0_baseline.tsv` records the committed validation totals, ranked error signatures, and invalid entry ids for the full corpus. `sampling/` holds v0.2-era calibration artifacts retained for provenance review; nothing in the suite reads them.

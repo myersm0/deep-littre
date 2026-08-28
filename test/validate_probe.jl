@@ -9,8 +9,8 @@ module ValidateProbe
 
 const schema_path = get(ENV, "lex0_rng", joinpath(@__DIR__, "..", "vendor", "tei-lex0-0.9.5", "lex-0.rng"))
 const jing_jar = get(ENV, "jing_jar", joinpath(@__DIR__, "..", "vendor", "jing.jar"))
-const probe_path = get(ENV, "probe_xml", joinpath(@__DIR__, "..", "test", "probe_lex0.xml"))
-const expected_path = get(ENV, "probe_expected", joinpath(@__DIR__, "..", "test", "probe_expected.tsv"))
+const probe_path = get(ENV, "probe_xml", joinpath(@__DIR__, "probe_lex0.xml"))
+const expected_path = get(ENV, "probe_expected", joinpath(@__DIR__, "probe_expected.tsv"))
 
 const entry_pattern = r"<entry\s+xml:id=\"([\w.]+)\""
 const message_pattern = r":(\d+):\d+:\s*(?:fatal)?\s*error:"

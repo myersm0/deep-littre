@@ -1,7 +1,7 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Indent
-using DeepLittre.Adjudication: project, locate, to_view, projected_text, view_sha256, SelectionFailure,
-	block_text_projection, block_text_version
+using DeepLittre.Adjudication: project, locate, locate_projected, to_projected, to_view, projected_text, SelectionFailure,
+	block_text_projection, block_text_version, ProjectedSpan
 
 @testset "adjudication projection" begin
 	documents = read_corpus(corpus_source)
@@ -113,10 +113,12 @@ using DeepLittre.Adjudication: project, locate, to_view, projected_text, view_sh
 		@test_throws SelectionFailure locate(projection, " ")
 	end
 
-	@testset "hash covers the projected text" begin
-		@test view_sha256(projection) == view_sha256(project(
-			document, DeepLittre.Adjudication.element_at(document, block.view_span),
-		))
+	@testset "projected and view coordinates round-trip" begin
+		selected = locate_projected(projection, "Avaler des poires d'angoisse")
+		view = to_view(projection, selected.start_byte, selected.end_byte)
+		@test view !== nothing
+		@test to_projected(projection, view) == selected
+		@test projected_text(projection, selected) == "Avaler des poires d'angoisse"
 	end
 
 	@testset "every eligible corpus block projects" begin

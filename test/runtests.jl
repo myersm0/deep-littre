@@ -22,9 +22,7 @@ end
 source_of(documents, block) = first(filter(d -> d.file == block.raw_span.file, documents))
 
 function build_harness(documents, corpus)
-	harness = Adjudication.Harness(documents, corpus, Adjudication.Store(mktempdir()))
-	Adjudication.initialize_store!(harness)
-	harness
+	Adjudication.Harness(documents, corpus, Adjudication.Store(mktempdir()))
 end
 
 function angoisse_block(harness, corpus)

@@ -1,8 +1,3 @@
-"""
-Canonical JSONL serialization. Key order is fixed by the writers below rather than by dictionary
-iteration, so regeneration from identical inputs is byte-identical. Output is UTF-8 with only the
-escapes JSON requires; non-ASCII characters are written literally.
-"""
 function write_json_string(io::IO, text::AbstractString)
 	write(io, '"')
 	for character in text
@@ -69,6 +64,11 @@ write_json(io::IO, span::RawSpan) = object(io) do writer
 	field!(writer, "end_byte", span.end_byte)
 end
 
+write_json(io::IO, span::ProjectedSpan) = object(io) do writer
+	field!(writer, "start_byte", span.start_byte)
+	field!(writer, "end_byte", span.end_byte)
+end
+
 write_json(io::IO, constituent::Constituent) = object(io) do writer
 	field!(writer, "name", constituent.name)
 	field!(writer, "span", constituent.span)
@@ -78,36 +78,21 @@ write_json(io::IO, assertion::NodeAssertion) = object(io) do writer
 	field!(writer, "node_id", assertion.node_id)
 	field!(writer, "node_type", node_type_name(assertion.node_type))
 	field!(writer, "span", assertion.span)
-	field!(writer, "parent", assertion.parent)
 	field!(writer, "constituents", assertion.constituents)
 end
 
 write_json(io::IO, assertion::ScopeAssertion) = object(io) do writer
-	field!(writer, "assertion_id", assertion.assertion_id)
 	field!(writer, "marker", assertion.marker)
 	field!(writer, "target", assertion.target)
-end
-
-write_json(io::IO, reference::ContextReference) = object(io) do writer
-	field!(writer, "span", reference.span)
-	field!(writer, "role", reference.role)
 end
 
 write_json(io::IO, record::ExaminationRecord) = object(io) do writer
 	field!(writer, "record_id", record.record_id)
 	field!(writer, "pass", record.pass)
 	field!(writer, "pass_version", record.pass_version)
-	field!(writer, "population", record.population)
-	field!(writer, "population_version", record.population_version)
 	field!(writer, "source", record.source)
-	field!(writer, "raw_sha256", record.raw_sha256)
-	field!(writer, "synthetic_boundary", record.synthetic_boundary)
-	field!(writer, "projection", record.projection)
-	field!(writer, "projection_version", record.projection_version)
-	field!(writer, "view_sha256", record.view_sha256)
-	field!(writer, "context", record.context)
+	field!(writer, "surface_sha256", record.surface_sha256)
 	field!(writer, "outcome", record.outcome)
-	field!(writer, "exhaustive", record.exhaustive)
 	field!(writer, "assertions", record.assertions)
 	field!(writer, "scopes", record.scopes)
 	field!(writer, "residuals", record.residuals)

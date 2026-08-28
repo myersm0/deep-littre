@@ -1,15 +1,12 @@
 """
-The three source views. `raw_text` is upstream XMLittré as distributed and is the durable
-anchoring layer. `parser_view` is raw source after committed patches; v0.3 applies no text
-normalization, so the two are byte-identical outside patched lines.
+The source views. `raw_text` is upstream XMLittré as distributed. `parser_view` is raw
+source after committed patches; the two are byte-identical outside patched intervals.
 """
 struct SourceDocument
 	file::String
 	path::String
 	raw_text::String
-	raw_sha256::String
 	parser_view::String
-	parser_view_sha256::String
 	transform::TransformMap
 	document::XML.FlatNode
 	elements::Dict{Tuple{Int, Int}, XML.FlatNode}
@@ -19,16 +16,12 @@ function read_document(path::AbstractString; patches::Vector{Patch} = Patch[])::
 	file = basename(path)
 	raw = read_source_text(path)
 	(view, edits) = apply_patches(raw, file, patches)
-	assert_line_count_preserved(raw, view, file)
-	assert_untouched_lines(raw, view, Set(patch.line for patch in patches), file)
 	parsed = XML.parse(XML.FlatNode, view)
 	SourceDocument(
 		file,
 		path,
 		raw,
-		text_sha256(raw),
 		view,
-		text_sha256(view),
 		TransformMap(file, edits),
 		parsed,
 		element_index(file, view, parsed),
@@ -123,8 +116,6 @@ end
 raw_text(document::SourceDocument, span::RawSpan)::SubString = slice(document.raw_text, span)
 view_text(document::SourceDocument, span::ViewSpan)::SubString = slice(document.parser_view, span)
 
-raw_sha256(document::SourceDocument, span::RawSpan)::String = span_sha256(document.raw_text, span)
-
 function elements(node::XML.FlatNode)::Vector{XML.FlatNode}
 	[child for child in XML.children(node) if XML.nodetype(child) == XML.Element]
 end
@@ -135,3 +126,14 @@ end
 
 attribute(node::XML.FlatNode, key::AbstractString)::Union{Nothing, String} =
 	get(node, key, nothing)
+
+function patched_corpus_sha256(documents::Vector{SourceDocument})::String
+	context = SHA.SHA256_CTX()
+	for document in sort(documents; by = document -> document.file)
+		SHA.update!(context, codeunits(string(ncodeunits(document.file), ':', document.file, '\n')))
+		SHA.update!(context, codeunits(string(ncodeunits(document.parser_view), ':')))
+		SHA.update!(context, codeunits(document.parser_view))
+		SHA.update!(context, UInt8[0x0a])
+	end
+	bytes2hex(SHA.digest!(context))
+end

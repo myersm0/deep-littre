@@ -28,13 +28,6 @@ const block_text_description = "Direct content of one source block: descendant b
 citations excluded, markup stripped, entity and character references decoded, whitespace runs \
 collapsed."
 
-view_sha256(projection::ProjectedView)::String = Source.text_sha256(projection.text)
-
-"""
-Elements skipped by the `block_text` projection: descendant source blocks, which are their own
-adjudication targets, and citations, which the renderer emits as separate block-level facts.
-Everything else contributes its source-visible text with tags stripped.
-"""
 skipped_in_projection(name::AbstractString)::Bool =
 	name in ("indent", "variante", "rubrique", "résumé", "cit")
 
@@ -167,13 +160,6 @@ function gather!(builder::ProjectionBuilder, document::Source.SourceDocument, no
 	nothing
 end
 
-"""
-	project(document, node)
-
-Build the `block_text` projection of one source block. The result is the block's direct content:
-descendant source blocks and citations are excluded, markup is stripped, and whitespace runs are
-collapsed to a single space.
-"""
 function project(document::Source.SourceDocument, node::XML.FlatNode)::ProjectedView
 	builder = ProjectionBuilder(document.file)
 	gather!(builder, document, node)
@@ -187,13 +173,6 @@ function project(document::Source.SourceDocument, node::XML.FlatNode)::Projected
 	)
 end
 
-"""
-	to_view(projection, projected_start, projected_end)
-
-Translate a half-open projected interval to the smallest parser-view interval covering its
-source-visible characters. Purely synthetic layout at either boundary is trimmed away. Returns
-`nothing` when the selection contains no source-visible material.
-"""
 function to_view(projection::ProjectedView, projected_start::Int, projected_end::Int)::Union{Nothing, ViewSpan}
 	covering = filter(projection.segments) do candidate
 		!candidate.synthetic &&
@@ -217,7 +196,7 @@ function to_view(projection::ProjectedView, projected_start::Int, projected_end:
 	ViewSpan(projection.file, view_start, view_end)
 end
 
-function projected_text(projection::ProjectedView, view::ViewSpan)::String
+function to_projected(projection::ProjectedView, view::ViewSpan)::Union{Nothing, ProjectedSpan}
 	view.file == projection.file ||
 		error("span file $(view.file) does not match projection file $(projection.file)")
 	covering = filter(projection.segments) do candidate
@@ -225,7 +204,7 @@ function projected_text(projection::ProjectedView, view::ViewSpan)::String
 			candidate.view_end > view.start_byte &&
 			candidate.view_start < view.end_byte
 	end
-	isempty(covering) && return ""
+	isempty(covering) && return nothing
 	leading = first(covering)
 	trailing = last(covering)
 	projected_start = if leading.literal
@@ -238,8 +217,14 @@ function projected_text(projection::ProjectedView, view::ViewSpan)::String
 	else
 		trailing.projected_end
 	end
-	projected_end > projected_start || return ""
-	String(segment(projection.text, projected_start, projected_end))
+	projected_end > projected_start || return nothing
+	ProjectedSpan(projected_start, projected_end)
+end
+
+function projected_text(projection::ProjectedView, view::ViewSpan)::String
+	span = to_projected(projection, view)
+	span === nothing && return ""
+	projected_text(projection, span)
 end
 
 struct SelectionFailure <: Exception
@@ -250,20 +235,22 @@ end
 Base.showerror(io::IO, failure::SelectionFailure) =
 	print(io, "selection ", repr(failure.selection), " failed: ", failure.reason)
 
-"""
-	locate(projection, selection)
-
-Resolve an adjudicator's projected substring to a parser-view span. The match must be unique
-under the pass matching policy; zero or ambiguous matches fail closed rather than guessing.
-"""
-function locate(projection::ProjectedView, selection::AbstractString)::ViewSpan
+function locate_projected(projection::ProjectedView, selection::AbstractString)::ProjectedSpan
 	isempty(strip(selection)) && throw(SelectionFailure(selection, "empty selection"))
 	matches = findall(selection, projection.text)
 	isempty(matches) && throw(SelectionFailure(selection, "no match in the projected target"))
 	length(matches) == 1 ||
 		throw(SelectionFailure(selection, "$(length(matches)) matches; selection is ambiguous"))
 	found = only(matches)
-	span = to_view(projection, first(found), nextind(projection.text, last(found)))
-	span === nothing && throw(SelectionFailure(selection, "selection maps to no source-visible material"))
-	span
+	ProjectedSpan(first(found), nextind(projection.text, last(found)))
 end
+
+function locate(projection::ProjectedView, selection::AbstractString)::ViewSpan
+	span = locate_projected(projection, selection)
+	view = to_view(projection, span.start_byte, span.end_byte)
+	view === nothing && throw(SelectionFailure(selection, "selection maps to no source-visible material"))
+	view
+end
+
+projected_text(projection::ProjectedView, span::ProjectedSpan)::String =
+	String(segment(projection.text, span.start_byte, span.end_byte))

@@ -1,8 +1,8 @@
 using DeepLittre.Source: read_corpus, slice, RawSpan
 using DeepLittre.Census: census, all_blocks, Indent
 using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
-	sublemma_pass, voice_variant_pass, write_pass!, SubLemma, VoiceVariant, Sense, ExaminationRecord
-using DeepLittre.Resolve: resolve, plain_text, IntegrityFailure, route_spans, UsgTarget,
+	sublemma_pass, voice_variant_pass, write_pass!, SubLemma, VoiceVariant, Sense, ExaminationRecord, ProjectedSpan
+using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 	GramElement, closure, adjudication_state
 
 @testset "resolve" begin
@@ -233,7 +233,7 @@ using DeepLittre.Resolve: resolve, plain_text, IntegrityFailure, route_spans, Us
 		@test sublemma.population_size == 351
 		@test sublemma.examined == 1
 		@test sublemma.positive == 1
-		@test sublemma.quarantined == 0
+		@test sublemma.stale == 0
 		@test length(sublemma.population_hash) == 64
 	end
 
@@ -301,9 +301,7 @@ using DeepLittre.Resolve: resolve, plain_text, IntegrityFailure, route_spans, Us
 		@test untouched !== nothing
 	end
 
-	# The harness rejects the overclaim at authoring, where there is still an item to re-author. The
-	# resolver keeps the same check for records written by anything that bypassed the harness.
-	@testset "an exhaustive claim over unaccounted material fails closed" begin
+	@testset "malformed persisted exhaustive partitions fail store integrity" begin
 		harness = fresh_harness()
 		block = angoisse_block(harness, corpus)
 		overclaiming = Decision(
@@ -318,19 +316,9 @@ using DeepLittre.Resolve: resolve, plain_text, IntegrityFailure, route_spans, Us
 			harness, sublemma_pass, present(harness, sublemma_pass, block), overclaiming;
 			decision_procedure = "test",
 		)
-		overclaim = DeepLittre.Adjudication.with(angoisse_record(harness); residuals = RawSpan[])
+		overclaim = DeepLittre.Adjudication.with(angoisse_record(harness); residuals = ProjectedSpan[])
 		write_pass!(harness.store, "sublemma", [overclaim])
-		write_pass!(harness.store, "voice_variant", [voice_negative(harness, block)])
-
-		state = adjudication_state(harness, ["sublemma", "voice_variant"])
-		(passed, reason) = closure(harness, state, block)
-		@test !passed
-		@test occursin("Familièrement.", reason)
-
-		resolved = resolve(harness)
-		@test any(finding -> finding.category == "incomplete_partition", resolved.review)
-		@test find_node(entry_named(resolved, "ANGOISSE").nodes,
-			node -> node.node_type isa Sense) === nothing
+		@test_throws DeepLittre.Adjudication.StoreIntegrityError resolve(harness)
 	end
 
 	@testset "unexamined blocks are not review findings" begin
@@ -338,28 +326,20 @@ using DeepLittre.Resolve: resolve, plain_text, IntegrityFailure, route_spans, Us
 		@test isempty(resolved.review)
 	end
 
-	@testset "a stale view hash quarantines rather than aborting" begin
+	@testset "a stale classification surface is skipped rather than aborting" begin
 		harness = fresh_harness()
 		record = angoisse_record(harness)
-		stale = DeepLittre.Adjudication.with(record; view_sha256 = repeat("0", 64))
+		stale = DeepLittre.Adjudication.with(record; surface_sha256 = repeat("0", 64))
 		write_pass!(harness.store, "sublemma", [stale])
 
 		resolved = resolve(harness)
 		@test length(resolved.review) == 1
-		@test first(resolved.review).category == "view_mismatch"
+		@test first(resolved.review).category == "stale"
 		@test length(resolved.entries) == 25
 
 		angoisse = entry_named(resolved, "ANGOISSE")
 		@test find_node(angoisse.nodes, node -> node.node_type isa SubLemma) === nothing
 		@test_throws ErrorException resolve(harness; strict = true)
-	end
-
-	@testset "a stale raw anchor aborts the build" begin
-		harness = fresh_harness()
-		record = angoisse_record(harness)
-		broken = DeepLittre.Adjudication.with(record; raw_sha256 = repeat("0", 64))
-		write_pass!(harness.store, "sublemma", [broken])
-		@test_throws IntegrityFailure resolve(harness)
 	end
 
 	# Semantic text is what Littré wrote, not what XML syntax required. The projection already

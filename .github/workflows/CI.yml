@@ -35,10 +35,9 @@ jobs:
         run: julia --project=. -e 'using Pkg; Pkg.test()'
 
       - name: Validate the Lex-0 probe
-        run: julia --project=. scripts/validate_probe.jl
+        run: julia --project=. test/validate_probe.jl
 
       - name: Build and validate the development corpus
         run: |
-          julia --project=. scripts/build.jl test/corpus/source /tmp/out \
-            --patches none --store test/corpus/adjudication
-          julia --project=. scripts/validate_lex0.jl /tmp/out/littre.tei.xml
+          julia --project=. bin/run_pipeline.jl test/corpus/source /tmp/out --patches none --store test/corpus/adjudication --strict-adjudications
+          julia --project=. bin/validate_lex0.jl /tmp/out/littre.tei.xml

@@ -4,47 +4,25 @@ facts reconstructed from explicit source markup, and durable judgments read from
 store. Deleting the store must still yield a coarse corpus carrying every explicit XMLittré fact.
 """
 struct AdjudicationState
-	applicable::Dict{Tuple{String, Int, Int}, Vector{Adjudication.ExaminationRecord}}
-	quarantined::Vector{Tuple{Adjudication.ExaminationRecord, Symbol}}
+	applicable::Dict{Tuple{String, Int, Int}, Vector{Adjudication.AppliedRecord}}
+	stale::Vector{Tuple{Adjudication.ExaminationRecord, Symbol}}
 	findings::Vector{ReviewFinding}
 end
 
-# Only unmet conditions that indicate a defective claim are reviewable. A block nobody has
-# examined yet is the ordinary intermediate state, not a finding.
-reviewable(reason::AbstractString)::Bool =
-	occursin("unaccounted for", reason) || occursin("no exhaustive claim", reason) ||
-	startswith(reason, "structural conflict:")
+reviewable(reason::AbstractString)::Bool = startswith(reason, "structural conflict:")
 
 function record_review!(state::AdjudicationState, block::Census.SourceBlock, reason::AbstractString)
 	reviewable(reason) || return nothing
-	category = startswith(reason, "structural conflict:") ? "structural_conflict" : "incomplete_partition"
-	push!(state.findings, ReviewFinding(category, reason, block.raw_span))
+	push!(state.findings, ReviewFinding("structural_conflict", reason, block.raw_span))
 	nothing
 end
 
-struct IntegrityFailure <: Exception
-	record_id::String
-	span::RawSpan
-end
-
-Base.showerror(io::IO, failure::IntegrityFailure) = print(
-	io, "raw anchor mismatch for record ", failure.record_id, " at ", failure.span,
-	"; the store no longer names the corpus it claims to name",
-)
-
-"""
-	adjudication_state(harness, passes; strict)
-
-Apply the build-time failure policy. A raw-anchor mismatch is a corpus/store integrity failure and
-aborts. A view or context mismatch quarantines the record: it is not applied, it produces a review
-item, and an ordinary build continues. `strict` makes any quarantine fatal.
-"""
 function adjudication_state(
 	harness::Adjudication.Harness, passes::Vector{String}; strict::Bool = false,
 )::AdjudicationState
 	Adjudication.validate_store(harness)
-	applicable = Dict{Tuple{String, Int, Int}, Vector{Adjudication.ExaminationRecord}}()
-	quarantined = Tuple{Adjudication.ExaminationRecord, Symbol}[]
+	applicable = Dict{Tuple{String, Int, Int}, Vector{Adjudication.AppliedRecord}}()
+	stale = Tuple{Adjudication.ExaminationRecord, Symbol}[]
 	seen_record_ids = Set{String}()
 	for pass in passes
 		for record in Adjudication.read_pass(harness.store, pass)
@@ -52,28 +30,24 @@ function adjudication_state(
 				"duplicate record id $(record.record_id) across adjudication passes",
 			))
 			push!(seen_record_ids, record.record_id)
-			result = Adjudication.check(harness, record)
-			if Adjudication.fatal(result)
-				throw(IntegrityFailure(record.record_id, record.source))
-			elseif Adjudication.applicable(result)
-				push!(get!(applicable, Adjudication.anchor_key(record.source),
-					Adjudication.ExaminationRecord[]), record)
+			applied = Adjudication.materialize_record(harness, record)
+			if applied === nothing
+				strict && error("strict build: record $(record.record_id) is stale")
+				push!(stale, (record, :stale))
 			else
-				strict && error("strict build: record $(record.record_id) quarantined as $(result)")
-				push!(quarantined, (record, result))
+				push!(get!(applicable, Adjudication.anchor_key(applied.source),
+					Adjudication.AppliedRecord[]), applied)
 			end
 		end
 	end
-	AdjudicationState(applicable, quarantined, ReviewFinding[])
+	AdjudicationState(applicable, stale, ReviewFinding[])
 end
 
 records_for(state::AdjudicationState, block::Census.SourceBlock, pass::AbstractString) =
 	filter(record -> record.pass == pass,
-		get(state.applicable, Adjudication.anchor_key(block.raw_span),
-			Adjudication.ExaminationRecord[]))
+		get(state.applicable, Adjudication.anchor_key(block.raw_span), Adjudication.AppliedRecord[]))
 
-# The store admits at most one record per target per pass, so there is nothing to choose between.
-function sole(records::Vector{Adjudication.ExaminationRecord})
+function sole(records::Vector{Adjudication.AppliedRecord})
 	isempty(records) && return nothing
 	length(records) == 1 || throw(Adjudication.StoreIntegrityError(
 		"$(length(records)) applicable records for $(first(records).source) in pass $(first(records).pass)",
@@ -83,8 +57,8 @@ end
 
 function structural_assertions(
 	state::AdjudicationState, block::Census.SourceBlock,
-)::Vector{Adjudication.NodeAssertion}
-	assertions = Adjudication.NodeAssertion[]
+)::Vector{Adjudication.AnchoredNodeAssertion}
+	assertions = Adjudication.AnchoredNodeAssertion[]
 	for pass in ("sublemma", "voice_variant")
 		record = sole(records_for(state, block, pass))
 		(record === nothing || record.outcome != :positive) && continue
@@ -100,7 +74,7 @@ strictly_covers(outer::RawSpan, inner::RawSpan)::Bool =
 	!same_span(outer, inner) && Source.covers(outer, inner)
 
 function structural_conflict(
-	assertions::Vector{Adjudication.NodeAssertion},
+	assertions::Vector{Adjudication.AnchoredNodeAssertion},
 )::Union{Nothing, String}
 	ids = Set{String}()
 	for assertion in assertions
@@ -113,23 +87,11 @@ function structural_conflict(
 		same_span(left.span, right.span) && return "coincident node spans $(left.span) for $(left.node_id) and $(right.node_id)"
 		Source.laminar(left.span, right.span) || return "node spans cross: $(left.span) and $(right.span)"
 	end
-	by_id = Dict(assertion.node_id => assertion for assertion in assertions)
-	parents = geometric_parent_indices_unchecked(assertions)
-	for index in eachindex(assertions)
-		assertion = assertions[index]
-		assertion.parent === nothing && continue
-		parent = get(by_id, assertion.parent, nothing)
-		parent === nothing && return "node $(assertion.node_id) names missing parent $(assertion.parent)"
-		strictly_covers(parent.span, assertion.span) || return "node $(assertion.node_id) names non-containing parent $(assertion.parent)"
-		geometric = parents[index]
-		geometric === nothing && return "node $(assertion.node_id) names a parent but has no geometric parent"
-		assertions[geometric].node_id == assertion.parent || return "node $(assertion.node_id) names parent $(assertion.parent), but its immediate geometric parent is $(assertions[geometric].node_id)"
-	end
 	nothing
 end
 
 function geometric_parent_indices_unchecked(
-	assertions::Vector{Adjudication.NodeAssertion},
+	assertions::Vector{Adjudication.AnchoredNodeAssertion},
 )::Vector{Union{Nothing, Int}}
 	parents = Union{Nothing, Int}[nothing for _ in assertions]
 	for child in eachindex(assertions)
@@ -144,19 +106,12 @@ function geometric_parent_indices_unchecked(
 end
 
 function geometric_parent_indices(
-	assertions::Vector{Adjudication.NodeAssertion},
+	assertions::Vector{Adjudication.AnchoredNodeAssertion},
 )::Vector{Union{Nothing, Int}}
 	structural_conflict(assertions) === nothing || error("cannot derive parentage for conflicting assertions")
 	geometric_parent_indices_unchecked(assertions)
 end
 
-"""
-	closure(harness, state, block)
-
-Closure protocol version 1, from which `segmentation_complete` is derived rather than stored.
-Returns the verdict and, when it fails, the reason: an unmet condition leaves the semantic type
-underdetermined rather than being read as absence.
-"""
 function closure(
 	harness::Adjudication.Harness, state::AdjudicationState, block::Census.SourceBlock,
 )::Tuple{Bool, String}
@@ -168,34 +123,8 @@ function closure(
 		record = sole(records_for(state, block, pass))
 		record === nothing && return (false, "$(pass) has not examined this block")
 		record.outcome == :unresolved && return (false, "$(pass) is unresolved")
-		record.outcome == :positive || continue
-		record.exhaustive || return (false, "$(pass) made no exhaustive claim")
-		covered = partition_gap(harness, block, record)
-		covered === nothing || return (false, "$(pass) leaves $(repr(covered)) unaccounted for")
 	end
 	(true, "")
-end
-
-"""
-	partition_gap(harness, block, record)
-
-The first stretch of adjudicable material claimed by neither a node span nor a residual span, or
-`nothing` when the partition is complete. The harness applies the same check at authoring; this is
-the build-time guard for records written before that check existed or by a producer that bypassed
-it, so an exhaustive claim can never license a derived sense on the producer's word alone.
-"""
-function partition_gap(
-	harness::Adjudication.Harness, block::Census.SourceBlock,
-	record::Adjudication.ExaminationRecord,
-)::Union{Nothing, String}
-	document = harness.documents[block.raw_span.file]
-	projection = Adjudication.project(
-		document, Adjudication.element_at(document, block.view_span),
-	)
-	Adjudication.partition_gap(
-		document, block, projection,
-		vcat(RawSpan[assertion.span for assertion in record.assertions], record.residuals),
-	)
 end
 
 function qualification_markers(
@@ -458,7 +387,7 @@ function apply_scopes(
 end
 
 function rescope_from(
-	record::Adjudication.ExaminationRecord, qualification::Qualification,
+	record::Adjudication.AppliedRecord, qualification::Qualification,
 )::Qualification
 	for scope in record.scopes
 		scope.marker == qualification.span || continue
@@ -795,7 +724,7 @@ function coverage(
 	harness::Adjudication.Harness, state::AdjudicationState, pass::Adjudication.PassDefinition,
 )::PassCoverage
 	population = Adjudication.eligible(pass, harness.corpus)
-	examined = Adjudication.ExaminationRecord[]
+	examined = Adjudication.AppliedRecord[]
 	for block in population
 		record = sole(records_for(state, block, pass.pass))
 		record === nothing || push!(examined, record)
@@ -807,7 +736,7 @@ function coverage(
 		count(record -> record.outcome == :positive, examined),
 		count(record -> record.outcome == :negative, examined),
 		count(record -> record.outcome == :unresolved, examined),
-		count(entry -> entry[1].pass == pass.pass, state.quarantined),
+		count(entry -> entry[1].pass == pass.pass, state.stale),
 	)
 end
 
@@ -840,7 +769,7 @@ function resolve(
 	review = vcat(
 		ReviewFinding[
 			ReviewFinding(String(result), record.record_id, record.source)
-			for (record, result) in state.quarantined
+			for (record, result) in state.stale
 		],
 		state.findings,
 		suspects,

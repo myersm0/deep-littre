@@ -25,7 +25,6 @@ using DeepLittre.Resolve: resolve
 
 	@testset "regeneration is byte-identical" begin
 		mirror = Store(mktempdir())
-		cp(joinpath(corpus_adjudication, "manifest.toml"), joinpath(mirror.root, "manifest.toml"))
 		for (pass, found) in records
 			isempty(found) && continue
 			write_pass!(mirror, pass, found)
@@ -48,7 +47,7 @@ using DeepLittre.Resolve: resolve
 		@test coverage["qualification_scope"].negative == 1
 		for record in values(coverage)
 			@test record.unresolved == 0
-			@test record.quarantined == 0
+			@test record.stale == 0
 			@test record.population_size == 351
 		end
 	end

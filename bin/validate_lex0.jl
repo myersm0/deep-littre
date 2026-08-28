@@ -4,8 +4,8 @@
 # entry by entry, and checks the validator harness itself against the committed probe. A probe disagreement means the harness is
 # wrong, not the corpus, so the probe runs first and a mismatch aborts.
 #
-#   julia --project=. scripts/validate_lex0.jl data/littre.tei.xml
-#   julia --project=. scripts/validate_lex0.jl data/littre.tei.xml --baseline test/lex0_baseline.tsv
+#   julia --project=. bin/validate_lex0.jl data/littre.tei.xml
+#   julia --project=. bin/validate_lex0.jl data/littre.tei.xml --baseline test/lex0_baseline.tsv
 
 module ValidateLex0
 

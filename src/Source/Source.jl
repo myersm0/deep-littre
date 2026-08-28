@@ -13,6 +13,6 @@ include("transform.jl")
 include("patches.jl")
 include("document.jl")
 
-export Span, RawSpan, ViewSpan, SourceDocument, Patch, source_paths
+export Span, RawSpan, ViewSpan, SourceDocument, Patch, source_paths, patched_corpus_sha256
 
 end

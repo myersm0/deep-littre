@@ -1,15 +1,14 @@
-using DeepLittre.Source: read_corpus, slice, covers, laminar
+using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, ReviewItem,
-	sublemma_pass, voice_variant_pass, eligible, SubLemma, fatal, applicable, validate_store, StoreIntegrityError,
-	ContextReference, Store, write_pass!
+using DeepLittre.Adjudication: present, commit, check, materialize_record, Decision, FormSelection,
+	ReviewItem, sublemma_pass, voice_variant_pass, eligible, SubLemma, applicable, validate_store,
+	StoreIntegrityError, Store, write_pass!, projected_text
 
 @testset "authoring harness" begin
 	documents = read_corpus(corpus_source)
 	corpus = census(documents)
 	harness = build_harness(documents, corpus)
 	block = angoisse_block(harness, corpus)
-	document = harness.documents[block.raw_span.file]
 	item = present(harness, sublemma_pass, block)
 
 	positive = Decision(
@@ -30,43 +29,13 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 		@test !ispath(root)
 	end
 
-	@testset "store gates are the ones with no per-record equivalent" begin
-		@test validate_store(harness) == :valid
-		path = joinpath(harness.store.root, "manifest.toml")
-		original = read(path, String)
-
-		# A pass version or projection version in the manifest gates nothing: the record carries
-		# its own, and `check` quarantines that one verdict rather than failing the store.
-		write(path, replace(original, "projection_version = 2" => "projection_version = 7"))
-		@test validate_store(harness) == :valid
-		write(path, replace(original, r"\n\[passes\.qualification_scope\][\s\S]*$" => "\n"))
-		@test validate_store(harness) == :valid
-
-		# Closure protocol and alternative-set versions govern the resolver's derivation rather
-		# than any single verdict, so they have nowhere else to be checked.
-		write(path, replace(original, "closure_protocol_version = 1" => "closure_protocol_version = 2"))
-		@test_throws StoreIntegrityError validate_store(harness)
-		write(path, replace(original,
-			"structural_alternative_set_version = 1" => "structural_alternative_set_version = 2"))
-		@test_throws StoreIntegrityError validate_store(harness)
-
-		# Records for a pass the code does not run would be read by nobody.
-		write(path, original)
+	@testset "unknown pass directories fail closed" begin
+		@test validate_store(harness) == :empty
 		unknown = joinpath(harness.store.root, "unknown_pass")
 		mkpath(unknown)
 		write(joinpath(unknown, "a.jsonl"), "{}\n")
 		@test_throws StoreIntegrityError validate_store(harness)
 		rm(unknown; recursive = true)
-	end
-
-	@testset "nonempty store without manifest fails closed" begin
-		store = Store(mktempdir())
-		record = commit(harness, sublemma_pass, item, Decision(:negative); decision_procedure = "test")
-		directory = joinpath(store.root, "sublemma")
-		mkpath(directory)
-		write(joinpath(directory, "a.jsonl"), DeepLittre.Adjudication.canonical_json(record) * "\n")
-		broken = DeepLittre.Adjudication.Harness(documents, corpus, store)
-		@test_throws StoreIntegrityError validate_store(broken)
 	end
 
 	@testset "eligible population is version 1" begin
@@ -76,27 +45,28 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 			candidate.kind isa DeepLittre.Census.Variante, pool)
 	end
 
-	@testset "constituents anchor to exactly their source text" begin
+	@testset "durable selections are projection-relative" begin
 		record = commit(harness, sublemma_pass, item, positive; decision_procedure = "test")
 		assertion = only(record.assertions)
-
 		@test assertion.node_type isa SubLemma
-		@test String(slice(document.raw_text, assertion.span)) ==
+		@test projected_text(item.projection, assertion.span) ==
 			"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs."
 		forms = Dict(constituent.name => constituent.span for constituent in assertion.constituents)
-		@test String(slice(document.raw_text, forms["form"])) == "Avaler des poires d'angoisse"
-		@test String(slice(document.raw_text, forms["gloss"])) ==
+		@test projected_text(item.projection, forms["form"]) == "Avaler des poires d'angoisse"
+		@test projected_text(item.projection, forms["gloss"]) ==
 			"subir des mortifications, de vifs déplaisirs."
-		@test String(slice(document.raw_text, only(record.residuals))) == "Familièrement."
-
-		@test covers(record.source, assertion.span)
-		@test all(constituent -> covers(assertion.span, constituent.span), assertion.constituents)
-		@test record.raw_sha256 == DeepLittre.Source.raw_sha256(document, record.source)
+		@test projected_text(item.projection, only(record.residuals)) == "Familièrement."
+		@test length(record.surface_sha256) == 64
 		@test record.outcome == :positive
-		@test record.exhaustive
 		@test record.decision_procedure == "test"
 		@test record.decision_reference === nothing
-		@test !isempty(record.context)
+
+		applied = materialize_record(harness, record)
+		@test applied !== nothing
+		document = harness.documents[block.raw_span.file]
+		anchored = only(applied.assertions)
+		@test String(DeepLittre.Source.slice(document.raw_text, anchored.span)) ==
+			"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs."
 	end
 
 	@testset "ids are minted, never derived from coordinates" begin
@@ -111,8 +81,6 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 		negative = commit(harness, sublemma_pass, item, Decision(:negative); decision_procedure = "test")
 		@test negative.outcome == :negative
 		@test isempty(negative.assertions)
-		@test !negative.exhaustive
-
 		unresolved = commit(
 			harness, sublemma_pass, item, Decision(:unresolved; notes = "scope unclear");
 			decision_procedure = "test",
@@ -134,19 +102,20 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 			decision_procedure = "test",
 		)
 		@test_throws ReviewItem commit(
-			harness, sublemma_pass, item, Decision(:negative; exhaustive = true); decision_procedure = "test",
+			harness, sublemma_pass, item, Decision(:negative; exhaustive = true);
+			decision_procedure = "test",
 		)
 	end
 
 	@testset "unmappable selections fail closed" begin
 		@test_throws ReviewItem commit(
 			harness, sublemma_pass, item,
-			Decision(:positive; selections = [FormSelection("not in the target", "nope")]);
+			Decision(:positive; exhaustive = true, selections = [FormSelection("not in the target", "nope")]);
 			decision_procedure = "test",
 		)
 		@test_throws ReviewItem commit(
 			harness, sublemma_pass, item,
-			Decision(:positive; selections = [FormSelection("des", "des")]);
+			Decision(:positive; exhaustive = true, selections = [FormSelection("des", "des")]);
 			decision_procedure = "test",
 		)
 	end
@@ -154,21 +123,19 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 	@testset "constituent escaping its node fails closed" begin
 		@test_throws ReviewItem commit(
 			harness, sublemma_pass, item,
-			Decision(:positive; selections = [FormSelection(
+			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Avaler des poires d'angoisse", "Familièrement.",
-			)]);
-			decision_procedure = "test",
+			)]); decision_procedure = "test",
 		)
 	end
 
 	@testset "crossing node spans fail closed" begin
 		@test_throws ReviewItem commit(
 			harness, sublemma_pass, item,
-			Decision(:positive; selections = [
+			Decision(:positive; exhaustive = true, selections = [
 				FormSelection("Familièrement. Avaler des poires", "Avaler des poires"),
 				FormSelection("Avaler des poires d'angoisse", "d'angoisse"),
-			]);
-			decision_procedure = "test",
+			]); decision_procedure = "test",
 		)
 	end
 
@@ -181,7 +148,7 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 		)])
 		@test_throws ReviewItem commit(
 			other, voice_variant_pass, present(other, voice_variant_pass, other_block),
-			Decision(:positive; selections = [FormSelection(
+			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Familièrement. Avaler des poires", "Avaler des poires",
 			)]); decision_procedure = "test",
 		)
@@ -191,6 +158,7 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 		@test_throws ReviewItem commit(
 			harness, sublemma_pass, item,
 			Decision(:positive;
+				exhaustive = true,
 				selections = [FormSelection(
 					"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.",
 					"Avaler des poires d'angoisse",
@@ -201,38 +169,55 @@ using DeepLittre.Adjudication: present, commit, check, Decision, FormSelection, 
 		)
 	end
 
-	@testset "target checks" begin
+	@testset "one stale check" begin
 		record = commit(harness, sublemma_pass, item, positive; decision_procedure = "test")
 		@test check(harness, record) == :valid
 		@test applicable(check(harness, record))
 
 		old_pass = DeepLittre.Adjudication.with(record; pass_version = record.pass_version + 1)
-		@test check(harness, old_pass) == :pass_version_mismatch
+		@test check(harness, old_pass) == :stale
 
-		old_projection = DeepLittre.Adjudication.with(
-			record; projection_version = record.projection_version + 1,
-		)
-		@test check(harness, old_projection) == :projection_version_mismatch
+		changed_surface = DeepLittre.Adjudication.with(record; surface_sha256 = repeat("0", 64))
+		@test check(harness, changed_surface) == :stale
+		@test !applicable(check(harness, changed_surface))
 
-		reference = first(record.context)
-		@test DeepLittre.Source.covers(record.source, reference.span)
-		outside = ContextReference(
-			DeepLittre.Source.RawSpan(record.source.file, record.source.end_byte,
-				record.source.end_byte + 1),
-			reference.role,
-		)
-		escaped = DeepLittre.Adjudication.with(record; context = [outside])
-		@test check(harness, escaped) == :record_schema_mismatch
-
-		moved = DeepLittre.Adjudication.with(record; source = DeepLittre.Source.RawSpan(
-			record.source.file, record.source.start_byte + 1, record.source.end_byte,
+		moved_locator = DeepLittre.Adjudication.with(record; source = DeepLittre.Source.RawSpan(
+			record.source.file, record.source.start_byte + 1, record.source.end_byte + 1,
 		))
-		@test check(harness, moved) == :raw_mismatch
-		@test fatal(check(harness, moved))
+		@test check(harness, moved_locator) == :valid
+		@test materialize_record(harness, moved_locator).source == record.source
+	end
 
-		restated = DeepLittre.Adjudication.with(record; view_sha256 = repeat("0", 64))
-		@test check(harness, restated) == :view_mismatch
-		@test !fatal(check(harness, restated))
-		@test !applicable(check(harness, restated))
+	@testset "coordinate drift is salvaged by the surface hash" begin
+		record = commit(harness, sublemma_pass, item, positive; decision_procedure = "test")
+		directory = mktempdir()
+		for path in DeepLittre.Source.source_paths(corpus_source)
+			cp(path, joinpath(directory, basename(path)))
+		end
+		path = joinpath(directory, "a.xml")
+		text = read(path, String)
+		write(path, replace(text, "<entree terme=\"ANGOISSE\">" => "\n<entree terme=\"ANGOISSE\">"; count = 1))
+		moved_documents = read_corpus(directory)
+		moved_corpus = census(moved_documents)
+		moved_harness = DeepLittre.Adjudication.Harness(moved_documents, moved_corpus, Store(mktempdir()))
+		applied = materialize_record(moved_harness, record)
+		@test applied !== nothing
+		@test applied.source != record.source
+		@test check(moved_harness, record) == :valid
+	end
+
+	@testset "citation context participates in the surface hash" begin
+		record = commit(harness, sublemma_pass, item, positive; decision_procedure = "test")
+		directory = mktempdir()
+		for path in DeepLittre.Source.source_paths(corpus_source)
+			cp(path, joinpath(directory, basename(path)))
+		end
+		path = joinpath(directory, "a.xml")
+		text = read(path, String)
+		write(path, replace(text, "Je vous présente des poires" => "Je vous apporte des poires"; count = 1))
+		changed_documents = read_corpus(directory)
+		changed_corpus = census(changed_documents)
+		changed_harness = DeepLittre.Adjudication.Harness(changed_documents, changed_corpus, Store(mktempdir()))
+		@test check(changed_harness, record) == :stale
 	end
 end

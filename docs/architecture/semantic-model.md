@@ -209,7 +209,7 @@ with a half-open raw UTF-8 interval `[start_byte, end_byte)`.
 Each adjudication stores:
 
 1. a raw-anchor hash proving that the same upstream material still occupies that span;
-2. a versioned adjudicated-view hash proving that the target material shown to the adjudicator has not changed semantically beneath a stable raw anchor.
+2. one classification-surface hash proving that the material shown to the adjudicator has not changed; the raw block span is only a locator.
 
 Context shown alongside the target does not enlarge the anchor or participate in record identity. It is recorded as provenance and must lie inside the record's own raw span, so the raw-anchor check already covers it; a separate context hash would only repeat that check.
 

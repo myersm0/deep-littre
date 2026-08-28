@@ -1,27 +1,28 @@
 # Development corpus
 
-25 XMLittré entries and the adjudication records made against them. Committed because most of the suite reads it: twelve of sixteen test files call `read_corpus(corpus_source)`, and the four that do not are the span, encoding, patch, and transform-map tests.
+25 XMLittré entries and the adjudication records made against them. Most of the test suite reads this committed corpus; it does not depend on `data/source`.
 
 ## Contents
 
-`source/` holds the entries, one file per source letter so `read_corpus` reads this directory exactly as it reads `data/source`. Each entry is a byte-identical slice of Gannaz's markup rather than a re-serialization, so spans, patches, and the census behave here as they do on the full corpus. `manifest.tsv` records what each entry was selected for.
+`source/` holds one file per source letter so `read_corpus` reads it exactly as it reads the full corpus. Each entry is a byte-identical slice of Gannaz's markup rather than a re-serialization, so spans and the census behave here as they do on the full corpus. `manifest.tsv` records why each entry was selected.
 
-Selection is reproducible from `scripts/build_sample_corpus.jl`, which strata-samples by entry size and requires coverage of the features named in `feature_probes`: `<exemple>`, proverbs, supplements, HISTORIQUE, wrapped etymons, `<nature>`, domain labels, cross-references, reflexive forms, and homographs.
-
-`.a.xml.swp` is deliberate. `source_paths` excludes dotfiles so that a stray editor file or a macOS AppleDouble sidecar cannot enter the census as an extra document and move the population hash; the fixture is what proves it.
+`.a.xml.swp` is deliberate. `source_paths` excludes dotfiles so a stray editor file or macOS sidecar cannot enter the census as an extra document.
 
 ## The adjudication store
 
-`adjudication/` is a real store in the committed format, holding six records across the three version-1 passes. Its byte anchors are relative to `source/`, so it applies to this corpus and no other. It is not the production store — that is `data/adjudication`, which is untracked and empty until corpus adjudication begins.
+`adjudication/` is a real committed store holding six records across the three version-1 passes. It is not the production store; `data/adjudication` remains untracked until corpus adjudication begins.
 
-The six records exist so the store format, the manifest gates, the raw and view checks, and the resolver's reading of verdicts are exercised by something committed. `test/adjudication/test_committed_store.jl` validates the store against the corpus beside it, asserts every record still applies, regenerates the JSONL and requires it byte-identical, and resolves through it. A projection version bump or a census kind change fails that test rather than surfacing at the next full build.
+Each record carries a raw block span only as its current locator and one `surface_sha256` over the deterministic classification surface. Semantic selections are stored in projection-relative coordinates. At load time a matching record is materialized onto current raw source spans. If the locator has moved, the harness may recover the uniquely matching surface in the same source file. If the surface itself changed, the record is stale.
 
-Repair after such a change is `scripts/reanchor.jl`, which re-anchors a record only where the projected text is byte-identical to what the verdict was made against, and reports the rest stranded.
+`test/adjudication/test_committed_store.jl` validates this store against the corpus beside it, regenerates the canonical JSONL byte-for-byte, and resolves through it.
 
 ## Building against it
 
 ```
-julia --project=. scripts/build.jl test/corpus/source /tmp/out --patches none --store test/corpus/adjudication
+julia --project=. bin/run_pipeline.jl test/corpus/source /tmp/out \
+    --patches none \
+    --store test/corpus/adjudication \
+    --strict-adjudications
 ```
 
-`--patches none` is required. The committed `patches/patches.toml` is line-targeted against the full source files, and these entries are slices, so its line numbers do not exist here.
+`--patches none` is required because the committed patch set targets the full source corpus rather than these extracted entries.

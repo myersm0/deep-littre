@@ -1,5 +1,4 @@
-using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, load_patches,
-	patches_for, assert_line_count_preserved, assert_untouched_lines, line_count
+using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, load_patches
 
 @testset "patches" begin
 	@testset "minimal edit trims shared affixes" begin
@@ -11,14 +10,13 @@ using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, loa
 	end
 
 	@testset "guards" begin
-		newline_patch = Dict("file" => "f.xml", "line" => 1, "old" => "a", "new" => "a\nb")
 		path = tempname()
 		open(path, "w") do handle
 			println(handle, "[[patches]]")
 			println(handle, "file = \"f.xml\"")
 			println(handle, "line = 1")
-			println(handle, "old = \"a\"")
-			println(handle, "new = \"a\\nb\"")
+			println(handle, "old = \"\"")
+			println(handle, "new = \"anything\"")
 		end
 		@test_throws PatchViolation load_patches(path)
 
@@ -28,17 +26,14 @@ using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, loa
 		@test_throws PatchViolation apply_patches(text, "f.xml", [Patch("other.xml", 2, "beta", "gamma")])
 	end
 
-	@testset "application preserves lines and untouched bytes" begin
+	@testset "free-form replacements may change line count" begin
 		text = "alpha\nbeta gamma\ndelta\n"
-		patches = [Patch("f.xml", 2, "beta", "<indent>beta")]
+		patches = [Patch("f.xml", 2, "beta gamma\ndelta", "beta\nnew line\ndelta!")]
 		(view, edits) = apply_patches(text, "f.xml", patches)
-		@test view == "alpha\n<indent>beta gamma\ndelta\n"
-		@test line_count(view) == line_count(text)
-		assert_line_count_preserved(text, view, "f.xml")
-		assert_untouched_lines(text, view, Set([2]), "f.xml")
-		@test_throws ErrorException assert_untouched_lines(text, view, Set{Int}(), "f.xml")
+		@test view == "alpha\nbeta\nnew line\ndelta!\n"
 		@test length(edits) == 1
-		@test edits[1].raw_start == edits[1].raw_end
+		@test edits[1].raw_start < edits[1].raw_end
+		@test edits[1].view_start < edits[1].view_end
 	end
 
 	@testset "several patches on one line resolve against raw coordinates" begin
@@ -56,15 +51,11 @@ using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, loa
 		@test_throws ErrorException apply_patches(text, "f.xml", patches)
 	end
 
-	@testset "committed corpus patches satisfy the guards" begin
+	@testset "committed corpus patches load deterministically" begin
 		grouped = load_patches(joinpath(repository_root, "patches", "patches.toml"))
 		@test !isempty(grouped)
 		for (file, patches) in grouped
-			for patch in patches
-				@test !occursin('\n', patch.old)
-				@test !occursin('\n', patch.new)
-				@test patch.file == file
-			end
+			@test all(patch -> patch.file == file, patches)
 			@test issorted(patches; by = patch -> patch.line)
 		end
 	end

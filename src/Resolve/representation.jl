@@ -193,7 +193,7 @@ struct PassCoverage
 	positive::Int
 	negative::Int
 	unresolved::Int
-	quarantined::Int
+	stale::Int
 end
 
 struct ResolvedCorpus

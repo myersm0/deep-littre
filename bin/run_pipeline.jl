@@ -42,7 +42,7 @@ function settings()
 			arg_type = String
 			default = joinpath(repository_root, "data", "adjudication")
 		"--strict-adjudications"
-			help = "treat any quarantined adjudication as fatal"
+			help = "treat any stale adjudication as fatal"
 			action = :store_true
 		"--coverage"
 			help = "write per-pass coverage to this TSV"
@@ -52,6 +52,11 @@ function settings()
 			help = "write review findings to this TSV"
 			arg_type = String
 			default = nothing
+		"--build-manifest"
+			help = "write build provenance to this TOML file"
+			arg_type = String
+			dest_name = "build_manifest"
+			default = nothing
 	end
 	parse_args(specification)
 end
@@ -60,13 +65,13 @@ function write_coverage(path::AbstractString, corpus::Resolve.ResolvedCorpus)
 	open(path, "w") do handle
 		println(handle, join([
 			"pass", "pass_version", "population", "population_version", "population_size",
-			"population_hash", "examined", "positive", "negative", "unresolved", "quarantined",
+			"population_hash", "examined", "positive", "negative", "unresolved", "stale",
 		], '\t'))
 		for record in corpus.coverage
 			println(handle, join([
 				record.pass, record.pass_version, record.population, record.population_version,
 				record.population_size, record.population_hash, record.examined, record.positive,
-				record.negative, record.unresolved, record.quarantined,
+				record.negative, record.unresolved, record.stale,
 			], '\t'))
 		end
 	end
@@ -81,6 +86,13 @@ function write_review(path::AbstractString, corpus::Resolve.ResolvedCorpus)
 				finding.span.file, finding.span.start_byte, finding.span.end_byte,
 			], '\t'))
 		end
+	end
+end
+
+function write_build_manifest(path::AbstractString, documents::Vector{Source.SourceDocument})
+	mkpath(dirname(path))
+	open(path, "w") do handle
+		println(handle, "patched_source_sha256 = \"$(Source.patched_corpus_sha256(documents))\"")
 	end
 end
 
@@ -132,9 +144,8 @@ function main()::Int
 	)
 	@info "resolve complete: $(length(resolved.entries)) entries in $(seconds(resolve_elapsed))s"
 	for record in resolved.coverage
-		@info "coverage" pass = record.pass population = record.population_size examined =
-			record.examined positive = record.positive negative = record.negative unresolved =
-			record.unresolved quarantined = record.quarantined
+		@info "coverage" pass = record.pass population = record.population_size examined = record.examined positive =
+			record.positive negative = record.negative unresolved = record.unresolved stale = record.stale
 	end
 	isempty(resolved.review) || @warn "review findings" count = length(resolved.review)
 
@@ -150,6 +161,8 @@ function main()::Int
 
 	arguments["coverage"] === nothing || write_coverage(arguments["coverage"], resolved)
 	arguments["review"] === nothing || write_review(arguments["review"], resolved)
+	build_manifest = get(arguments, "build_manifest", nothing)
+	build_manifest === nothing || write_build_manifest(build_manifest, documents)
 
 	@info "done" tei_mb = round(filesize(tei_path) / 1024^2; digits = 2) database_mb =
 		round(filesize(database_path) / 1024^2; digits = 2)

@@ -6,7 +6,6 @@ module Adjudication
 
 using Dates
 using JSON
-using TOML
 using UUIDs
 using XML
 
@@ -14,13 +13,14 @@ using ..Source
 using ..Source: RawSpan, ViewSpan, slice, segment
 using ..Census
 
-include("projection.jl")
 include("records.jl")
+include("projection.jl")
 include("canonical.jl")
 include("store.jl")
 include("harness.jl")
 
-export ProjectedView, ExaminationRecord, NodeAssertion, Decision, FormSelection,
-	Harness, Store, PassDefinition, ReviewItem, StoreIntegrityError, initialize_store!
+export ProjectedView, ProjectedSpan, ExaminationRecord, NodeAssertion, AppliedRecord,
+	AnchoredNodeAssertion, Decision, FormSelection, Harness, Store, PassDefinition, ReviewItem,
+	StoreIntegrityError
 
 end

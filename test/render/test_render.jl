@@ -93,7 +93,7 @@ end
 		# workflow state. Whitelist rather than ban, so a new value has to be considered.
 		values = Set(match.captures[1] for match in eachmatch(r"ana=\"([^\"]+)\"", text))
 		@test values ⊆ Set(["resolved", "suspect"])
-		for state in ("unclassified", "unresolved", "quarantine", "stale_context", "underdetermined")
+		for state in ("unclassified", "unresolved", "stale_context", "underdetermined")
 			@test !occursin(state, text)
 		end
 	end

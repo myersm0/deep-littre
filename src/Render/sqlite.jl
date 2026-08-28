@@ -134,7 +134,7 @@ create table coverage (
 	positive integer not null,
 	negative integer not null,
 	unresolved integer not null,
-	quarantined integer not null
+	stale integer not null
 );
 
 create table review (
@@ -422,7 +422,7 @@ function render_sqlite(corpus::Resolve.ResolvedCorpus, path::AbstractString)
 				(
 					record.pass, record.pass_version, record.population, record.population_version,
 					record.population_size, record.population_hash, record.examined,
-					record.positive, record.negative, record.unresolved, record.quarantined,
+					record.positive, record.negative, record.unresolved, record.stale,
 				),
 			)
 		end

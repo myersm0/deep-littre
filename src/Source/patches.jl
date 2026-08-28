@@ -20,8 +20,6 @@ function load_patches(path::AbstractString)::Dict{String, Vector{Patch}}
 	isfile(path) || return grouped
 	for entry in get(TOML.parsefile(path), "patches", Dict{String, Any}[])
 		patch = Patch(entry["file"], entry["line"], entry["old"], entry["new"])
-		occursin('\n', patch.old) && throw(PatchViolation(patch, "target text contains a newline"))
-		occursin('\n', patch.new) && throw(PatchViolation(patch, "replacement contains a newline"))
 		isempty(patch.old) && throw(PatchViolation(patch, "target text is empty"))
 		push!(get!(grouped, patch.file, Patch[]), patch)
 	end
@@ -34,14 +32,6 @@ end
 patches_for(grouped::Dict{String, Vector{Patch}}, file::AbstractString)::Vector{Patch} =
 	get(grouped, file, Patch[])
 
-"""
-	minimal_edit(old, new)
-
-Byte lengths of the shared prefix and shared suffix of the two strings, on codepoint
-boundaries. Trimming them narrows a patch to the material it actually changes, so that a
-split patch inserting `</indent><indent>` records an insertion rather than a replacement of
-the whole line fragment.
-"""
 function minimal_edit(old::AbstractString, new::AbstractString)::Tuple{Int, Int}
 	old_characters = collect(old)
 	new_characters = collect(new)
@@ -60,22 +50,20 @@ function minimal_edit(old::AbstractString, new::AbstractString)::Tuple{Int, Int}
 	(prefix_bytes, suffix_bytes)
 end
 
-function sole_occurrence(line::AbstractString, patch::Patch)::Int
-	first_match = findfirst(patch.old, line)
-	first_match === nothing &&
-		throw(PatchViolation(patch, "target text does not occur on its line"))
-	tail = findnext(patch.old, line, nextind(line, first(first_match)))
-	tail === nothing ||
-		throw(PatchViolation(patch, "target text occurs more than once on its line"))
-	first(first_match)
+function sole_occurrence(raw::AbstractString, starts::Vector{Int}, patch::Patch)::Int
+	(line_start, line_end) = line_bounds(raw, starts, patch.line)
+	matches = filter(findall(patch.old, raw)) do match
+		line_start <= first(match) < line_end
+	end
+	isempty(matches) && throw(PatchViolation(
+		patch, "target text does not begin on the specified line",
+	))
+	length(matches) == 1 || throw(PatchViolation(
+		patch, "target text begins more than once on the specified line",
+	))
+	first(only(matches))
 end
 
-"""
-	apply_patches(raw, file, patches)
-
-Returns the parser view and the ordered edits relating it to raw source. Every patch is
-resolved against raw coordinates, so patches sharing a line do not shift one another.
-"""
 function apply_patches(raw::String, file::AbstractString, patches::Vector{Patch})
 	isempty(patches) && return (raw, Edit[])
 	starts = line_starts(raw)
@@ -83,11 +71,8 @@ function apply_patches(raw::String, file::AbstractString, patches::Vector{Patch}
 	for patch in patches
 		patch.file == file ||
 			throw(PatchViolation(patch, "patch addressed to $(patch.file) applied to $(file)"))
-		(line_start, line_end) = line_bounds(raw, starts, patch.line)
-		line = segment(raw, line_start, line_end)
-		offset = sole_occurrence(line, patch)
+		match_start = sole_occurrence(raw, starts, patch)
 		(prefix, suffix) = minimal_edit(patch.old, patch.new)
-		match_start = line_start + offset - 1
 		raw_start = match_start + prefix
 		raw_end = match_start + ncodeunits(patch.old) - suffix
 		replacement = segment(patch.new, prefix + 1, ncodeunits(patch.new) - suffix + 1)
@@ -114,33 +99,4 @@ function apply_patches(raw::String, file::AbstractString, patches::Vector{Patch}
 	end
 	write(buffer, segment(raw, cursor, ncodeunits(raw) + 1))
 	(String(take!(buffer)), edits)
-end
-
-function assert_line_count_preserved(raw::AbstractString, view::AbstractString, file::AbstractString)
-	raw_lines = line_count(raw)
-	view_lines = line_count(view)
-	raw_lines == view_lines ||
-		error("$(file): patching changed line count from $(raw_lines) to $(view_lines)")
-	nothing
-end
-
-"""
-	assert_untouched_lines(raw, view, lines, file)
-
-Byte identity outside the patched line set. This is what makes a source line number a stable
-navigation field and keeps unpatched material at identical raw and view coordinates.
-"""
-function assert_untouched_lines(
-	raw::AbstractString, view::AbstractString, lines::Set{Int}, file::AbstractString,
-)
-	raw_starts = line_starts(raw)
-	view_starts = line_starts(view)
-	for line in 1:length(raw_starts)
-		line in lines && continue
-		(raw_start, raw_end) = line_bounds(raw, raw_starts, line)
-		(view_start, view_end) = line_bounds(view, view_starts, line)
-		segment(raw, raw_start, raw_end) == segment(view, view_start, view_end) ||
-			error("$(file): line $(line) changed but is not named by a patch")
-	end
-	nothing
 end

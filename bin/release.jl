@@ -15,6 +15,7 @@ const baseline_path = joinpath(repo_root, "test", "lex0_baseline.tsv")
 
 const corpus_name = "littre.tei.xml"
 const database_name = "littre.db"
+const build_manifest_name = "BUILD-MANIFEST.toml"
 
 function baseline_invalid(path::AbstractString)::Int
 	isfile(path) || error("missing baseline: $(path); run validate_lex0.jl --baseline first")
@@ -72,31 +73,30 @@ function main()::Int
 
 	corpus = joinpath(output_directory, corpus_name)
 	database = joinpath(output_directory, database_name)
+	build_manifest = joinpath(output_directory, build_manifest_name)
 
 	coverage = joinpath(output_directory, "coverage.tsv")
 
-	# A release refuses quarantined adjudications: a stale judgment may be tolerated during
-	# development, where it simply is not applied, but not in a published artifact.
 	step(
 		"build corpus and database",
-		`julia --project=$(repo_root) $(joinpath(repo_root, "bin", "run_pipeline.jl")) $(source_directory) $(output_directory) --strict-adjudications --coverage $(coverage)`,
+		`julia --project=$(repo_root) $(joinpath(repo_root, "bin", "run_pipeline.jl")) $(source_directory) $(output_directory) --strict-adjudications --coverage $(coverage) --build-manifest $(build_manifest)`,
 	)
 	# validate_lex0.jl runs the committed probe as its arbiter before reporting on the corpus, so
 	# a separate probe step would duplicate it.
 	step(
 		"validate against the pinned Lex-0 schema",
-		`julia --project=$(repo_root) $(joinpath(repo_root, "scripts", "validate_lex0.jl")) $(corpus) --gate $(floor_value)`,
+		`julia --project=$(repo_root) $(joinpath(repo_root, "bin", "validate_lex0.jl")) $(corpus) --gate $(floor_value)`,
 	)
 	report_coverage(coverage)
 
 	archives = [compress(corpus), compress(database)]
-	manifest = checksums(archives)
+	manifest = checksums([archives... , build_manifest])
 
 	println("\n== release artifacts for v$(version)")
-	for path in vcat(archives, manifest)
+	for path in [archives... , build_manifest, manifest]
 		println("   $(path)  ($(round(filesize(path) / 1024^2; digits = 1)) MB)")
 	end
-	println("\nupload with: gh release create v$(version) $(join(vcat(archives, manifest), " "))")
+	println("\nupload with: gh release create v$(version) $(join([archives... , build_manifest, manifest], " "))")
 	0
 end
 

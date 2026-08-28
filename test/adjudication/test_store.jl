@@ -1,8 +1,7 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemma_pass,
-	canonical_json, write_pass!, read_pass, Store, sort_key, write_json_string, ExaminationRecord,
-	StoreIntegrityError
+	canonical_json, write_pass!, read_pass, Store, sort_key, write_json_string, ExaminationRecord
 
 @testset "canonical store" begin
 	documents = read_corpus(corpus_source)
@@ -11,11 +10,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 	block = angoisse_block(harness, corpus)
 	item = present(harness, sublemma_pass, block)
 
-	function fresh_store()
-		store = Store(mktempdir())
-		cp(joinpath(harness.store.root, "manifest.toml"), joinpath(store.root, "manifest.toml"))
-		store
-	end
+	fresh_store() = Store(mktempdir())
 
 	record = commit(
 		harness, sublemma_pass, item,
@@ -40,7 +35,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 	@testset "key order is fixed by the writer" begin
 		text = canonical_json(record)
 		positions = [findfirst("\"$(key)\":", text) for key in
-			("record_id", "pass", "source", "outcome", "assertions", "created", "notes")]
+			("record_id", "pass", "source", "surface_sha256", "outcome", "assertions", "created", "notes")]
 		@test all(position -> position !== nothing, positions)
 		@test issorted([first(position) for position in positions])
 	end
@@ -55,9 +50,6 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 		@test String(take!(accented)) == "\"Familièrement\""
 	end
 
-	@testset "writer requires a declared store" begin
-		@test_throws StoreIntegrityError write_pass!(Store(mktempdir()), "sublemma", [record])
-	end
 
 	@testset "round trip through the store" begin
 		store = fresh_store()
@@ -80,7 +72,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 		@test last(before) == UInt8('\n')
 	end
 
-	@testset "records sort by durable anchor" begin
+	@testset "records sort by locator" begin
 		other = present(harness, sublemma_pass, first(filter(
 			candidate -> candidate.raw_span.start_byte < block.raw_span.start_byte,
 			DeepLittre.Adjudication.eligible(sublemma_pass, corpus),
