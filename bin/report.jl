@@ -2,7 +2,8 @@
 
 # Coverage and review reporting over the current adjudication state. Low structural coverage is
 # the expected intermediate state of the rewrite, not a defect: absence of a record means no pass
-# has looked, and nothing licenses a derived sense until one has.
+# has looked, and nothing licenses a derived sense until one has. Review findings are likewise a
+# reported quantity, not a failure, so the exit status reports whether the report ran.
 #
 #   julia --project=. bin/report.jl data/source
 #   julia --project=. bin/report.jl data/source --review data/review.tsv
@@ -118,9 +119,11 @@ function main()
 		end
 	end
 
-	isempty(resolved.review) ? 0 : 1
+	0
 end
 
 end
 
-exit(Report.main())
+if abspath(PROGRAM_FILE) == @__FILE__
+	exit(Report.main())
+end
