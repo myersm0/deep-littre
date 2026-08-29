@@ -6,20 +6,6 @@ using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSe
 using DeepLittre.Resolve: resolve
 using DeepLittre.Render: render_tei, render_sqlite
 
-const schema_path = joinpath(repository_root, "vendor", "tei-lex0-0.9.5", "lex-0.rng")
-const jing_path = joinpath(repository_root, "vendor", "jing.jar")
-
-have_validator() = isfile(jing_path) && isfile(schema_path) && Sys.which("java") !== nothing
-
-function jing_errors(path::AbstractString)::Vector{String}
-	output = IOBuffer()
-	try
-		run(pipeline(`java -jar $(jing_path) $(schema_path) $(path)`; stdout = output, stderr = output))
-	catch
-	end
-	filter(!isempty, strip.(split(String(take!(output)), '\n')))
-end
-
 @testset "renderers" begin
 	documents = read_corpus(corpus_source)
 	corpus = census(documents)
@@ -191,8 +177,6 @@ end
 		close(database)
 	end
 
-	# Node identity used to be minted per build, so every SQLite key and every foreign key into it
-	# changed on rebuild while TEI stayed stable and hid it. Both outputs are checked here.
 	@testset "a rebuild reproduces both outputs exactly" begin
 		again = resolve(harness)
 		rebuilt = mktempdir()

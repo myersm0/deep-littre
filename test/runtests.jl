@@ -12,6 +12,23 @@ const repository_root = normpath(joinpath(@__DIR__, ".."))
 const fixture_root = joinpath(@__DIR__, "fixtures")
 const corpus_source = joinpath(@__DIR__, "corpus", "source")
 const corpus_adjudication = joinpath(@__DIR__, "corpus", "adjudication")
+const schema_path = joinpath(repository_root, "vendor", "tei-lex0-0.9.5", "lex-0.rng")
+const jing_path = joinpath(repository_root, "vendor", "jing.jar")
+
+have_validator() = isfile(jing_path) && isfile(schema_path) && Sys.which("java") !== nothing
+
+function jing_errors(path::AbstractString)::Vector{String}
+	output = IOBuffer()
+	try
+		run(pipeline(`java -jar $(jing_path) $(schema_path) $(path)`; stdout = output, stderr = output))
+	catch
+	end
+	filter(!isempty, strip.(split(String(take!(output)), '\n')))
+end
+
+if get(ENV, "DEEP_LITTRE_REQUIRE_VALIDATOR", "") != "" && !have_validator()
+	error("DEEP_LITTRE_REQUIRE_VALIDATOR is set but java, jing, or the pinned schema is missing")
+end
 
 function all_qualifications(entry)
 	found = []
