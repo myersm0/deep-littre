@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="TABLIER" sens="1">
+<entete>
+	<prononciation>ta-bli-é ; l'r ne se lie jamais ; au pluriel, l's se lie : des ta-bli-é-z en ivoire</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Anciennement, la table, non pas seulement du jeu des tables, mais de tous les jeux qui se jouent avec des pièces mobiles sur une surface plane.
+<indent>Petite table distinguée par des carrés de deux différentes couleurs pour jouer aux échecs aux dames.
+</indent>
+</variante>
+<variante num="2">La totalité d'un trictrac, divisée en deux parties subdivisées chacune en deux tables.
+</variante>
+<variante num="3">Parquet d'un pont suspendu.
+<indent>Ensemble des poutres et des planches qui forment une des travées d'un pont de charpente
+</indent>
+<indent>Partie supérieure d'un pont militaire, sur laquelle se fait le passage.
+</indent>
+</variante>
+<variante num="4">Support en bois ou en pierre sur lequel pose une ruche.
+</variante>
+<variante num="5"><semantique type="domaine">Terme de sculpture.</semantique> Ornement sculpté sur la face d'un piédestal.
+</variante>
+<variante num="6">Anciennement, nom donné à des bureaux de recette des droits du roi, en certaines provinces.
+<cit aut="" ref="Édit, sept. 1664">Et la nouvelle imposition qui fut établie en 1599.... elle a été créée pour être levée de tablier en tablier, et lesdits tabliers sont composés de certain nombre de paroisses [hors desquelles les marchandises ne peuvent sortir sans payer le droit]</cit>
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIIIe s. 
+<cit aut="JOINV." ref="253">Monsieur Gautier en fu le miex paié ; car il jeta tous les deniers qui estoient sus le tablier, dont il y avoit grant foison</cit>
+</indent>
+<indent>XIVe s.
+<cit aut="" ref="Hist. litt. de la Fr. t. xxv, p. 54">Li taule rouge est eslevée ou taulier</cit>
+<cit aut="DE LABORDE" ref="Émaux, p. 509">Un tablier de fust garny de jeux de tables et d'eschez</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="ID." ref="ib. p. 510">Ung tablier de marbre blanc et noir, bordé par dedens, ouvré tout autour à ymaiges de petiz enfans nuz, et est percié, entre le tablier et l'eschiquier, à mectre une petite layette de bois où sont les tables et eschecz de yvoire blanc et noir</cit>
+<cit aut="CH. D'ORL." ref="Chanson 96">Vivres, tabliers, cartes aurons, Où souvent nous estudierons</cit>
+<cit aut="DU CANGE" ref="tabularium.">Les supplians commencerent à s'en partir d'illec pour eulx en aler en ung tablier ou ouvrouer d'escripture.... où avoient acoustumé escrire et exercer fait de pratique</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="MONT." ref="I, 195">Ceulx qui par certains jeux de tablier apprennent l'arithmetique et la geometrie</cit>
+<cit aut="CARL." ref="V, 3">Il declara au receveur general que toutes les finances de sa generalité et celles de Picardie et Bourgoigne, qui se devoient rapporter par commandement exprès de sa majesté à son tablier....</cit>
+<cit aut="CHARRON" ref="Sagesse, Préf. de la 2e éd.">Je presente seulement les choses et les estalle comme sur le tablier</cit>
+<cit aut="" ref="Coust. gén. t. II, p. 698">Il n'est permis à aucun voisin ou habitant de la ditte ville, vendre, trancher ou poiser chair en detail aux tabliers [étaux] communs de la ditte ville, s'il n'a premierement fait et presté le serment en tel cas accoustumé</cit>
+<cit aut="PASQUIER" ref="Rech. I, p. 31, dans LACURNE">Ils poursuivirent leurs desseins avecques telle opiniastreté, qu'en fin de jeu ils demeurerent maistres du tablier, c'est à dire paisibles possesseurs du royaume d'Angleterre</cit>
+<cit aut="" ref="Nature d'amour, f° 148, dans LACURNE">Nostre vie ressemble à un jeu de tablier : si les dez ne viennent à propos pour nous, nous rengeons par artifice à nostre profit ce qui est venu par sort et hazard</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Provenç. <i>taulier</i> ; du lat. <i lang="la">tabularium</i>, de <i lang="la">tabula</i>, table, planche.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="CANDI, IE" sens="2">
+<entete>
+	<prononciation>kan-di, die</prononciation>
+	<nature>part. passé.</nature>
+</entete>
+<corps>
+<variante>Fruits candis, ou, substantivement, candis, fruits que l'on conserve en faisant candir du sucre dessus.
+</variante>
+</corps>
+</entree>
+<entree terme="CHEVER">
+<entete>
+	<prononciation>che-vé</prononciation>
+	<nature>v. a.</nature>
+</entete>
+<corps>
+<variante num="1">Creuser une pierre précieuse par-dessous, pour affaiblir la couleur lorsqu'elle est trop forte.
+</variante>
+<variante num="2">Rendre concave une pièce de métal.
+</variante>
+<variante num="3">Faire subir au verre le chevage. Verres chevés, verres pour montres et pendules.
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIIIe s. 
+<cit aut="" ref="Ren. 7408">Prestre Martin se porpensa, Qu'une grant fosse chevera</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="" ref="Coustumier gén. t. I, p. 528">Nul ne peut chever ne faire entreprinse sur la chausseure [chaussée] d'icelle ville</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Chever, ancienne forme de caver (voy. <a ref="caver">ce mot</a>).
+</indent>
+</rubrique>
+</entree>
+<entree terme="COTRET">
+<entete>
+	<prononciation>ko-trè ; le t ne se lie pas dans le parler ordinaire ; au pluriel, l's se lie : kotrè-z et fagots ; cotrets rime avec succès, traits, jamais, paix, etc.</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Fagot de bois court et de médiocre grosseur. Acheter un cotret. Brûler des cotrets.
+<cit aut="" ref="Francion, liv. II, p. 452">J'estime également ceux qui ont la charge des plus grandes affaires et ceux qui n'ont qu'une charge de cotrets sur le dos, si la vertu n'y met de la différence</cit>
+<indent>Châtrer des cotrets, en ôter quelques bâtons.
+</indent>
+</variante>
+<variante num="2">Chacun des bâtons qui composent le fagot.
+<indent><semantique type="indicateur">Familièrement.</semantique> Un coup de cotret. De l'huile de cotret, des coups de bâton.
+</indent>
+<indent>Être sec comme un cotret, être fort maigre. Des jambes de cotrets, jambes fort menues.
+</indent>
+</variante>
+<variante num="3">Morceau de bois qui fait partie des ailes d'un moulin à vent.
+<indent>Madrier faisant partie du métier de haute lisse.
+</indent>
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIVe s. 
+<cit aut="" ref="Ménagier, II, 4">En Greve, un cent de costerez de Bourgogne</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="" ref="Journal de Paris, an 1442">Le cent de cotterets pour vingt sous parisis</cit>
+<cit aut="COQUILLART" ref="le Monologue du puits.">Brief, c'est un gentil compaignon ; Et si a ung très beau maintien ; Par mon ame, c'est grand dommaige Qu'il n'est porteur de cotherès</cit>
+<cit aut="VILLON" ref="Repue fr. du souffreteux.">Et puis après, pour faire fin, Le cotteret et la bourrée</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="LANOUE" ref="551">S'ils se fussent presentez à l'impourveue avec des bastons de cotterets ès mains</cit>
+<cit aut="O. DE SERRES" ref="808">Mettant d'un costé les grosses buches et bois de fente et de moule ; de l'autre les fagots, bourrées et costerets</cit>
+<cit aut="RAB." ref="Garg. I, 1">Je pense que plusieurs sont aujourd'hui empereurs, roys, ducz, princes et papes en la terre, lesquelz sont descenduz de quelques porteurs de roguatons et de coustrets</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Saintonge, coterâ. Origine inconnue. Vient-il de Villers-Cotterets, localité où il y a de grandes forêts ? mais on n'a aucun renseignement qui permette d'affirmer qu'il en est ainsi (en tout cas Villers-Cotterets se décompose en villers-coste-Retz, près de Retz). D'autre part, il y a dans le bas-latin costeretum, en français costeret, qui signifie une charge, un panier, une botte (texte de 1295) : Chacune mande [manne] de merlan ou poisson doit deux deniers, et s'ils sont en costerès, chascun costeret doit deux deniers. Ce costeretum vient de costa dans le sens de panier, botte : une coste de raisins (texte de 1379) ; costa circulorum, une botte de cercles. On peut sans beaucoup de peine passer de l'idée de botte à celle de fagot.
+</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+COTRET.
+<variante num="1">Ajoutez :
+<cit aut="J. SAVARY" ref="Dict. univ. du commerce">Cotrets de taillis, cotrets faits avec du bois taillis ; cotrets de quartiers, cotrets faits de rondins refendus</cit>
+</variante>
+<variante num="2">Ajoutez :
+<indent>Sous le cotret, sous les coups de bâton. 
+<cit aut="CORN." ref="Illus. II, 9">Nous verrons ce soir, si je le tiens, Danser sous le cotret sa noblesse et ses biens</cit>
+</indent>
+</variante>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Ajoutez : Savary, dans son Dict. de commerce, dit que cette espèce de bois a été ainsi nommée, parce qu'il en a été envoyé en premier lieu de la forêt de Villers-Cotterets.
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

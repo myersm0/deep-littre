@@ -42,7 +42,7 @@ jobs:
         run: julia --project=. -e 'using Pkg; Pkg.test()'
 
       - name: Probe verdicts
-        run: julia --project=. scripts/validate_probe.jl
+        run: julia --project=. test/validate_probe.jl
 
       - name: Publish draft release
         if: github.ref_type == 'tag'

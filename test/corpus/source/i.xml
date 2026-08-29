@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="IMAGÉ, ÉE">
+<entete>
+	<prononciation>i-ma-jé, jée</prononciation>
+	<nature>part. passé</nature> d'imager
+</entete>
+<corps>
+<variante>La philosophie botanique de Linné, avec son style nerveux et imagé. Une éloquence imagée comme celle de Bossuet.
+</variante>
+</corps>
+</entree>
+<entree terme="INSOLVABILITÉ">
+<entete>
+	<prononciation>in-sol-va-bi-li-té</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante>Impuissance de payer. L'insolvabilité de ce débiteur.
+</variante>
+</corps>
+<rubrique nom="ÉTYMOLOGIE">
+<indent><i>Insolvable</i>. Au XVIe siècle on disait <i>in solvence</i>.
+</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+<indent>INSOLVABILITÉ. Ajoutez : 
+<cit ref="Remontrance du parlement, dans Mme DE MOTTEVILLE, Mém. p. 169">Donner au peuple ce qu'ils devaient des dernières années, lesquelles ils ne pouvaient payer à cause de leur insolvabilité,</cit>
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

@@ -10,5 +10,8 @@ temp/
 Manifest.toml
 data/
 bak/
-.DS_STORE
+.DS_Store
 test/reports/
+tutorials/
+sample/
+test/sampling/verdict_candidates.tsv

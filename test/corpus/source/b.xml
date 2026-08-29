@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="BIEN" sens="1">
+<entete>
+	<prononciation>biin ; l'n ne se lie jamais : ce bien est à moi, dites : ce biin est à moi, en donnant à biin la nasalité qui est dans in-digne, et non ce biin-n est à moi</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Ce qui est juste, honnête. Le bien et le beau. Le bien et la justice régnaient alors. Faire le bien. Se porter au bien. Il pratiqua le bien toute sa vie. Puissance pour le bien comme pour le mal. 
+<cit aut="BOILEAU" ref="Épître, III">Des superbes mortels le plus affreux lien, N'en doutons pas, Arnauld, c'est la honte du bien</cit>
+<cit aut="BALZ." ref="Livr. VI, lett. 3">Cette sagesse timide qui ne veut pas assurer que le bien soit bien</cit>
+<cit aut="J. J. ROUSS." ref="Hél. II, 18">J'imagine à peine quelle sorte de bonté peut avoir un livre qui ne porte point ses lecteurs au bien</cit>
+<indent>Homme de bien, gens de bien, homme. gens d'une probité éprouvée, d'une véritable vertu.
+</indent>
+<indent>Femme de bien, femme dont la fidélité conjugale est irréprochable.
+</indent>
+<indent><semantique type="domaine">Terme de métaphysique.</semantique> Le souverain bien, le bien absolu, celui qui est infini en prix et en durée, et aussi Dieu.
+<cit aut="VOIT." ref="Lettr. 51">À moins que de traiter de l'immortalité de l'âme ou du souverain bien</cit>
+</indent>
+</variante>
+<variante num="2">Ce qui est dans la règle ou dans la convenance. Il y a du bien, il y a du mal dans cet ouvrage. L'ignorant ne trouve rien de bien que ce qu'il fait lui-même.
+</variante>
+<variante num="3">Ce qui est utile, avantageux, agréable. 
+<cit aut="VAUGEL." ref="Q. C. 287">Pays fertile et abondant en toutes sortes de biens</cit>
+<cit aut="VOIT." ref="Lettr. 43">Un homme auquel vous avez fait tant de biens et à qui vous en avez enseigné encore davantage</cit>
+<cit aut="LA BRUY." ref="11">La vie est courte et ennuyeuse ; elle se passe toute à désirer ; l'on remet à l'avenir son repos et ses joies, à cet âge souvent où les meilleurs biens ont déjà disparu, la santé et la jeunesse</cit>
+<cit aut="ID." ref="ib.">Il est si ordinaire à l'homme de n'être pas heureux, et si essentiel à tout ce qui est un bien d'être acheté par mille peines, qu'une affaire qui devient facile se rend suspecte</cit>
+<cit aut="VOLT." ref="Zaïre, III, 6">Cet hyménée Était un bien suprême à mon âme étonnée</cit>
+<cit aut="ID." ref="Fanat. II, 5">C'est le premier des biens pour mon âme attendrie</cit>
+<cit aut="ID." ref="Dés. de Lisbonne.">Le trépas est un bien qui finit nos misères</cit>
+<cit aut="LA FONT." ref="Fabl. II, 13">Nous rendre dans le bien, de plaisirs incapables</cit>
+<cit aut="CORN." ref="Nicom. I, 2">Et le bien d'être libre aisément vous console De ce qu'a d'injustice un manque de parole</cit>
+<cit aut="ID." ref="Cid, III, 4">Mon âme aurait trouvé dans le bien de te voir L'unique allégement qu'elle eût pu recevoir</cit>
+<cit aut="ID." ref="Nicom. II, 2">Si le bien de vous voir m'était moins précieux</cit>
+<cit aut="ID." ref="D. San. V, 3">Pour rendre à l'Aragon le bien de sa présence</cit>
+<cit aut="BALZ." ref="liv. VI, lett. 2">Je ferais exprès ce voyage pour avoir le bien de vous embrasser</cit>
+<cit aut="PASC." ref="Prov. 6">Le dessein qu'a pris notre société pour le bien de la religion est de ne rebuter personne</cit>
+<cit aut="BOSSUET" ref="Aut. eccl.">Il serait utile au bien de la paix de représenter ces actes</cit>
+<cit aut="ID." ref="Reine d'Anglet.">En leur donnant [aux rois] sa puissance, il [Dieu] leur commande d'en user comme il fait lui-même, pour le bien du monde</cit>
+<cit aut="MOL." ref="Éc. des mar. I, 5">J'ai le bien d'être de vos voisins</cit>
+<cit aut="SAINT-SIMON" ref="24, 27">M. de Noyon n'en eut que le bien devant Dieu [de s'être réconcilié avec M. de Caumartin] et l'honneur devant le monde</cit>
+<indent>Avoir le bien, locution de politesse, en place de laquelle on dit plutôt aujourd'hui avoir l'avantage. 
+<cit aut="MOL." ref="Fâch. II, 7">Il s'est dit grand chasseur et nous a priés tous Qu'il pût avoir le bien de courir avec nous</cit>
+</indent>
+<indent>Le bien public, l'utilité générale. 
+<cit aut="MASS." ref="Confér. Sacerdoce.">Point de bien public auquel il ne se sacrifie</cit>
+<cit aut="LA FONT." ref="Captivité de St. Malc.">L'amour du bien public empêchait le repos ; Les chefs encourageaient chacun par leur exemple</cit>
+</indent>
+<indent>Les biens du corps, la santé, la force. Les biens de l'âme, les vertus. Les biens de l'esprit, les talents.
+</indent>
+<indent>Les biens temporels, les biens de ce monde, se dit par opposition aux biens éternels, c'est-à-dire ceux dont on jouit pour toujours dans une autre vie.
+</indent>
+<indent>Les biens de la terre, les productions du sol. Ce temps est contraire aux biens de la terre.
+</indent>
+<indent>Sentir son bien, avoir des sentiments dignes de sa naissance. 
+<cit aut="VOIT." ref="Lettr. 153">Et Rominagrobis même ne saurait avoir meilleure mine et ne sentirait pas mieux son bien</cit> Locution qui a vieilli.
+</indent>
+<indent>Faire du bien à quelqu'un, le secourir, lui rendre service. 
+<cit aut="VOIT." ref="Lettr. 60">Il est en votre pouvoir de faire du bien à une personne qui vous en demande</cit>
+<cit aut="LA BRUY." ref="4">Comme nous nous affectionnons de plus en plus aux personnes à qui nous faisons du bien....</cit>
+<cit aut="BOSSUET" ref="Hist. II, 6">Il ne cesse de faire du bien à ses citoyens</cit>
+<cit aut="ROTR." ref="Bélis. II, 7">Et qui fait bien à tous peut dormir sûrement</cit>
+<cit aut="CORN." ref="Cinna, II, 1">C'est un ordre des dieux qui jamais ne se rompt, De nous vendre bien cher les grands biens qu'ils nous font</cit>
+<cit aut="SCARRON" ref="Don Japhet, Épître au roi.">Votre Majesté ne se ferait pas grand tort, si elle me faisait un peu de bien</cit>
+</indent>
+<indent>Faire du bien à quelque chose, en procurer le développement, la prospérité. La paix fera du bien au commerce. 
+<cit aut="PASC." ref="Prov. 3">Ce manquement de liberté ne ferait pas de bien à leur censure</cit>
+</indent>
+<indent>Faire du bien, ayant pour sujet un nom de chose, être utile. Ce voyage lui a fait beaucoup de bien, a été utile à sa santé. Cette action lui a fait du bien, lui a donné de la considération, du crédit.
+</indent>
+<indent>Dire du bien de quelqu'un, d'un ouvrage, en parler avec éloge. 
+<cit aut="SÉV." ref="2">Cela est assez ridicule que je dise tant de bien de ma fille</cit>
+<cit aut="ID." ref="141">Son frère lui a dit du bien de votre style</cit>
+<cit aut="ID." ref="364">J'avais dit beaucoup de bien de son cœur</cit>
+<cit aut="ID." ref="27">On m'a dit cent mille biens de vous</cit>
+<cit aut="ID." ref="450">Des gens qui lui en ont dit des biens</cit>
+<cit aut="FÉN." ref="Diog.">On disait à Diogène du jeune homme tous les biens imaginables</cit>
+</indent>
+<indent>Vouloir du bien à quelqu'un, vouloir le bien de quelqu'un, être bien disposé en sa faveur. 
+<cit aut="MOL." ref="Sicilien, 7">Vous voulez du bien à ceux qui prennent ce soin</cit>
+<cit aut="LA BRUY." ref="4">Il faut briguer la faveur de ceux à qui l'on veut du bien, plutôt que de ceux de qui l'on espère du bien</cit>
+</indent>
+<indent>On dit qu'une dame veut du bien à quelqu'un, quand elle a pour lui un sentiment tendre.
+</indent>
+</variante>
+<variante num="4">À bien, <nature>loc. adv.</nature> D'une façon qui réussit. Mener une entreprise à bien, faire qu'elle réussisse. Aller à bien, venir à bien, se terminer à bien, réussir. 
+<cit aut="MOL." ref="le Dép. III, 4">Puisse cette action se terminer à bien</cit>
+<cit aut="LA FONT." ref="Fabl. VII, 10">La chose allait à bien par son soin diligent</cit>
+<cit aut="ID." ref="Herm.">Moyennant Dieu, l'enfant viendrait à bien</cit>
+<indent>Mettre à bien, s'est dit quelquefois ironiquement pour séduire, en parlant d'une femme. 
+<cit aut="LA FONT." ref="Joc.">Encor faut-il du temps pour mettre un cœur à bien</cit>
+</indent>
+</variante>
+<variante num="5">En bien, locut. adverb. Avec honnêteté. 
+<cit aut="LA BRUY." ref="11">On ne trompe point en bien, et la fourberie ajoute la malice au mensonge</cit>
+<indent>En bien, d'une façon favorable. Prendre en bien, interpréter favorablement. Changement en bien. Ne citer ni en bien ni en mal. Ce mot peut être pris en bien comme en mal.
+</indent>
+<indent>En tout bien, tout honneur, c'est-à-dire à bonne fin, à bonne intention.
+</indent>
+<indent>Pour le bien, locution familière signifiant à bonnes intentions. Il a fait cela pour le bien. 
+<cit aut="LA FONT." ref="Captivité de St-Malc.">Toute feinte est sujet de scrupule à des saints ; Ce qu'ils font pour un bien leur semble être une offense</cit>
+</indent>
+</variante>
+<variante num="6">Bienfait. 
+<cit aut="RAC." ref="Athal. I, 4">Pour tant de biens il commande qu'on l'aime</cit>
+<cit aut="DUCIS" ref="Abufar, III, 6">Le bien qu'on croit caché sort de la nuit obscure, Et le ciel tôt ou tard le paye avec usure</cit>
+</variante>
+<variante num="7">Ce qui appartient en propre à quelqu'un, tout ce qu'on possède. Bien patrimonial. Les biens meubles et immeubles. 
+<cit aut="LA BRUY." ref="4">On convie, on invite, on offre sa maison, sa table, son bien et ses services : rien ne coûte qu'à tenir parole</cit>
+<cit aut="BOSSUET" ref="Anne de Gonz.">Le prodigue de l'Évangile, qui veut avoir son partage, qui veut jouir de soi-même et des biens que son père lui a donnés</cit>
+<cit aut="MOL." ref="Éc. des mar. I, 2">Lorsque l'on a du bien</cit>
+<cit aut="LA FONT." ref="Fauc.">Clitie avait aussi beaucoup de bien</cit>
+<cit aut="RÉGNIER" ref="Sat. IX">Telles je les croirai quand ils auront du bien</cit>
+<cit aut="SAINT-SIMON" ref="15, 168">L'embarras était le bien ; j'en avais grand besoin pour nettoyer le mien</cit>
+<cit aut="VOLT." ref="Tancr. III, 3">Un rival odieux, Seigneur, vous enlevait le bien de vos aïeux</cit>
+<cit aut="PASC." ref="Prov. 16">Les saints recommandent aux riches de partager avec les pauvres les biens de la terre, s'ils veulent posséder avec eux les biens du ciel</cit>
+<indent><semantique type="indicateur">Par extension.</semantique> 
+<cit aut="RAC." ref="Phèd. II, 2">L'Attique est votre bien....</cit>
+<cit aut="ID." ref="Baj. II, 1">Ma vie est votre bien</cit>
+<cit aut="CORN." ref="Cinna. II, 1">Rome est à vous, seigneur, l'empire est votre bien</cit>
+<cit aut="M. J. CHÉN." ref="Œdipe roi, III, 2">Nos libertés, nos jours ne sont pas votre bien</cit>
+</indent>
+<indent>Bien de campagne, ou, absolument, bien, propriété rurale. 
+<cit aut="LA FONT." ref="Fauc.">Clitie à cinq cents pas de cette métairie Avait du bien</cit>
+</indent>
+<indent><semantique type="indicateur">Familièrement.</semantique> Avoir du bien au soleil, avoir des terres, des biens-fonds, des maisons.
+</indent>
+<indent><semantique type="domaine">En termes de mer,</semantique> le navire a péri corps et biens, c'est-à-dire la cargaison et les hommes ont péri.
+</indent>
+</variante>
+</corps>
+<rubrique nom="PROVERBES">
+<indent><exemple>Nul bien sans peine</exemple>.
+</indent>
+<indent><exemple>Le mieux est l'ennemi du bien</exemple>, c'est-à-dire on risque de gâter un ouvrage, une situation, en essayant trop de l'améliorer.
+</indent>
+</rubrique>
+<rubrique nom="HISTORIQUE">
+<indent>XIe s. 
+<cit aut="" ref="Ch. de Rol. III">Serez ses hom [son homme] par honur et par ben</cit>
+<cit aut="" ref="ib. X">Ne ben ne mal [il] ne respont [à] son neveu</cit>
+<cit aut="" ref="ib. XXXVIII">Deus, se lui plaist, à bien nous le mercie</cit>
+<cit aut="" ref="ib. CLVII">Ensemble [nous] aurons et le ben et le mal</cit>
+</indent>
+<indent>XIIe s. 
+<cit aut="" ref="Ronc. p. 130">Par amistié et par bien, [je] vous commande</cit>
+<cit aut="" ref="Couci, III">Puisqu'en vous sont tout mal estaint Et tout bien à droit alumé</cit>
+<cit aut="" ref="ib. XII">Les biens d'amour que j'ai atendus tant</cit>
+<cit aut="" ref="ib. XI">Douce dame, d'orgueil vous defendez, Ne trahissez vos biens [qualités] ne vos beautez</cit>
+<cit aut="" ref="ib.">Quant plus me truis [je me trouve] pensis et esgaré, Plus [je] me confort as biens dont ele est pleine</cit>
+<cit aut="" ref="ib. XVI">Un petiz biens vaut mieux, si Diex me voie, Qu'on fait courtoisement Que cent greignor fait envieusement</cit>
+<cit aut="" ref="ib. XX">S'avec ces biens [beauté et courtoisie] [vous] acueilliez felonie</cit>
+<cit aut="" ref="Sax. VII">[Je] N'en oi [ouis] nului parler qui moult de bien n'en die</cit>
+<cit aut="" ref="Liber psalm. p. 127">El tuen bien plaisir sera exalced li notre corz [corne]</cit>
+</indent>
+<indent>XIIIe s. 
+<cit aut="" ref="Berte, VI">Et de faire tout bien [elle] fu en grant convoitise</cit>
+<cit aut="" ref="ib. VIII">Qui de bien est venus, drois est qu'à bien retraie</cit>
+<cit aut="" ref="ib. XXIV">Dame, ce dist Tybers, grans biens vous est venus</cit>
+<cit aut="" ref="ib. LXII">Et qu'à force [elle] leur tout [enlève] leur biens et leur richoise</cit>
+<cit aut="" ref="ib. LXXIV">Quant [elle] parti de ma terre, de tous biens [qualités] estoit pleine</cit>
+<cit aut="" ref="ib. CXXXII">[Dieu] Qui vous rende les biens que vous fais nous avez</cit>
+<cit aut="" ref="la Rose, 8111">Car, amis, [je] ne prise une prune Contre ami les biens de fortune</cit>
+<cit aut="BEAUMANOIR" ref="XXIX, 12">En tele maniere se pot on entremetre d'autrui service, tout n'i pensast on fors qu'à bien</cit>
+<cit aut="JOINV." ref="235">Pour ce que il cuidoient avoir bien [récompense], il descendirent à pié, et l'alerent saluer là où il chaçoit aus bestes sauvages</cit>
+</indent>
+<indent>XIVe s. 
+<cit aut="ORESME" ref="Eth. 21">Instruments desquex l'on se peut aidier et en user en bien</cit>
+<cit aut="ID." ref="ib. 24">Jà soit ce que les biens de fortune ont aucune foiz mestier ; et s'en aide l'en en aucunes nobles operacions</cit>
+<cit aut="ID." ref="ib. 2">Bien est ce que toutes choses desirent</cit>
+<cit aut="" ref="Guesclin. 15178">Ainsi doit dire cuer qui à bien veult penser, Et c'est toute la fin où li hons doit penser</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="FROISS." ref="I, I, 149">L'endemain il fit faire et appareiller instruments et engins, pour plus fort assaillir le chastel, et bien dit qu'il ne s'en partiroit pour bien ni pour mal, si l'auroit à sa volonté</cit>
+<cit aut="ID." ref="II, III, 12">Sainte Marie, dis-je au chevalier, que vos paroles me sont agreables et que elles me font grand bien</cit>
+<cit aut="ID." ref="ib.">De celle chose s'enfelonna le duc de Berry sur le comte de Foix, et n'en pouvoit le dit duc ouïr parler en bien devant lui</cit>
+<cit aut="CH. D'ORL." ref="Bal. 35">Grant bien me fait à m'y mirer, En actendant bonne esperance</cit>
+<cit aut="ID." ref="Rondeau.">Qui bien fera, bien trouvera</cit>
+<cit aut="CHASTEL." ref="Chron. des ducs de Bourg. II, ch. 46">Il voloit [voulait] du bien beaucoup au dict leur roy, nonobstant qu'ennemy feust à son cousin germain le roy Henry</cit>
+<cit aut="ID." ref="ib. II, ch. 27">Lequel, comme je croy, le fait pour vostre bien, et pour maintenir sa maison vive</cit>
+<cit aut="" ref="Bouciq. II, ch. 19">Et certes, on ne peut trop honorer ne faire de bien à un vaillant homme d'armes ; car moult en est le mestier perilleux</cit>
+<cit aut="COQUILL." ref="Plaid. de la simple.">Il fault dire du bien le bien</cit>
+<cit aut="COMM." ref="I, 3">À tout quarante ou cinquante gentilz hommes de Savoye, gens de bien</cit>
+<cit aut="ID." ref="II, 10">Les hommes de bien et vertueux de cette avant-garde se tindrent ensemble</cit>
+<cit aut="ID." ref="I, 12">Tous deux avoient autreffois receu bien du roy</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="MARG." ref="Lett. 84">J'ay ung merveilleux regret d'avoir perdu le bien de les voir si tost que je le desirois</cit>
+<cit aut="ID." ref="Nouv. LV">La plupart des hommes attendent à faire des biens [aumônes, bonnes œuvres], lorsqu'ils se sentent assaillis de la mort</cit>
+<cit aut="MONT." ref="I, 19">Se servir d'une chose au bien de sa cause</cit>
+<cit aut="ID." ref="I, 39">Ses biens furent confisqués</cit>
+<cit aut="MONT." ref="I, 64">Perdre son bien</cit>
+<cit aut="ID." ref="I, 67">[Par sa mort] donner reputation en bien ou en mal à toute sa vie</cit>
+<cit aut="MONT." ref="I, 128">Des gents de bien</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Provenç. ben, be ; espagn. bien ; portug. bem ; ital. bene. Bien ne peut pas venir de bonum ; à la vérité, dans le dialecte normand, bonus avait donné buen, comme homo, huem, et comes, cuens ; mais il n'y a aucun exemple que cet u y ait été changé en i. Il vient donc de bene, adverbe, mais adverbe transformé par les langues romanes en un substantif et même, comme dans un exemple du XIIe siècle (bien plaisir), en un adjectif.
+</indent>
+</rubrique>
+</entree>
+<entree terme="BOUE">
+<entete>
+	<prononciation>boûe</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Mélange de terre, de sable, de substance organique, plus ou moins consistant, qui recouvre le pavé des villes ou remplit les égouts, les fossés. Un tas de boue. J'ai été couvert de boue par un fiacre. 
+<cit aut="SCARRON" ref="Rom. com. ch. 1">Il avait des brodequins à l'antique que les boues avaient gâtés</cit>
+<indent>Payer les boues et lanternes, se disait autrefois de la taxe à payer pour boues et lanternes.
+</indent>
+<indent>Traîner dans la boue, traîner dans les rues boueuses. 
+<cit aut="FÉN." ref="Tél. VIII">On avait commencé à la traîner dans la boue</cit> Fig. diffamer.
+</indent>
+<indent>De vieilles équivoques ramassées parmi les boues des halles (empruntées au langage le plus bas et le plus grossier).
+</indent>
+<indent><semantique type="indicateur">Familièrement.</semantique> Ne pas faire plus de cas d'une chose que de la boue de ses souliers, ne s'en soucier aucunement. 
+<cit aut="MONTESQ." ref="Lett. pers. 98">Ils [les traitants] sont méprisés comme de la boue, pendant qu'ils sont pauvres ; quand ils sont riches, on les estime assez</cit>
+</indent>
+</variante>
+<variante num="2">Terre délayée. Des cahutes de boue et de paille. 
+<cit aut="THÉOPHILE" ref="Sat. I">Toi que les éléments ont fait d'air et de boue, Ordinaire sujet où le malheur se joue</cit>
+<indent>Maison faite de boue et de crachat, peu solide.
+</indent>
+<indent><semantique type="indicateur">Fig.</semantique> Bâtir sur la boue, se bercer de vaines espérances. 
+<cit aut="VERTOT" ref="Révol. rom. XIV, p. 303">C'est bâtir sur la boue que d'appuyer les fondements de sa fortune sur l'affection passagère d'une vile populace</cit>
+</indent>
+<indent><semantique type="indicateur">Poétiquement.</semantique> Cet amas de boue, ce tas de boue, le globe terrestre. 
+<cit aut="VOLT." ref="Désastre de Lisb.">Atomes tourmentés sur cet amas de boue, Que la mort engloutit et dont le sort se joue, Mais atomes pensants....</cit>
+</indent>
+</variante>
+<variante num="3">Il se dit des choses auxquelles on n'attache aucune valeur réelle. 
+<cit aut="MALH." ref="IV, 9">Le monde aujourd'hui ne m'étant plus que boue</cit>
+<cit aut="MASS." ref="Avent, Mort. du péch.">Ils [ses biens] lui échappent cependant ; ce tas de boue fond à ses yeux</cit>
+<cit aut="ID." ref="Car. Rechutes.">C'est avoir perdu la foi, d'aimer mieux risquer son salut éternel qu'une fortune de boue</cit>
+<cit aut="ID." ref="Car. Fausse confiance.">La vertu de la parole de la croix n'est pas attachée à celle des ministres qui l'annoncent ; la boue entre les mains du Seigneur peut éclairer les aveugles</cit>
+</variante>
+<variante num="4"><semantique type="domaine">Terme mystique.</semantique> Le corps humain. 
+<cit aut="MASS." ref="Car. Sur la mort.">L'auteur de notre être avait d'abord animé notre boue d'un souffle d'immortalité</cit>
+<cit aut="ID." ref="Avent, Mort du péch.">Il sent que cette maison de boue s'écroule ; il se sent mourir peu à peu à chacun de ses sens</cit>
+<cit aut="MASS." ref="Car. Vérité de la religion.">Se persuadant qu'il n'est qu'une vile boue que le hasard a rassemblée</cit>
+<cit aut="ID." ref="Car. Rechutes.">Vous connaissez, ô mon Dieu, la fragilité de notre boue</cit>
+<cit aut="ID." ref="Avent, Délai de la conversion.">Voyez s'il n'en coûta rien autrefois à Augustin ; quels efforts pour s'arracher à sa boue, pour rompre la chaîne de fer qui liait sa volonté rebelle !</cit>
+<indent>Nous sommes tous sortis de la même boue, nous avons tous la même origine. 
+<cit aut="MASS." ref="Car. Prospérité tempor.">Tout s'étudie, tout s'empresse à leur persuader [aux grands] qu'ils sont pétris d'une autre boue que les autres hommes</cit>
+<cit aut="ID." ref="Profession religieuse, serm. 4">Ô mon Dieu, souvenez-vous que vous nous avez formés d'une boue fragile</cit>
+</indent>
+</variante>
+<variante num="5">État misérable. 
+<cit aut="CORN." ref="Poly. IV, 3">Aujourd'hui dans le trône, et demain dans la boue</cit>
+<cit aut="MASS." ref="Petit carême, Exemples.">Les peuples sont soulagés, les vicieux laissés dans la boue</cit>
+<cit aut="BÉRANG." ref="Tournebr.">Lorsque la fortune à sa roue Attache mille ambitieux, Les précipite dans la boue, Ou les élève jusqu'aux cieux</cit>
+<indent>Tirer quelqu'un de la boue, le tirer d'une position basse et misérable.
+</indent>
+</variante>
+<variante num="6">Bassesse, impureté. 
+<cit aut="CORN." ref="Pomp. I, 3">Ces âmes que le ciel ne forma que de boue</cit>
+<cit aut="ID." ref="D. San. I, 1">Mais son sang que le ciel n'a formé que de boue</cit>
+<cit aut="MASS." ref="Obst.">Dès que ce poison a gagné le cœur, on trouve des âmes de boue</cit>
+<cit aut="ID." ref="Samar.">Ses efforts impuissants pour s'arracher à sa boue</cit>
+<cit aut="ID." ref="Disp. à la comm.">N'avez-vous pas traîné votre cœur sur la boue de mille passions ?</cit>
+<cit aut="ID." ref="ib.">Un cœur qui se traîne encore sur la boue et qui ne sait s'élever au-dessus des créatures</cit>
+<cit aut="ID." ref="Car. Sur les causes ordinaires de nos rechutes">Tirez-moi de cette boue où je ne saurais marcher sans enfoncer tous les jours davantage</cit>
+</variante>
+<variante num="7">Boues minérales, limons que l'on trouve près des sources de quelques eaux minérales, et qui, imprégnés des matières contenues dans ces eaux, jouissent de propriétés analogues à celles des eaux elles-mêmes.
+</variante>
+<variante num="8"><semantique type="domaine">Terme de géologie.</semantique> Couches de boue noire, contenant beaucoup de lignite terreux et des troncs d'arbres conifères.
+</variante>
+<variante num="9">Boue d'émeri, potée qui se forme sous les roues ou meules des lapidaires, et qui sert à polir le marbre.
+</variante>
+<variante num="10">Dépôt épais qui se forme au fond d'un encrier. Cette encre n'est que de la boue.
+</variante>
+<variante num="11">Pus qui sort d'un abcès. On lui ouvrit l'apostume ; il en sortit beaucoup de boue.
+</variante>
+</corps>
+<rubrique nom="HISTORIQUE">
+<indent>XIIe s. 
+<cit aut="" ref="Rois, 209">Jo's osterai [je les ôterai] si cume la puldre de la terre ; si cume la boe de la strae [de la rue] les defulerai</cit>
+</indent>
+<indent>XIIIe s. 
+<cit aut="" ref="Berte, XXXIII">Quant de si haute honor [je] sui cheüe en la boe</cit>
+<cit aut="" ref="la Rose, 4000">Ele [fortune] a une roe qui torne ; Et quant ele veut, ele met Le plus bas amont ou sommet, Et celi qui est sor la roe Reverse à un tor dans la boe</cit>
+<cit aut="TAILLIAR" ref="Recueil, p. 148">En tai ou en bohe</cit>
+</indent>
+<indent>XVe s. 
+<cit aut="FROISS." ref="II, III, 49">Et quant ils sont tous eslevés et ils cuident estre au plus sur, fortune les retourne en la boue et les met plus bas que elle ne les a eus de commencement</cit>
+</indent>
+<indent>XVIe s. 
+<cit aut="PARÉ" ref="Introd. 17">En l'ouverture d'un empyeme, il faut que la boue qui en sort....</cit>
+<cit aut="ID." ref="XI, 2">Ce mot, qui est en françois appellé boue, en latin pus, et en grec pyon, signifie un humeur putride</cit>
+<cit aut="BRANT." ref="Capit. fr. t. II, p. 178, dans LACURNE">On la [une ville] disoit n'estre faite que de boue et de crachat ; de tels mots usoit on pour monstrer sa foiblesse</cit>
+</indent>
+</rubrique>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Picard, baue et beue. L'étymologie parait être dans le celtique : kymri, baw, boue, budhyr, boueux. Le lorrain bodère, qui tient sans doute de boue, veut un radical avec une dentale. Le lombard boga, boue, est douteux. Le celtique garde la probabilité, sans tout expliquer.
+</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+<indent>BOUE. Ajoutez : - REM. J. J. Rousseau dit : traîner par les boues, dans les boues ; ce qui n'est pas conforme à l'usage. 
+<cit aut="J. J. ROUSSEAU" ref="Lett. à Mme de Chenonceaux, 6 février 1765">On fait circuler.... dans Genève une lettre avec laquelle on achève de me traîner par les boues</cit>
+<cit aut="ID." ref="Lett. à d'Ivernois, 8 avril 1765">Le sexe dévot y [à Neuchâtel, où les dames s'étaient déclarées en sa faveur] traîne les ministres dans les boues</cit>
+</indent>
+</rubrique>
+</entree>
+</xmlittre>

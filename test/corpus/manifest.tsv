@@ -1,0 +1,26 @@
+letter	headword	bytes	indents	citations	band	features
+a	ANGOISSE	5235	8	19	medium	supplement historique wrapped_etymon nature cross_reference
+a	APOTHICAIRE	1383	6	3	small	historique wrapped_etymon nature cross_reference
+b	BIEN	16848	32	107	large	exemple proverbes historique nature domaine
+b	BOUE	8289	15	37	medium	supplement historique nature domaine
+c	CANDI, IE	283	0	0	tiny	nature homograph
+c	CHEVER	887	3	2	small	historique nature cross_reference
+c	COTRET	3811	10	10	medium	supplement historique nature
+d	DISPENSER	9289	11	46	large	historique nature domaine cross_reference
+e	ÉVADER (S')	3327	8	14	medium	historique nature reflexive_form
+f	FRANÇAIS, AISE	12161	26	45	large	historique nature
+h	HARDEAU	892	3	2	small	supplement historique nature
+h	HYPOCHILE ou HYPOCHILION	401	1	0	tiny	wrapped_etymon nature domaine
+i	IMAGÉ, ÉE	300	0	0	tiny	nature
+i	INSOLVABILITÉ	665	2	1	tiny	supplement wrapped_etymon nature
+l	LIBERTÉ	31916	35	113	huge	exemple proverbes historique nature domaine
+m	MESSAGER, ÈRE	5587	11	22	medium	exemple proverbes historique nature cross_reference
+n	NI	16724	18	86	large	supplement historique nature cross_reference
+p	PATROUILLER	1900	5	6	small	historique nature
+p	PENCHANT, ANTE	2032	2	10	small	nature domaine
+p	PROROGATION	1042	2	0	small	nature domaine
+r	REHUMER	338	1	1	tiny	historique nature
+r	RÈGNE	7354	11	35	medium	historique nature domaine cross_reference
+s	SERRET	1263	3	1	small	supplement nature cross_reference
+s	SUR	51065	65	245	huge	historique nature domaine cross_reference
+t	TABLIER	4053	8	13	medium	historique wrapped_etymon nature domaine
