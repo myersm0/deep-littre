@@ -180,7 +180,7 @@ function render_citation(
 		newline(io, depth + 1)
 		write(io, "<bibl>")
 		# A resolved name was not printed at this citation, so the resolution is marked rather than
-		# passed off as source text. An unresolved ID. keeps what Littré printed.
+		# passed off as source text. An ID. without a resolved author keeps what Littré printed.
 		if citation.resolution == :resolved
 			newline(io, depth + 2)
 			write(io, "<author ana=\"resolved\">", escape_xml(citation.resolved_author), "</author>")

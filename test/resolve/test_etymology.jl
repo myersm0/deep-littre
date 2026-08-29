@@ -36,6 +36,25 @@ using DeepLittre.Resolve: resolve, segment_etymology, EtymCit, EtymConnector, Et
 		@test cit.language == "it"
 	end
 
+
+	@testset "language lookup normalizes article and terminal dot variants" begin
+		cases = [
+			("l'allem. <i>Form</i>", "de", "l'allem."),
+			("L'ital. <i>forma</i>", "it", "L'ital."),
+			("ital <i>forma</i>", "it", "ital"),
+			("lat <i>forma</i>", "la", "lat"),
+			("l'anglo-sax. <i>form</i>", "ang", "l'anglo-sax."),
+			("espag. <i>forma</i>", "es", "espag."),
+		]
+		for (text, language, printed) in cases
+			segments = segment_etymology(text)
+			cit = only(filter(segment -> segment isa EtymCit, segments))
+			@test cit.language == language
+			@test cit.cue.printed == printed
+			@test isempty(filter(segment -> segment isa EtymSuspect, segments))
+		end
+	end
+
 	@testset "non-language abbreviations do not become cues" begin
 		for token in ("s. m.", "plur.", "voy.")
 			segments = segment_etymology("$(token) <i>forme</i>")

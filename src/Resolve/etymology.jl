@@ -98,8 +98,18 @@ const etym_punctuation_characters = [' ', ',', ';', '.', '(', ')', ':']
 
 strip_tags(markup::AbstractString)::String = strip(replace(markup, r"<[^>]+>" => ""))
 
-normalize_etym_token(token::AbstractString)::String =
-	lowercase(strip(token, [',', ';', '(', ')', ':', ' ']))
+function normalize_etym_token(token::AbstractString)::String
+	normalized = lowercase(strip(token, [',', ';', '(', ')', ':', ' ']))
+	startswith(normalized, "l'") ? String(normalized[nextind(normalized, 2):end]) : normalized
+end
+
+function etym_language_key(
+	table::EtymLanguageTable, candidate::AbstractString,
+)::Union{Nothing, String}
+	haskey(table.languages, candidate) && return String(candidate)
+	alternate = endswith(candidate, '.') ? String(chop(candidate)) : String(candidate) * "."
+	haskey(table.languages, alternate) ? alternate : nothing
+end
 
 is_punctuation_token(token::AbstractString)::Bool =
 	isempty(strip(token, etym_punctuation_characters))
@@ -179,10 +189,11 @@ function match_cue_at(
 	end
 	for key_length in reverse(1:min(3, total - key_start + 1))
 		candidate = normalize_etym_token(join(tokens[key_start:(key_start + key_length - 1)], ' '))
-		haskey(table.languages, candidate) || continue
+		key = etym_language_key(table, candidate)
+		key === nothing && continue
 		printed = strip(join(tokens[start:(key_start + key_length - 1)], ' '), [',', ' '])
-		(code, expand) = table.languages[candidate]
-		return (EtymCue(String(printed), expand, code), key_start + key_length - start, candidate)
+		(code, expand) = table.languages[key]
+		return (EtymCue(String(printed), expand, code), key_start + key_length - start, key)
 	end
 	(nothing, 0, "")
 end
@@ -194,7 +205,8 @@ function full_name_language_hint(
 	for key_length in reverse(1:min(3, total))
 		candidate = normalize_etym_token(join(tokens[(total - key_length + 1):total], ' '))
 		occursin('.', candidate) && continue
-		haskey(table.languages, candidate) && return table.languages[candidate][1]
+		key = etym_language_key(table, candidate)
+		key === nothing || return table.languages[key][1]
 	end
 	""
 end
@@ -256,7 +268,7 @@ function gloss_qualifies(text::AbstractString, table::EtymLanguageTable)::Bool
 	for word in words
 		normalized = normalize_etym_token(word)
 		normalized in etym_connector_words && return false
-		haskey(table.languages, normalized) && return false
+		etym_language_key(table, normalized) === nothing || return false
 		normalized in table.skip && return false
 	end
 	true
@@ -369,7 +381,7 @@ function process_chunk!(
 		last_token = rest[end]
 		last_normalized = normalize_etym_token(last_token)
 		suspect = adjacent_event == :form &&
-			!haskey(table.languages, last_normalized) &&
+			etym_language_key(table, last_normalized) === nothing &&
 			!(last_normalized in table.skip) &&
 			(endswith(strip(last_token, [',', ' ']), '.') ||
 				(length(rest) == 1 && length(last_normalized) <= 4))

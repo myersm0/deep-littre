@@ -107,7 +107,7 @@ end
 		subtypes = Set(match.captures[1] for match in eachmatch(r"subtype=\"([^\"]+)\"", text))
 		@test subtypes ⊆ Set(value.subtype for value in values(committed)) ∪ Set(["other"])
 		labels = Set(match.captures[1] for match in eachmatch(r"<lbl type=\"([^\"]+)\"", text))
-		@test labels ⊆ Set([DeepLittre.Resolve.date_range_label])
+		@test labels ⊆ Set([DeepLittre.Resolve.date_range_label, DeepLittre.Resolve.supplement_label])
 		notes = Set(match.captures[1] for match in eachmatch(r"<note type=\"([^\"]+)\"", text))
 		@test notes ⊆ Set(value.note for value in values(committed)) ∪ Set(["other"])
 		@test !isempty(subtypes)

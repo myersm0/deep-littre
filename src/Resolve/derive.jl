@@ -183,10 +183,11 @@ end
 """
 	author_resolution(document, entry)
 
-Littré writes `ID.` for a citation by the author most recently named. The antecedent is a property
-of the printed page, so resolution walks every citation in the entry in *source* order rather than
-in semantic order — the semantic tree is built later and may attach citations to nodes by
-containment, which would reorder them.
+Littré writes `ID.` for a citation whose source is the immediately preceding citation. The
+antecedent is a property of the printed page, so resolution walks every citation in the entry in
+*source* order rather than in semantic order — the semantic tree is built later and may attach
+citations to nodes by containment, which would reorder them. An antecedent citation can itself
+carry no author; that is distinct from there being no antecedent at all.
 
 Returns, per citation, the resolved author and how it was arrived at. No author table is involved
 or needed: this is anaphora over what the source already prints.
@@ -198,17 +199,21 @@ function author_resolution(
 	collect_citations!(found, document, entry)
 	sort!(found; by = first)
 	resolution = Dict{Int, Tuple{String, Symbol}}()
-	antecedent = ""
+	previous_author = ""
+	previous_resolution = :none
 	for (position, author) in found
 		if author == anaphoric_author
-			resolution[position] = isempty(antecedent) ?
-				(author, :unresolved) : (antecedent, :resolved)
-		elseif isempty(author)
-			resolution[position] = ("", :absent)
+			if previous_resolution in (:none, :unresolved)
+				resolution[position] = (author, :unresolved)
+			elseif isempty(previous_author)
+				resolution[position] = ("", :antecedent_absent)
+			else
+				resolution[position] = (previous_author, :resolved)
+			end
 		else
-			antecedent = author
-			resolution[position] = (author, :printed)
+			resolution[position] = isempty(author) ? ("", :absent) : (author, :printed)
 		end
+		previous_author, previous_resolution = resolution[position]
 	end
 	resolution
 end
@@ -493,9 +498,14 @@ conventions_for(name::AbstractString) =
 
 # A century header is printed once over the group of attestations it introduces. Recognition is a
 # committed pattern with counted residue, not an inference: unmatched lead text stays prose and
-# becomes a review finding. 266 corpus paragraphs currently miss, three quarters of them because
-# the lead carries both a century and Littré's `Ajoutez :`.
-const century_pattern = r"^([IVXLC]+)e\s+s\.$"
+# becomes a review finding. HISTORIQUE also has a deterministic supplement marker, `Ajoutez :`,
+# which may precede or follow the century token.
+const century_pattern = r"^(?:\(\*\)\s*)?([IVXLC]+)e\.?\s+s\.$"
+const century_first_lead_pattern =
+	r"^\s*((?:\(\*\)\s*)?([IVXLC]+)e\.?\s+s\.)(?:\s*(Ajoutez\s*:))?"
+const supplement_first_lead_pattern =
+	r"^\s*(Ajoutez\s*:)(?:\s*((?:\(\*\)\s*)?([IVXLC]+)e\.?\s+s\.))?"
+const supplement_label = "supplement"
 
 const date_range_label = "dateRange"
 
@@ -525,6 +535,70 @@ function century_range(text::AbstractString)
 	found === nothing && return nothing
 	century = roman_value(found.captures[1])
 	century === nothing ? nothing : ((century - 1) * 100 + 1, century * 100)
+end
+
+function century_years(numeral::AbstractString)
+	century = roman_value(numeral)
+	century === nothing ? nothing : ((century - 1) * 100 + 1, century * 100)
+end
+
+function lead_capture_span(
+	span::ViewSpan, found::RegexMatch, capture_index::Int,
+)::Union{Nothing, ViewSpan}
+	offset = found.offsets[capture_index]
+	offset < 1 && return nothing
+	printed = found.captures[capture_index]
+	printed === nothing && return nothing
+	start_byte = span.start_byte + offset - 1
+	ViewSpan(span.file, start_byte, start_byte + ncodeunits(printed))
+end
+
+function normalized_lead_text(text::AbstractString)::String
+	strip(replace(text, r"\s+" => " "))
+end
+
+function historique_lead(
+	document::Source.SourceDocument, nodes::Vector{XML.FlatNode},
+)::Tuple{Vector{RubriqueLabel}, Vector{ViewSpan}}
+	isempty(nodes) && return (RubriqueLabel[], ViewSpan[])
+	first_node = first(nodes)
+	XML.nodetype(first_node) == XML.Text || return (RubriqueLabel[], ViewSpan[])
+	span = Source.node_view_span(document, first_node)
+	text = String(Source.slice(document.parser_view, span))
+	found = match(century_first_lead_pattern, text)
+	order = :century_first
+	if found === nothing
+		found = match(supplement_first_lead_pattern, text)
+		order = :supplement_first
+	end
+	found === nothing && return (RubriqueLabel[], ViewSpan[])
+
+	labels = RubriqueLabel[]
+	excluded = ViewSpan[]
+	function push_label!(kind::String, capture_index::Int, numeral_index::Int = 0)
+		view_span = lead_capture_span(span, found, capture_index)
+		view_span === nothing && return nothing
+		printed = normalized_lead_text(String(Source.slice(document.parser_view, view_span)))
+		raw_span = Source.to_raw(document.transform, view_span)[1]
+		if numeral_index == 0
+			push!(labels, RubriqueLabel(kind, printed, nothing, nothing, raw_span))
+		else
+			years = century_years(found.captures[numeral_index])
+			years === nothing && return nothing
+			push!(labels, RubriqueLabel(date_range_label, printed, years[1], years[2], raw_span))
+		end
+		push!(excluded, view_span)
+		nothing
+	end
+
+	if order == :century_first
+		push_label!(date_range_label, 1, 2)
+		push_label!(supplement_label, 3)
+	else
+		push_label!(supplement_label, 1)
+		push_label!(date_range_label, 2, 3)
+	end
+	(labels, excluded)
 end
 
 function resolve_rubrique(
@@ -569,23 +643,31 @@ function rubrique_items(
 
 	function flush!()
 		isempty(pending) && return nothing
-		content = inline_from(document, pending, references)
+		labels = RubriqueLabel[]
+		excluded = ViewSpan[]
+		if leading && rubrique.name == "HISTORIQUE"
+			labels, excluded = historique_lead(document, pending)
+			append!(items, labels)
+		end
+		content = inline_from(document, pending, references; excluded)
 		empty!(pending)
-		isempty(content) && return nothing
-		span = RawSpan(
-			rubrique.raw_span.file,
-			first(content).span.start_byte,
-			last(content).span.end_byte,
-		)
-		text = strip(plain_text(content))
-		range = century_range(text)
-		if leading && range !== nothing
-			push!(items, RubriqueLabel(date_range_label, String(text), range[1], range[2], span))
-		else
-			push!(items, RubriqueProse(content, span))
-			leading && rubrique.name == "HISTORIQUE" && push!(findings, ReviewFinding(
-				"century_unrecognized", String(first(text, 60)), span,
-			))
+		if !isempty(content)
+			span = RawSpan(
+				rubrique.raw_span.file,
+				first(content).span.start_byte,
+				last(content).span.end_byte,
+			)
+			text = strip(plain_text(content))
+			range = century_range(text)
+			if leading && isempty(labels) && range !== nothing
+				push!(items, RubriqueLabel(date_range_label, String(text), range[1], range[2], span))
+			elseif !isempty(text)
+				push!(items, RubriqueProse(content, span))
+				leading && rubrique.name == "HISTORIQUE" && isempty(labels) &&
+					push!(findings, ReviewFinding(
+						"century_unrecognized", String(first(text, 60)), span,
+					))
+			end
 		end
 		nothing
 	end

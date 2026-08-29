@@ -202,13 +202,14 @@ The pinned schema has a closed `cit/@type` vocabulary. Do not use bare `<cit>` m
 
 Resolved author information may be represented in `<author>` while retaining the printed abbreviation/provenance required by the data model.
 
-Littré writes `ID.` for a citation by the author most recently named. v0.3 resolves this by
-anaphora over the entry in **source** order — the semantic tree is built later and may reattach
-citations to nodes by containment, which would reorder them. No author table is involved: the
-antecedent is already printed in the source. A resolved name renders as
-`<author ana="resolved">MOL.</author>`, marking that the name was supplied rather than printed;
-the printed `ID.` is retained in SQLite and recoverable from the citation's raw anchor. An `ID.`
-with no antecedent keeps what Littré printed and becomes an `author_unresolved` review finding.
+Littré writes `ID.` for a citation whose source is the immediately preceding citation. v0.3
+resolves this by anaphora over the entry in **source** order — the semantic tree is built later and
+may reattach citations to nodes by containment, which would reorder them. No author table is
+involved. If the antecedent names an author, a resolved name renders as
+`<author ana="resolved">MOL.</author>`, marking that the name was supplied rather than printed.
+If the antecedent citation carries no author, the printed `ID.` is retained without inventing one
+and the resolution state is `antecedent_absent`. Only an `ID.` with no antecedent citation becomes
+an `author_unresolved` review finding.
 
 `@ana` carries epistemic provenance only — `resolved`, `suspect`. It must never carry pipeline
 workflow state, and a test enforces the whitelist rather than banning the attribute.
@@ -325,7 +326,9 @@ Encoding:
 - citations are lifted to entry level as `<cit type="example" subtype="…">`, because `cit/@type` is
   a closed list with no `attestation` value;
 - a century header becomes `<lbl type="dateRange">`, printed once over the group it introduces, as
-  the source prints it. `<date>` cannot sit at entry level, so the machine-readable range is
+  the source prints it. HISTORIQUE's `Ajoutez :` lead marker becomes a separate
+  `<lbl type="supplement">`; either marker may precede the other, and any remaining lead text stays
+  prose. `<date>` cannot sit at entry level, so the machine-readable range is
   additionally written into each attestation's `<bibl>` as
   `<date notBefore="1501" notAfter="1600">XVIe s.</date>`. This repeats per citation what Littré
   prints once, and is emitted anyway: without it the century survives only as prose and neither
@@ -337,8 +340,8 @@ Encoding:
   before `ÉTYMOLOGIE` in some entries and after in others.
 
 `lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
-convention, committed in `rubrique_conventions`: `attestation`, `supplement`, `remark`, `proverb`,
-`synonym`, `other`.
+convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the
+committed `dateRange` and `supplement`.
 
 The cost: a rubrique that mixes prose and citations splits across a `<note>` and sibling `<cit>`s,
 and **the rubrique boundary is not expressed in TEI**. The `subtype` distinguishes the kind, and

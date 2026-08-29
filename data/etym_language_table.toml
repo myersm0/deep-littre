@@ -69,6 +69,7 @@
 "dan." = { code = "da", expand = "danois", note = "Danish" }
 "danois" = { code = "da", expand = "danois", note = "Danish" }
 "esp." = { code = "es", expand = "espagnol", note = "Spanish" }
+"espag." = { code = "es", expand = "espagnol", note = "Spanish" }
 "espagn." = { code = "es", expand = "espagnol", note = "Spanish" }
 "espagnol" = { code = "es", expand = "espagnol", note = "Spanish" }
 "flam." = { code = "nl", expand = "flamand", note = "Dutch/Flemish (per 01_decisions)" }

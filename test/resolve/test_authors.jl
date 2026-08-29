@@ -70,6 +70,33 @@ using DeepLittre.Resolve: resolve, entry_citations
 		end
 	end
 
+
+	@testset "ID. distinguishes an antecedent with no author" begin
+		directory = mktempdir()
+		write(joinpath(directory, "authors.xml"), """<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="AUTHORS">
+<entete><prononciation>x</prononciation><nature>s. m.</nature></entete>
+<corps><variante num="1">
+<cit ref="Mémoire de Chenier">Premier.</cit>
+<cit aut="ID." ref="ib.">Deuxième.</cit>
+<cit aut="TEST" ref="III">Troisième.</cit>
+<cit aut="ID." ref="ib.">Quatrième.</cit>
+</variante></corps>
+</entree>
+</xmlittre>
+""")
+		local_documents = read_corpus(directory)
+		local_corpus = census(local_documents)
+		local_resolved = resolve(build_harness(local_documents, local_corpus))
+		citations = entry_citations(only(local_resolved.entries))
+		@test [citation.resolution for citation in citations] ==
+			[:absent, :antecedent_absent, :printed, :resolved]
+		@test isempty(citations[2].resolved_author)
+		@test citations[4].resolved_author == "TEST"
+		@test all(finding -> finding.category != "author_unresolved", local_resolved.review)
+	end
+
 	@testset "an unresolved ID. becomes a review finding" begin
 		unresolved = filter(citation -> citation.resolution == :unresolved, all_citations)
 		findings = filter(f -> f.category == "author_unresolved", resolved.review)

@@ -194,18 +194,20 @@ function gather_node!(builder::InlineBuilder, child::XML.FlatNode, excluded::Vec
 end
 
 """
-	inline_from(document, nodes)
+	inline_from(document, nodes; excluded = ViewSpan[])
 
 Inline content assembled from an explicit run of sibling nodes rather than from a whole element.
 Rubrique prose arrives as the material between citations, which is a slice of a paragraph's
-children, not a subtree.
+children, not a subtree. Optional exclusions carve deterministic lead labels out of that prose
+without losing the remaining inline structure.
 """
 function inline_from(
-	document::Source.SourceDocument, nodes::Vector{XML.FlatNode}, references = nothing,
+	document::Source.SourceDocument, nodes::Vector{XML.FlatNode}, references = nothing;
+	excluded::Vector{ViewSpan} = ViewSpan[],
 )::Vector{Inline}
 	builder = InlineBuilder(document, references)
 	for node in nodes
-		gather_node!(builder, node, ViewSpan[])
+		gather_node!(builder, node, excluded)
 	end
 	flush_run!(builder)
 	trim_inline(builder.items)

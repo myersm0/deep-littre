@@ -82,8 +82,8 @@ end
 
 """
 `author` is what Littré prints. Where that is `ID.`, `resolved_author` carries the antecedent
-recovered by anaphora and `resolution` records that the name was supplied rather than printed, so
-a consumer can always tell the two apart.
+author when the immediately preceding citation names one. `resolution` distinguishes a recovered
+name, a valid antecedent with no author, and a genuinely missing antecedent.
 """
 struct Citation
 	span::RawSpan

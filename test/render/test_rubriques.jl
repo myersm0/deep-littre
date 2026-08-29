@@ -3,7 +3,7 @@ using DeepLittre.Source: read_corpus, read_document, Patch, slice, covers
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: Harness, Store
 using DeepLittre.Resolve: resolve, plain_text, RubriqueLabel, RubriqueCitation, RubriqueProse,
-	conventions_for, century_pattern
+	conventions_for, century_pattern, supplement_label
 using DeepLittre.Render: render_tei, render_sqlite
 
 @testset "rubrique structure" begin
@@ -55,13 +55,57 @@ using DeepLittre.Render: render_tei, render_sqlite
 	end
 
 	@testset "the century pattern is a committed rule with counted residue" begin
-		for good in ("Xe s.", "XIIe s.", "XVIe s.")
+		for good in ("Xe s.", "XIIe s.", "XIIe. s.", "(*) XVe s.", "XVIe s.")
 			@test occursin(century_pattern, good)
 		end
 		for bad in ("Ajoutez :", "XVIe siècle", "REM. quelque chose", "")
 			@test !occursin(century_pattern, bad)
 		end
 		@test all(f -> f.category != "century_unrecognized", resolved.review)
+	end
+
+
+	@testset "HISTORIQUE lead grammar separates supplement, century, and residue" begin
+		directory = mktempdir()
+		path = joinpath(directory, "historique.xml")
+		write(path, """<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="HISTORIQUE TEST">
+<entete><prononciation>x</prononciation><nature>s. m.</nature></entete>
+<corps><rubrique nom="HISTORIQUE">
+<indent>XVIe s. Ajoutez : Texte A. <cit aut="A" ref="1">Citation A.</cit></indent>
+<indent>Ajoutez : XIIIe s. Texte B. <cit aut="B" ref="2">Citation B.</cit></indent>
+<indent>Ajoutez : Texte C. <cit aut="C" ref="3">Citation C.</cit></indent>
+<indent>XIIe. s. Texte D. <cit aut="D" ref="4">Citation D.</cit></indent>
+<indent>(*) XVe s. Texte E. <cit aut="E" ref="5">Citation E.</cit></indent>
+<indent>Prose sans siècle. <cit aut="F" ref="6">Citation F.</cit></indent>
+</rubrique></corps>
+</entree>
+</xmlittre>
+""")
+		document = read_document(path)
+		local_corpus = census([document])
+		local_resolved = resolve(build_harness([document], local_corpus))
+		historical = only(only(local_resolved.entries).rubriques)
+		labels = filter(item -> item isa RubriqueLabel, historical.items)
+		@test [label.kind for label in labels] == [
+			"dateRange", supplement_label, supplement_label, "dateRange", supplement_label,
+			"dateRange", "dateRange",
+		]
+		@test [label.text for label in labels] == [
+			"XVIe s.", "Ajoutez :", "Ajoutez :", "XIIIe s.", "Ajoutez :",
+			"XIIe. s.", "(*) XVe s.",
+		]
+		prose = [plain_text(item.content) for item in historical.items if item isa RubriqueProse]
+		@test prose == ["Texte A.", "Texte B.", "Texte C.", "Texte D.", "Texte E.", "Prose sans siècle."]
+		findings = filter(finding -> finding.category == "century_unrecognized", local_resolved.review)
+		@test length(findings) == 1
+		@test occursin("Prose sans siècle", only(findings).detail)
+		citations = filter(item -> item isa RubriqueCitation, historical.items)
+		@test (citations[1].not_before, citations[1].not_after) == (1501, 1600)
+		@test (citations[2].not_before, citations[2].not_after) == (1201, 1300)
+		@test (citations[4].not_before, citations[4].not_after) == (1101, 1200)
+		@test (citations[5].not_before, citations[5].not_after) == (1401, 1500)
 	end
 
 	@testset "explicit phrase wrappers survive coarse rubrique resolution" begin
