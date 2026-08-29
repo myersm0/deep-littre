@@ -174,8 +174,17 @@ resolved_columns(::Nothing) = (missing, missing, missing, missing)
 resolved_columns(span::RawSpan) =
 	(anchor_id(span), span.file, span.start_byte, span.end_byte)
 
+struct SqliteWriter
+	database::SQLite.DB
+	prepared::Dict{String, SQLite.Stmt}
+end
+
+insert_row!(writer::SqliteWriter, statement::AbstractString, values::Tuple) = DBInterface.execute(
+	get!(() -> DBInterface.prepare(writer.database, statement), writer.prepared, statement), values,
+)
+
 """
-	insert_segments!(database, owner_kind, owner_id, items)
+	insert_segments!(writer, owner_kind, owner_id, items)
 
 The ordered inline pieces of a definition, a rubrique's prose, or a citation's quotation, each with
 its own anchor. The flattened text column beside it stays for reading and search; this is where the
@@ -183,7 +192,7 @@ structure the resolver recovered remains queryable — a cross-reference keeps i
 wrapper keeps which element it was and what language it declared.
 """
 function insert_segments!(
-	database, owner_kind::AbstractString, owner_id::AbstractString,
+	writer, owner_kind::AbstractString, owner_id::AbstractString,
 	items::Vector{Resolve.Inline}, offset::Int = 0,
 )::Int
 	for (index, item) in enumerate(items)
@@ -196,8 +205,8 @@ function insert_segments!(
 			("text", missing, missing, missing)
 		end
 		resolved = item isa Resolve.CrossReference ? item.resolved : nothing
-		DBInterface.execute(
-			database,
+		insert_row!(
+			writer,
 			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
 				owner_kind, owner_id, offset + index, kind, Resolve.inline_text(item),
@@ -210,11 +219,11 @@ function insert_segments!(
 end
 
 function insert_node!(
-	database, entry::Resolve.ResolvedEntry, node::Resolve.ResolvedNode,
+	writer, entry::Resolve.ResolvedEntry, node::Resolve.ResolvedNode,
 	parent::Union{Nothing, String}, position::Int,
 )
-	DBInterface.execute(
-		database,
+	insert_row!(
+		writer,
 		"insert into nodes values (?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
 			node.node_id, entry.entry_id, parent === nothing ? missing : parent,
@@ -226,10 +235,10 @@ function insert_node!(
 			node.span.file, node.span.start_byte, node.span.end_byte,
 		),
 	)
-	insert_segments!(database, "node", node.node_id, node.definition)
+	insert_segments!(writer, "node", node.node_id, node.definition)
 	for constituent in node.constituents
-		DBInterface.execute(
-			database,
+		insert_row!(
+			writer,
 			"insert into constituents values (?,?,?,?,?,?)",
 			(
 				node.node_id, constituent.name, constituent.text,
@@ -238,8 +247,8 @@ function insert_node!(
 		)
 	end
 	for qualification in node.qualifications
-		DBInterface.execute(
-			database,
+		insert_row!(
+			writer,
 			"insert into qualifications values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
 				node.node_id, entry.entry_id, String(qualification.channel), qualification.type,
@@ -250,8 +259,8 @@ function insert_node!(
 		)
 	end
 	for (index, citation) in enumerate(node.citations)
-		DBInterface.execute(
-			database,
+		insert_row!(
+			writer,
 			"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
 				anchor_id(citation.span), node.node_id, entry.entry_id, "sense", missing, missing,
@@ -263,10 +272,10 @@ function insert_node!(
 				citation.span.file, citation.span.start_byte, citation.span.end_byte,
 			),
 		)
-		insert_segments!(database, "citation", anchor_id(citation.span), citation.quotation)
+		insert_segments!(writer, "citation", anchor_id(citation.span), citation.quotation)
 	end
 	for (index, child) in enumerate(node.children)
-		insert_node!(database, entry, child, node.node_id, index)
+		insert_node!(writer, entry, child, node.node_id, index)
 	end
 	nothing
 end
@@ -302,9 +311,9 @@ etymology_row(segment::Resolve.EtymCrossReference) = (
 	missing, missing, missing, missing, missing, segment.printed, segment.target,
 )
 
-function insert_etymology!(database, entry, anchored, position::Int)
-	DBInterface.execute(
-		database,
+function insert_etymology!(writer, entry, anchored, position::Int)
+	insert_row!(
+		writer,
 		"insert into etymology values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(entry.entry_id, position, etymology_row(anchored.segment)...,
 			anchored.span.file, anchored.span.start_byte, anchored.span.end_byte),
@@ -322,10 +331,10 @@ rubrique_text(rubrique::Resolve.ResolvedRubrique)::String = join(
 	"\n",
 )
 
-function insert_rubrique_citation!(database, entry, rubrique, item, position::Int)
+function insert_rubrique_citation!(writer, entry, rubrique, item, position::Int)
 	citation = item.citation
-	DBInterface.execute(
-		database,
+	insert_row!(
+		writer,
 		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
 			anchor_id(citation.span), missing, entry.entry_id, "rubrique", rubrique.name, item.subtype,
@@ -340,7 +349,7 @@ function insert_rubrique_citation!(database, entry, rubrique, item, position::In
 			citation.span.file, citation.span.start_byte, citation.span.end_byte,
 		),
 	)
-	insert_segments!(database, "citation", anchor_id(citation.span), citation.quotation)
+	insert_segments!(writer, "citation", anchor_id(citation.span), citation.quotation)
 	nothing
 end
 
@@ -351,14 +360,15 @@ function render_sqlite(
 	database = SQLite.DB(path)
 	foreach(statement -> DBInterface.execute(database, statement),
 		filter(!isempty, strip.(split(schema, ";"))))
+	writer = SqliteWriter(database, Dict{String, SQLite.Stmt}())
 
 	total_entries = length(corpus.entries)
 	report_step = max(cld(total_entries, 20), 1)
 	started = time_ns()
 	SQLite.transaction(database) do
 		for (entry_index, entry) in enumerate(corpus.entries)
-			DBInterface.execute(
-				database,
+			insert_row!(
+				writer,
 				"insert into entries values (?,?,?,?,?,?,?)",
 				(
 					entry.entry_id, entry.headword,
@@ -368,8 +378,8 @@ function render_sqlite(
 				),
 			)
 			for qualification in entry.grammar
-				DBInterface.execute(
-					database,
+				insert_row!(
+					writer,
 					"insert into qualifications values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
 					(
 						missing, entry.entry_id, String(qualification.channel), qualification.type,
@@ -381,24 +391,24 @@ function render_sqlite(
 				)
 			end
 			for (index, node) in enumerate(entry.nodes)
-				insert_node!(database, entry, node, nothing, index)
+				insert_node!(writer, entry, node, nothing, index)
 			end
 			position = 0
 			for rubrique in entry.rubriques
 				for anchored in rubrique.etymology
 					position += 1
-					insert_etymology!(database, entry, anchored, position)
+					insert_etymology!(writer, entry, anchored, position)
 				end
 			end
 			for rubrique in entry.rubriques
 				for (index, item) in enumerate(rubrique.items)
 					item isa Resolve.RubriqueCitation || continue
-					insert_rubrique_citation!(database, entry, rubrique, item, index)
+					insert_rubrique_citation!(writer, entry, rubrique, item, index)
 				end
 			end
 			for (index, rubrique) in enumerate(entry.rubriques)
-				DBInterface.execute(
-					database,
+				insert_row!(
+					writer,
 					"insert into rubriques values (?,?,?,?,?,?,?,?)",
 					(
 						anchor_id(rubrique.span), entry.entry_id, rubrique.name, index,
@@ -410,7 +420,7 @@ function render_sqlite(
 				for item in rubrique.items
 					item isa Resolve.RubriqueProse || continue
 					position = insert_segments!(
-						database, "rubrique", anchor_id(rubrique.span), item.content, position,
+						writer, "rubrique", anchor_id(rubrique.span), item.content, position,
 					)
 				end
 			end
@@ -422,8 +432,8 @@ function render_sqlite(
 			end
 		end
 		for record in corpus.coverage
-			DBInterface.execute(
-				database,
+			insert_row!(
+				writer,
 				"insert into coverage values (?,?,?,?,?,?,?,?,?,?,?)",
 				(
 					record.pass, record.pass_version, record.population, record.population_version,
@@ -433,8 +443,8 @@ function render_sqlite(
 			)
 		end
 		for finding in corpus.review
-			DBInterface.execute(
-				database,
+			insert_row!(
+				writer,
 				"insert into review values (?,?,?,?,?)",
 				(
 					finding.category, finding.detail,
