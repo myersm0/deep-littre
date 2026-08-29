@@ -8,7 +8,7 @@ using DBInterface
 using SQLite
 using Unicode
 
-using ..Source: RawSpan
+using ..Source: RawSpan, anchor_id
 using ..Adjudication
 using ..Resolve
 

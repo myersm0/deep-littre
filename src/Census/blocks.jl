@@ -66,8 +66,6 @@ struct CorpusCensus
 	documents::Vector{DocumentCensus}
 end
 
-identifier(span::RawSpan)::String = string(span.file, ':', span.start_byte, ':', span.end_byte)
-
 struct Context
 	within_rubrique::Bool
 	within_resume::Bool
@@ -132,7 +130,7 @@ function leaf_block(
 	view = Source.node_view_span(document, node)
 	(raw, synthetic) = Source.node_raw_span(document, node)
 	SourceBlock(
-		identifier(raw), kind, raw, view, synthetic,
+		anchor_id(raw), kind, raw, view, synthetic,
 		context.entry_id, context.parent_id, SourceBlock[],
 	)
 end
@@ -149,7 +147,7 @@ function build_block(
 	check_resume_marking(document, node, kind, context, anomalies)
 	view = Source.node_view_span(document, node)
 	(raw, synthetic) = Source.node_raw_span(document, node)
-	source_id = identifier(raw)
+	source_id = anchor_id(raw)
 	children = scan!(document, rubriques, anomalies, node, descend(context, source_id))
 	SourceBlock(source_id, kind, raw, view, synthetic, context.entry_id, context.parent_id, children)
 end
@@ -180,7 +178,7 @@ function build_rubrique(
 )::SourceRubrique
 	view = Source.node_view_span(document, node)
 	(raw, _) = Source.node_raw_span(document, node)
-	source_id = identifier(raw)
+	source_id = anchor_id(raw)
 	name = something(Source.attribute(node, "nom"), "")
 	inner = Context(true, false, context.entry_id, source_id)
 	blocks = scan!(document, rubriques, anomalies, node, inner)
@@ -192,7 +190,7 @@ function build_entry(
 )::SourceEntry
 	view = Source.node_view_span(document, node)
 	(raw, _) = Source.node_raw_span(document, node)
-	source_id = identifier(raw)
+	source_id = anchor_id(raw)
 	rubriques = SourceRubrique[]
 	context = Context(false, false, source_id, nothing)
 	blocks = scan!(document, rubriques, anomalies, node, context)
@@ -275,7 +273,7 @@ as the same population under an unchanged count.
 function population_hash(blocks::Vector{SourceBlock})::String
 	context = SHA.SHA256_CTX()
 	for block in blocks
-		SHA.update!(context, codeunits(string(identifier(block.raw_span), ':', kind_name(block.kind), '\n')))
+		SHA.update!(context, codeunits(string(anchor_id(block.raw_span), ':', kind_name(block.kind), '\n')))
 	end
 	bytes2hex(SHA.digest!(context))
 end

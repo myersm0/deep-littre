@@ -2,7 +2,7 @@ using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Variante, Indent
 using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
 	voice_variant_pass, sublemma_pass, write_pass!, VoiceVariant, SubLemma, Sense, ReviewItem,
-	form_bearing, structural_alternatives
+	form_bearing, structural_passes, scope_passes, current_passes
 using DeepLittre.Resolve: resolve, plain_text
 
 @testset "voice variant pass" begin
@@ -28,8 +28,11 @@ using DeepLittre.Resolve: resolve, plain_text
 	entry_named(resolved, headword) = first(filter(e -> e.headword == headword, resolved.entries))
 
 	@testset "the alternative set is form-bearing" begin
-		@test length(structural_alternatives) == 2
-		@test all(form_bearing, structural_alternatives)
+		@test length(structural_passes) == 2
+		@test all(pass -> form_bearing(pass.node_type), structural_passes)
+		# The resolver reaches passes only through these two groups, so a pass in neither would be
+		# declared and then silently never applied.
+		@test Set(vcat(collect(structural_passes), collect(scope_passes))) == Set(current_passes)
 		@test !form_bearing(Sense())
 		@test voice_variant_pass.node_type isa VoiceVariant
 		@test sublemma_pass.node_type isa SubLemma

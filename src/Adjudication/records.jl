@@ -18,7 +18,6 @@ form_bearing(::Sense) = false
 form_bearing(::SubLemma) = true
 form_bearing(::VoiceVariant) = true
 
-const structural_alternatives = (SubLemma(), VoiceVariant())
 const outcomes = (:positive, :negative, :unresolved)
 
 struct ProjectedSpan

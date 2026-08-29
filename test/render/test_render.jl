@@ -191,6 +191,45 @@ end
 		close(database)
 	end
 
+	# Node identity used to be minted per build, so every SQLite key and every foreign key into it
+	# changed on rebuild while TEI stayed stable and hid it. Both outputs are checked here.
+	@testset "a rebuild reproduces both outputs exactly" begin
+		again = resolve(harness)
+		rebuilt = mktempdir()
+		rebuilt_tei = render_tei(again, joinpath(rebuilt, "littre.tei.xml"))
+		rebuilt_database = render_sqlite(again, joinpath(rebuilt, "littre.db"))
+
+		@test read(rebuilt_tei) == read(tei_path)
+
+		identifiers(corpus) = begin
+			found = String[]
+			visit(nodes) = for node in nodes
+				push!(found, node.node_id)
+				visit(node.children)
+			end
+			foreach(entry -> visit(entry.nodes), corpus.entries)
+			found
+		end
+		@test identifiers(again) == identifiers(resolved)
+		@test !isempty(identifiers(again))
+
+		rows(path, query) = begin
+			database = SQLite.DB(path)
+			collected = [Tuple(row) for row in DBInterface.execute(database, query)]
+			close(database)
+			collected
+		end
+		for query in (
+			"select * from nodes order by node_id",
+			"select * from qualifications order by file, start_byte, end_byte, type",
+			"select * from constituents order by node_id, name",
+			"select * from content_segments order by owner_kind, owner_id, position",
+			"select * from citations order by citation_id",
+		)
+			@test isequal(rows(rebuilt_database, query), rows(database_path, query))
+		end
+	end
+
 	@testset "anchors survive into both outputs" begin
 		database = SQLite.DB(database_path)
 		row = first(DBInterface.execute(database,

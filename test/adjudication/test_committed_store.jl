@@ -47,6 +47,9 @@ using DeepLittre.Resolve: resolve
 	@testset "resolution through the committed store" begin
 		resolved = resolve(harness)
 		coverage = Dict(record.pass => record for record in resolved.coverage)
+		# Declaring a pass in `current_passes` is what puts it into coverage; nothing downstream
+		# keeps a second list that could fall behind.
+		@test Set(keys(coverage)) == Set(pass.pass for pass in current_passes)
 		@test coverage["sublemma"].positive == 1
 		@test coverage["voice_variant"].positive == 1
 		@test coverage["voice_variant"].negative == 2

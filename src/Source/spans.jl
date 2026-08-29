@@ -51,6 +51,8 @@ crosses(left::Span{layer}, right::Span{layer}) where {layer} =
 
 laminar(left::Span{layer}, right::Span{layer}) where {layer} = !crosses(left, right)
 
+anchor_id(span::Span)::String = string(span.file, ':', span.start_byte, ':', span.end_byte)
+
 text_sha256(text::AbstractString)::String =
 	bytes2hex(sha256(Vector{UInt8}(codeunits(text))))
 

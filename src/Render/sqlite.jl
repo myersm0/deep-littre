@@ -167,17 +167,12 @@ scope_columns(qualification::Resolve.Qualification) =
 node_type_column(::Nothing) = missing
 node_type_column(value::Adjudication.NodeType) = Adjudication.node_type_name(value)
 
-# Rubriques and citations have no minted identity of their own, and do not need one: their raw
-# anchor already identifies them uniquely and deterministically, so a rebuild produces the same
-# keys rather than fresh ones.
-anchored_id(span::RawSpan)::String = string(span.file, ':', span.start_byte, ':', span.end_byte)
-
 # A cross-reference keeps what the source printed and, where the resolver could establish it, the
 # anchor it names. Unresolved stays null rather than guessing, which is the same contract the TEI
 # renderer applies when it declines to emit @target.
 resolved_columns(::Nothing) = (missing, missing, missing, missing)
 resolved_columns(span::RawSpan) =
-	(anchored_id(span), span.file, span.start_byte, span.end_byte)
+	(anchor_id(span), span.file, span.start_byte, span.end_byte)
 
 """
 	insert_segments!(database, owner_kind, owner_id, items)
@@ -259,7 +254,7 @@ function insert_node!(
 			database,
 			"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
-				anchored_id(citation.span), node.node_id, entry.entry_id, "sense", missing, missing,
+				anchor_id(citation.span), node.node_id, entry.entry_id, "sense", missing, missing,
 				index, missing, missing, Resolve.plain_text(citation.quotation),
 				isempty(citation.author) ? missing : citation.author,
 				isempty(citation.resolved_author) ? missing : citation.resolved_author,
@@ -268,7 +263,7 @@ function insert_node!(
 				citation.span.file, citation.span.start_byte, citation.span.end_byte,
 			),
 		)
-		insert_segments!(database, "citation", anchored_id(citation.span), citation.quotation)
+		insert_segments!(database, "citation", anchor_id(citation.span), citation.quotation)
 	end
 	for (index, child) in enumerate(node.children)
 		insert_node!(database, entry, child, node.node_id, index)
@@ -333,7 +328,7 @@ function insert_rubrique_citation!(database, entry, rubrique, item, position::In
 		database,
 		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
-			anchored_id(citation.span), missing, entry.entry_id, "rubrique", rubrique.name, item.subtype,
+			anchor_id(citation.span), missing, entry.entry_id, "rubrique", rubrique.name, item.subtype,
 			position,
 			item.not_before === nothing ? missing : item.not_before,
 			item.not_after === nothing ? missing : item.not_after,
@@ -345,7 +340,7 @@ function insert_rubrique_citation!(database, entry, rubrique, item, position::In
 			citation.span.file, citation.span.start_byte, citation.span.end_byte,
 		),
 	)
-	insert_segments!(database, "citation", anchored_id(citation.span), citation.quotation)
+	insert_segments!(database, "citation", anchor_id(citation.span), citation.quotation)
 	nothing
 end
 
@@ -406,7 +401,7 @@ function render_sqlite(
 					database,
 					"insert into rubriques values (?,?,?,?,?,?,?,?)",
 					(
-						anchored_id(rubrique.span), entry.entry_id, rubrique.name, index,
+						anchor_id(rubrique.span), entry.entry_id, rubrique.name, index,
 						rubrique_text(rubrique),
 						rubrique.span.file, rubrique.span.start_byte, rubrique.span.end_byte,
 					),
@@ -415,7 +410,7 @@ function render_sqlite(
 				for item in rubrique.items
 					item isa Resolve.RubriqueProse || continue
 					position = insert_segments!(
-						database, "rubrique", anchored_id(rubrique.span), item.content, position,
+						database, "rubrique", anchor_id(rubrique.span), item.content, position,
 					)
 				end
 			end

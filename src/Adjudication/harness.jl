@@ -30,6 +30,9 @@ const voice_variant_pass = PassDefinition(
 
 const current_passes = (sublemma_pass, voice_variant_pass, qualification_scope_pass)
 
+const structural_passes = filter(pass -> pass.node_type !== nothing, current_passes)
+const scope_passes = filter(pass -> pass.node_type === nothing, current_passes)
+
 function pass_definition(name::AbstractString)::Union{Nothing, PassDefinition}
 	index = findfirst(pass -> pass.pass == name, current_passes)
 	index === nothing ? nothing : current_passes[index]

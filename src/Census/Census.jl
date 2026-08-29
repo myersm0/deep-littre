@@ -8,7 +8,7 @@ using SHA
 using XML
 
 using ..Source
-using ..Source: RawSpan, ViewSpan
+using ..Source: RawSpan, ViewSpan, anchor_id
 
 include("blocks.jl")
 
