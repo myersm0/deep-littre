@@ -5,7 +5,7 @@ store. Deleting the store must still yield a coarse corpus carrying every explic
 """
 struct AdjudicationState
 	applicable::Dict{Tuple{String, Int, Int}, Vector{Adjudication.AppliedRecord}}
-	stale::Vector{Tuple{Adjudication.ExaminationRecord, Symbol}}
+	stale::Vector{Adjudication.ExaminationRecord}
 	findings::Vector{ReviewFinding}
 end
 
@@ -24,7 +24,7 @@ function adjudication_state(
 )::AdjudicationState
 	Adjudication.validate_store(harness)
 	applicable = Dict{Tuple{String, Int, Int}, Vector{Adjudication.AppliedRecord}}()
-	stale = Tuple{Adjudication.ExaminationRecord, Symbol}[]
+	stale = Adjudication.ExaminationRecord[]
 	seen_record_ids = Set{String}()
 	for pass in passes
 		for record in Adjudication.read_pass(harness.store, pass)
@@ -35,7 +35,7 @@ function adjudication_state(
 			applied = Adjudication.materialize_record(harness, record)
 			if applied === nothing
 				strict && error("strict build: record $(record.record_id) is stale")
-				push!(stale, (record, :stale))
+				push!(stale, record)
 			else
 				push!(get!(applicable, Adjudication.anchor_key(applied.source),
 					Adjudication.AppliedRecord[]), applied)
@@ -826,7 +826,7 @@ function coverage(
 		count(record -> record.outcome == :positive, examined),
 		count(record -> record.outcome == :negative, examined),
 		count(record -> record.outcome == :unresolved, examined),
-		count(entry -> entry[1].pass == pass.pass, state.stale),
+		count(record -> record.pass == pass.pass, state.stale),
 	)
 end
 
@@ -871,8 +871,8 @@ function resolve(
 	]
 	review = vcat(
 		ReviewFinding[
-			ReviewFinding(String(result), record.record_id, record.source)
-			for (record, result) in state.stale
+			ReviewFinding("stale", record.record_id, record.source)
+			for record in state.stale
 		],
 		state.findings,
 		suspects,

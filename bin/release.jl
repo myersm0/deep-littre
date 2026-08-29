@@ -6,6 +6,7 @@
 
 module Release
 
+using SHA
 using TOML
 
 const repo_root = normpath(joinpath(@__DIR__, ".."))
@@ -45,7 +46,7 @@ function checksums(paths::Vector{String})::String
 	manifest = joinpath(output_directory, "SHA256SUMS")
 	open(manifest, "w") do io
 		for path in paths
-			digest = first(split(read(`shasum -a 256 $(path)`, String)))
+			digest = bytes2hex(open(SHA.sha256, path))
 			println(io, "$(digest)  $(basename(path))")
 		end
 	end
