@@ -158,6 +158,36 @@ using DeepLittre.Render: render_tei, render_sqlite
 		end
 	end
 
+	@testset "a rubrique inside a block is not absorbed into its definition" begin
+		path = joinpath(fixture_root, "synthetic", "nested_rubrique.xml")
+		document = read_document(path)
+		local_corpus = census([document])
+		local_resolved = resolve(build_harness([document], local_corpus))
+		entry = only(local_resolved.entries)
+
+		# The rubrique is hoisted to entry level whatever its depth in the source.
+		@test only(entry.rubriques).name == "PROVERBE"
+		proverb = "À l'impossible nul n'est tenu"
+		definitions = String[]
+		collect_definitions(nodes) = for node in nodes
+			push!(definitions, plain_text(node.definition))
+			collect_definitions(node.children)
+		end
+		collect_definitions(entry.nodes)
+		@test !any(text -> occursin(proverb, text), definitions)
+		@test any(text -> occursin("supposition qui paraît impossible", text), definitions)
+
+		tei_path = render_tei(local_resolved, joinpath(mktempdir(), "littre.tei.xml"))
+		text = read(tei_path, String)
+		@test length(collect(eachmatch(Regex(proverb), text))) == 1
+		@test occursin("<note type=\"proverbs\">", text)
+		if have_validator()
+			@test jing_errors(tei_path) == String[]
+		else
+			@test_skip "jing or java unavailable"
+		end
+	end
+
 	@testset "citations carry their rubrique's subtype" begin
 		@test conventions_for("HISTORIQUE").subtype == "attestation"
 		@test conventions_for("REMARQUE").subtype == "remark"

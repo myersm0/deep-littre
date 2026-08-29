@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="IMPOSSIBLE">
+<entete>
+	<prononciation>in-po-si-bl'</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="5">Par impossible, en faisant une supposition qui paraît impossible ou tout à fait improbable.
+<cit aut="FÉN." ref="t. III, p. 156">Le monde eût été mauvais si, par impossible, il eût été créé sans l'incarnation du Verbe</cit>
+<indent><semantique type="domaine">Terme de scolastique.</semantique> Supposition par impossible, supposition dans laquelle on pose une alternative impossible.
+</indent>
+<rubrique nom="PROVERBE">
+<exemple>À l'impossible nul n'est tenu</exemple>.
+</rubrique>
+</variante>
+</corps>
+</entree>
+</xmlittre>

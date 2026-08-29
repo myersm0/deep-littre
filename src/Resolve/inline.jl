@@ -161,12 +161,12 @@ function gather_node!(builder::InlineBuilder, child::XML.FlatNode, excluded::Vec
 	if kind == XML.Text
 		absorb_text!(builder, span, excluded)
 	elseif kind == XML.Element
-		if carved(span, excluded)
+		name = XML.tag(child)
+		if carved(span, excluded) || name == "rubrique"
 			flush_run!(builder)
 			(builder.pending_space === nothing || isempty(builder.pending_space)) &&
 				(builder.pending_space = ViewSpan(span.file, span.end_byte, span.end_byte))
 		else
-			name = XML.tag(child)
 			if name == "a"
 				reference = something(Source.attribute(child, "ref"), "")
 				push_item!(builder, CrossReference(
