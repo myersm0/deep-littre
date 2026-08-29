@@ -349,14 +349,19 @@ function insert_rubrique_citation!(database, entry, rubrique, item, position::In
 	nothing
 end
 
-function render_sqlite(corpus::Resolve.ResolvedCorpus, path::AbstractString)
+function render_sqlite(
+	corpus::Resolve.ResolvedCorpus, path::AbstractString; progress = nothing,
+)
 	isfile(path) && rm(path)
 	database = SQLite.DB(path)
 	foreach(statement -> DBInterface.execute(database, statement),
 		filter(!isempty, strip.(split(schema, ";"))))
 
+	total_entries = length(corpus.entries)
+	report_step = max(cld(total_entries, 20), 1)
+	started = time_ns()
 	SQLite.transaction(database) do
-		for entry in corpus.entries
+		for (entry_index, entry) in enumerate(corpus.entries)
 			DBInterface.execute(
 				database,
 				"insert into entries values (?,?,?,?,?,?,?)",
@@ -413,6 +418,12 @@ function render_sqlite(corpus::Resolve.ResolvedCorpus, path::AbstractString)
 						database, "rubrique", anchored_id(rubrique.span), item.content, position,
 					)
 				end
+			end
+			if progress !== nothing && (entry_index % report_step == 0 || entry_index == total_entries)
+				progress(
+					entry_index, total_entries, entry.span.file,
+					(time_ns() - started) / 1e9,
+				)
 			end
 		end
 		for record in corpus.coverage

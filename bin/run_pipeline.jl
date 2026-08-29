@@ -12,9 +12,14 @@
 
 module Pipeline
 
+println("== load pipeline environment")
+flush(stdout)
+load_started = time_ns()
 using ArgParse
 using DeepLittre
 using DeepLittre: Source, Census, Adjudication, Resolve, Render
+println("   complete in ", round((time_ns() - load_started) / 1e9; digits = 2), "s")
+flush(stdout)
 
 const repository_root = normpath(joinpath(@__DIR__, ".."))
 
@@ -90,10 +95,13 @@ function write_review(path::AbstractString, corpus::Resolve.ResolvedCorpus)
 end
 
 function write_build_manifest(path::AbstractString, documents::Vector{Source.SourceDocument})
+	@info "build manifest" path
+	elapsed = @elapsed digest = Source.patched_corpus_sha256(documents)
 	mkpath(dirname(path))
 	open(path, "w") do handle
-		println(handle, "patched_source_sha256 = \"$(Source.patched_corpus_sha256(documents))\"")
+		println(handle, "patched_source_sha256 = \"$(digest)\"")
 	end
+	@info "build manifest complete in $(seconds(elapsed))s"
 end
 
 function main()::Int
@@ -156,7 +164,15 @@ function main()::Int
 
 	database_path = joinpath(arguments["output_dir"], "littre.db")
 	@info "emit SQLite" path = database_path
-	database_elapsed = @elapsed Render.render_sqlite(resolved, database_path)
+	database_elapsed = @elapsed Render.render_sqlite(
+		resolved,
+		database_path;
+		progress = function (done, total, file, elapsed)
+			rate = elapsed > 0 ? done / elapsed : 0.0
+			remaining = rate > 0 ? (total - done) / rate : 0.0
+			@info "  SQLite $(lpad(done, 6)) / $(total) entries  $(rpad(file, 8))  $(lpad(seconds(elapsed), 7))s elapsed  ~$(lpad(seconds(remaining), 7))s remaining"
+		end,
+	)
 	@info "SQLite complete in $(seconds(database_elapsed))s"
 
 	arguments["coverage"] === nothing || write_coverage(arguments["coverage"], resolved)

@@ -130,9 +130,9 @@ attribute(node::XML.FlatNode, key::AbstractString)::Union{Nothing, String} =
 function patched_corpus_sha256(documents::Vector{SourceDocument})::String
 	context = SHA.SHA256_CTX()
 	for document in sort(documents; by = document -> document.file)
-		SHA.update!(context, codeunits(string(ncodeunits(document.file), ':', document.file, '\n')))
-		SHA.update!(context, codeunits(string(ncodeunits(document.parser_view), ':')))
-		SHA.update!(context, codeunits(document.parser_view))
+		SHA.update!(context, Vector{UInt8}(codeunits(string(ncodeunits(document.file), ':', document.file, '\n'))))
+		SHA.update!(context, Vector{UInt8}(codeunits(string(ncodeunits(document.parser_view), ':'))))
+		SHA.update!(context, Vector{UInt8}(codeunits(document.parser_view)))
 		SHA.update!(context, UInt8[0x0a])
 	end
 	bytes2hex(SHA.digest!(context))

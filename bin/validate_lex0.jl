@@ -9,8 +9,13 @@
 
 module ValidateLex0
 
+println("== load validation environment")
+flush(stdout)
+load_started = time_ns()
 using ArgParse
 using XML
+println("   complete in ", round((time_ns() - load_started) / 1e9; digits = 2), "s")
+flush(stdout)
 
 const repository_root = normpath(joinpath(@__DIR__, ".."))
 const schema_path = joinpath(repository_root, "vendor", "tei-lex0-0.9.5", "lex-0.rng")
@@ -169,21 +174,22 @@ function main()
 	println("probe agrees with expected verdicts")
 
 	println("\n== complete document")
-	document_errors = validate_path(arguments["corpus"])
+	document_elapsed = @elapsed document_errors = validate_path(arguments["corpus"])
 	if isempty(document_errors)
-		println("valid")
+		println("valid in ", round(document_elapsed; digits = 2), "s")
 	else
-		println("invalid")
+		println("invalid after ", round(document_elapsed; digits = 2), "s")
 		for line in first(document_errors, min(20, length(document_errors)))
 			println("  ", line)
 		end
 	end
 
 	println("\n== corpus entries")
-	results = verdicts(arguments["corpus"]; progress = function (done, total)
+	entries_elapsed = @elapsed results = verdicts(arguments["corpus"]; progress = function (done, total)
 		total > batch_size && print("\r  ", done, " / ", total)
 		done == total && total > batch_size && println()
 	end)
+	println("entry validation complete in ", round(entries_elapsed; digits = 2), "s")
 	valid = count(entry -> entry[2], results)
 	invalid = length(results) - valid
 	println("total   ", length(results))
