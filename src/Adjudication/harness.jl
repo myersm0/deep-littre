@@ -125,12 +125,19 @@ Base.showerror(io::IO, item::ReviewItem) = print(
 	io, "review item ", item.item_id, " (", item.pass, "/", item.category, "): ", item.detail,
 )
 
+struct PassIndex
+	fingerprint::Vector{Tuple{String, Float64, Int}}
+	by_anchor::Dict{Tuple{String, Int, Int}, ExaminationRecord}
+	unanchored::Vector{ExaminationRecord}
+end
+
 mutable struct Harness
 	documents::Dict{String, Source.SourceDocument}
 	corpus::Census.CorpusCensus
 	blocks::Dict{Tuple{String, Int, Int}, Census.SourceBlock}
 	store::Store
 	surface_indices::Dict{String, Dict{Tuple{String, String}, Vector{Census.SourceBlock}}}
+	record_indices::Dict{String, PassIndex}
 end
 
 anchor_key(span::RawSpan) = (span.file, span.start_byte, span.end_byte)
@@ -142,6 +149,7 @@ function Harness(documents::Vector{Source.SourceDocument}, corpus::Census.Corpus
 		Dict(anchor_key(block.raw_span) => block for block in Census.all_blocks(corpus)),
 		store,
 		Dict{String, Dict{Tuple{String, String}, Vector{Census.SourceBlock}}}(),
+		Dict{String, PassIndex}(),
 	)
 end
 
@@ -287,10 +295,38 @@ function target_block(
 	length(candidates) == 1 ? only(candidates) : nothing
 end
 
-function latest_applicable_record(
+function pass_fingerprint(store::Store, pass::AbstractString)::Vector{Tuple{String, Float64, Int}}
+	directory = pass_directory(store, pass)
+	isdir(directory) && return [
+		(basename(path), mtime(path), filesize(path))
+		for path in sort(filter(name -> endswith(name, ".jsonl"), readdir(directory; join = true)))
+	]
+	Tuple{String, Float64, Int}[]
+end
+
+function pass_index(harness::Harness, pass::PassDefinition)::PassIndex
+	fingerprint = pass_fingerprint(harness.store, pass.pass)
+	cached = get(harness.record_indices, pass.pass, nothing)
+	cached === nothing || cached.fingerprint != fingerprint || return cached
+	by_anchor = Dict{Tuple{String, Int, Int}, ExaminationRecord}()
+	unanchored = ExaminationRecord[]
+	for record in read_pass(harness.store, pass.pass)
+		key = anchor_key(record.source)
+		haskey(harness.blocks, key) ? (by_anchor[key] = record) : push!(unanchored, record)
+	end
+	harness.record_indices[pass.pass] = PassIndex(fingerprint, by_anchor, unanchored)
+end
+
+function applicable_record(
 	harness::Harness, block::Census.SourceBlock, pass::PassDefinition,
 )::Union{Nothing, ExaminationRecord}
-	for record in read_pass(harness.store, pass.pass)
+	index = pass_index(harness, pass)
+	candidate = get(index.by_anchor, anchor_key(block.raw_span), nothing)
+	if candidate !== nothing
+		target_block(harness, candidate, pass) == block &&
+			check(harness, candidate) == :valid && return candidate
+	end
+	for record in index.unanchored
 		target_block(harness, record, pass) == block || continue
 		check(harness, record) == :valid || continue
 		return record
@@ -305,7 +341,7 @@ function validate_against_store(
 	for other_pass in current_passes
 		other_pass.node_type === nothing && continue
 		other_pass.pass == pass.pass && continue
-		record = latest_applicable_record(harness, item.block, other_pass)
+		record = applicable_record(harness, item.block, other_pass)
 		(record === nothing || record.outcome != :positive) && continue
 		for assertion in assertions, existing in record.assertions
 			projected_covers(assertion.span, existing.span) &&

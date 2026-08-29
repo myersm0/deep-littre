@@ -2,7 +2,8 @@ using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: present, commit, check, materialize_record, Decision, FormSelection,
 	ReviewItem, sublemma_pass, voice_variant_pass, eligible, SubLemma, applicable, validate_store,
-	StoreIntegrityError, Store, write_pass!, projected_text
+	StoreIntegrityError, Store, write_pass!, read_pass, projected_text, ExaminationRecord,
+	applicable_record, target_block
 
 @testset "authoring harness" begin
 	documents = read_corpus(corpus_source)
@@ -169,6 +170,52 @@ using DeepLittre.Adjudication: present, commit, check, materialize_record, Decis
 				"Familièrement. Avaler des poires", "Avaler des poires",
 			)]); decision_procedure = "test",
 		)
+	end
+
+	@testset "the record index follows the store" begin
+		other = build_harness(documents, corpus)
+		other_block = angoisse_block(other, corpus)
+		crossing() = commit(
+			other, voice_variant_pass, present(other, voice_variant_pass, other_block),
+			Decision(:positive; exhaustive = true, selections = [FormSelection(
+				"Familièrement. Avaler des poires", "Avaler des poires",
+			)]); decision_procedure = "test",
+		)
+		rejection() = try
+			crossing()
+			nothing
+		catch failure
+			failure isa ReviewItem ? failure.category : rethrow()
+		end
+		write_pass!(other.store, "sublemma", [commit(
+			other, sublemma_pass, present(other, sublemma_pass, other_block), positive;
+			decision_procedure = "test",
+		)])
+		@test rejection() == "structural_conflict"
+		write_pass!(other.store, "sublemma", ExaminationRecord[])
+		@test rejection() != "structural_conflict"
+	end
+
+	@testset "an anchor lookup agrees with a full scan" begin
+		scanned = build_harness(documents, corpus)
+		blocks = eligible(sublemma_pass, corpus)
+		write_pass!(scanned.store, "sublemma", ExaminationRecord[commit(
+			scanned, sublemma_pass, present(scanned, sublemma_pass, candidate),
+			Decision(:negative); decision_procedure = "test",
+		) for candidate in first(blocks, 40)])
+		stored = read_pass(scanned.store, "sublemma")
+		for candidate in first(blocks, 60)
+			naive = nothing
+			for record in stored
+				target_block(scanned, record, sublemma_pass) == candidate || continue
+				check(scanned, record) == :valid || continue
+				naive = record
+				break
+			end
+			found = applicable_record(scanned, candidate, sublemma_pass)
+			@test (found === nothing) == (naive === nothing)
+			found === nothing || @test found.record_id == naive.record_id
+		end
 	end
 
 	@testset "residual overlapping a node fails closed" begin
