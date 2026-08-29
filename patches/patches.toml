@@ -662,3 +662,24 @@ file = "d.xml"
 line = 114640
 old = "<indent>SE DONNER, v. réfl."
 new = "<indent>SE DONNER, <nature>v. réfl.</nature>"
+
+
+## Author patches identified on Aug 28, 2026
+[[patches]]
+file = "c.xml"
+line = 126394
+old = '<cit aut="ID." ref="CORN. Sertor. II, 2">'
+new = '<cit aut="CORN." ref="Sertor. II, 2">'
+
+[[patches]]
+file = "h.xml"
+line = 49158
+old = '<cit aut="ID." ref="Sat. X">'
+new = '<cit aut="BOILEAU" ref="Sat. X">'
+
+[[patches]]
+file = "m.xml"
+line = 109679
+old = '<cit aut="ID." ref="Ép. IV">'
+new = '<cit aut="BOILEAU" ref="Ép. IV">'
+
