@@ -28,10 +28,17 @@ jobs:
 
       - uses: julia-actions/cache@v2
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Instantiate
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
 
       - name: Run tests
+        env:
+          DEEP_LITTRE_REQUIRE_VALIDATOR: '1'
         run: julia --project=. -e 'using Pkg; Pkg.test()'
 
       - name: Validate the Lex-0 probe
