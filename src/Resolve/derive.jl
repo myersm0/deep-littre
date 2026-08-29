@@ -18,7 +18,9 @@ function record_review!(state::AdjudicationState, block::Census.SourceBlock, rea
 end
 
 function adjudication_state(
-	harness::Adjudication.Harness, passes::Vector{String}; strict::Bool = false,
+	harness::Adjudication.Harness,
+	passes::Vector{String} = String[pass.pass for pass in Adjudication.current_passes];
+	strict::Bool = false,
 )::AdjudicationState
 	Adjudication.validate_store(harness)
 	applicable = Dict{Tuple{String, Int, Int}, Vector{Adjudication.AppliedRecord}}()
@@ -59,8 +61,8 @@ function structural_assertions(
 	state::AdjudicationState, block::Census.SourceBlock,
 )::Vector{Adjudication.AnchoredNodeAssertion}
 	assertions = Adjudication.AnchoredNodeAssertion[]
-	for pass in ("sublemma", "voice_variant")
-		record = sole(records_for(state, block, pass))
+	for pass in Adjudication.structural_passes
+		record = sole(records_for(state, block, pass.pass))
 		(record === nothing || record.outcome != :positive) && continue
 		append!(assertions, record.assertions)
 	end
@@ -112,17 +114,18 @@ function geometric_parent_indices(
 	geometric_parent_indices_unchecked(assertions)
 end
 
-function closure(
-	harness::Adjudication.Harness, state::AdjudicationState, block::Census.SourceBlock,
-)::Tuple{Bool, String}
-	Adjudication.in_structural_population(block.kind) ||
-		return (false, "outside the structural population")
+function closure(state::AdjudicationState, block::Census.SourceBlock)::Tuple{Bool, String}
+	passes = Adjudication.structural_passes
+	isempty(passes) && return (false, "no structural pass is declared")
+	all(passes) do pass
+		Adjudication.population_predicate(pass.population)(block.kind)
+	end || return (false, "outside the structural population")
 	conflict = structural_conflict(structural_assertions(state, block))
 	conflict === nothing || return (false, "structural conflict: $(conflict)")
-	for pass in ("sublemma", "voice_variant")
-		record = sole(records_for(state, block, pass))
-		record === nothing && return (false, "$(pass) has not examined this block")
-		record.outcome == :unresolved && return (false, "$(pass) is unresolved")
+	for pass in passes
+		record = sole(records_for(state, block, pass.pass))
+		record === nothing && return (false, "$(pass.pass) has not examined this block")
+		record.outcome == :unresolved && return (false, "$(pass.pass) is unresolved")
 	end
 	(true, "")
 end
@@ -286,7 +289,7 @@ function asserted_nodes(
 			for item in assertion.constituents
 		]
 		ResolvedNode(
-			assertion.node_id,
+			Source.anchor_id(assertion.span),
 			assertion.node_type,
 			assertion.span,
 			nothing,
@@ -331,7 +334,7 @@ function resolve_block(
 	document = harness.documents[block.raw_span.file]
 	node = Adjudication.element_at(document, block.view_span)
 
-	(resolved, reason) = closure(harness, state, block)
+	(resolved, reason) = closure(state, block)
 	isempty(reason) || record_review!(state, block, reason)
 
 	(qualifications, marker_spans) = qualification_markers(document, node)
@@ -359,7 +362,7 @@ function resolve_block(
 	definition = inline_content(document, node, excluded, references)
 
 	ResolvedNode(
-		string(uuid4()),
+		Source.anchor_id(block.raw_span),
 		resolved ? Adjudication.Sense() : nothing,
 		block.raw_span,
 		Source.attribute(node, "num"),
@@ -386,9 +389,14 @@ absence of a record never becomes a claim.
 function apply_scopes(
 	state::AdjudicationState, block::Census.SourceBlock, qualifications::Vector{Qualification},
 )::Vector{Qualification}
-	record = sole(records_for(state, block, "qualification_scope"))
-	(record === nothing || record.outcome != :positive) && return qualifications
-	Qualification[rescope_from(record, qualification) for qualification in qualifications]
+	for pass in Adjudication.scope_passes
+		record = sole(records_for(state, block, pass.pass))
+		(record === nothing || record.outcome != :positive) && continue
+		qualifications = Qualification[
+			rescope_from(record, qualification) for qualification in qualifications
+		]
+	end
+	qualifications
 end
 
 function rescope_from(
@@ -822,12 +830,24 @@ function coverage(
 	)
 end
 
+function check_node_identity(entries::Vector{ResolvedEntry})
+	seen = Set{String}()
+	function visit(nodes::Vector{ResolvedNode})
+		for node in nodes
+			node.node_id in seen &&
+				error("two resolved nodes share the anchor $(node.node_id)")
+			push!(seen, node.node_id)
+			visit(node.children)
+		end
+	end
+	foreach(entry -> visit(entry.nodes), entries)
+	nothing
+end
+
 function resolve(
 	harness::Adjudication.Harness; strict::Bool = false, progress = nothing,
 )::ResolvedCorpus
-	state = adjudication_state(
-		harness, ["sublemma", "voice_variant", "qualification_scope"]; strict,
-	)
+	state = adjudication_state(harness; strict)
 	references = cross_reference_index(harness.corpus)
 	entries = ResolvedEntry[]
 	for document in harness.corpus.documents
@@ -838,6 +858,7 @@ function resolve(
 		append!(entries, resolved)
 		progress === nothing || progress(document.file, length(resolved), elapsed)
 	end
+	check_node_identity(entries)
 	unresolved_authors = ReviewFinding[
 		ReviewFinding("author_unresolved", "ID. with no antecedent in the entry", citation.span)
 		for entry in entries for citation in entry_citations(entry)
@@ -858,8 +879,6 @@ function resolve(
 		unresolved_authors,
 	)
 	ResolvedCorpus(entries, review, PassCoverage[
-		coverage(harness, state, Adjudication.sublemma_pass),
-		coverage(harness, state, Adjudication.voice_variant_pass),
-		coverage(harness, state, Adjudication.qualification_scope_pass),
+		coverage(harness, state, pass) for pass in Adjudication.current_passes
 	])
 end

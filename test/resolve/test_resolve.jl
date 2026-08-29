@@ -271,7 +271,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		block = angoisse_block(harness, corpus)
 		write_pass!(harness.store, "sublemma", [angoisse_record(harness)])
 		state = adjudication_state(harness, ["sublemma", "voice_variant"])
-		(resolved, reason) = closure(harness, state, block)
+		(resolved, reason) = closure(state, block)
 		@test !resolved
 		@test occursin("voice_variant", reason)
 	end
@@ -283,7 +283,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		write_pass!(harness.store, "voice_variant", [voice_negative(harness, block)])
 
 		state = adjudication_state(harness, ["sublemma", "voice_variant"])
-		(passed, reason) = closure(harness, state, block)
+		(passed, reason) = closure(state, block)
 		@test passed
 		@test isempty(reason)
 
