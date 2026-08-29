@@ -1,0 +1,58 @@
+<teiHeader>
+  <fileDesc>
+    <titleStmt>
+      <title type="full">Dictionnaire de la langue française</title>
+      <title type="abbr">Littré</title>
+      <author>
+        <persName><forename>Émile</forename><surname>Littré</surname></persName>
+      </author>
+      <editor role="digital">
+        <persName><forename>François</forename><surname>Gannaz</surname></persName>
+      </editor>
+      <editor role="enrichment">
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </editor>
+    </titleStmt>
+    <editionStmt>
+      <edition>TEI Lex-0 edition</edition>
+    </editionStmt>
+    <publicationStmt>
+      <publisher>
+        <persName><forename>Michael</forename><surname>Myers</surname></persName>
+      </publisher>
+      <availability status="free">
+        <licence target="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</licence>
+      </availability>
+    </publicationStmt>
+    <sourceDesc>
+      <listBibl type="dictionaries">
+        <biblStruct xml:id="littre-print">
+          <monogr>
+            <author>
+              <persName><forename>Émile</forename><surname>Littré</surname></persName>
+            </author>
+            <title level="m">Dictionnaire de la langue française</title>
+            <imprint>
+              <publisher>Hachette</publisher>
+              <pubPlace>Paris</pubPlace>
+              <date notBefore="1872" notAfter="1877">1872–1877</date>
+            </imprint>
+          </monogr>
+        </biblStruct>
+      </listBibl>
+    </sourceDesc>
+  </fileDesc>
+  <profileDesc>
+    <langUsage>
+      <language ident="fr-x-lit19c" role="objectLanguage">
+        <name xml:lang="en">19th-century literary French</name>
+        <name xml:lang="fr">Français littéraire du XIXᵉ siècle</name>
+        <date notBefore="1801" notAfter="1900"/>
+      </language>
+      <language ident="fr" role="workingLanguage">
+        <name xml:lang="en">French</name>
+        <name xml:lang="fr">Français</name>
+      </language>
+    </langUsage>
+  </profileDesc>
+</teiHeader>
