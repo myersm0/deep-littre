@@ -1,12 +1,8 @@
-# Semantic model: span-anchored adjudication
+# Semantic model
 
-Status: **normative semantic-layer specification for v0.3**.
+The semantic layer: what a source block yields, how those facts are anchored, and how ordinary senses are derived. Source-position mechanics live in `source-representation.md`.
 
-This document replaces the v0.2 `IndentRole` ontology. Implementation sequencing and source-position mechanics live in `rewrite-v0.3.md` and `source-representation.md`.
-
-## Core result
-
-The finished model has no `IndentRole`.
+## A block is not a type
 
 XMLittré `<indent>` is a source-layout container, not a semantic type. One source block may contain several independently true facts at once. The semantic layer therefore describes those facts directly rather than assigning one mutually exclusive label to the container.
 
@@ -20,8 +16,6 @@ explicit target references
 unassigned/coarse remainder where adjudication is incomplete
 ```
 
-The v0.2 role hierarchy may appear in historical releases and import adapters but not in the durable v0.3 representation.
-
 ## Why orthogonality is required
 
 Adjudication is performed one semantic class at a time. Each adjudication pass must add information without invalidating settled facts from another pass.
@@ -31,7 +25,7 @@ A single enum cannot do that. In the sample, for example:
 - `angoisse_s3.1` contains the register label *Familièrement.*, the multiword unit *Avaler des poires d'angoisse*, and its gloss;
 - `boue_s2.2` contains the figurative label *Fig.* and the multiword unit *Bâtir sur la boue* with its gloss.
 
-Treating either block as only `RegisterLabel`, `Figurative`, or `Locution` necessarily discards another true fact. The v0.3 representation allows the usage qualification and form-bearing semantic node to coexist.
+Forcing one label onto either block necessarily discards another true fact. The representation therefore allows a usage qualification and a form-bearing semantic node to coexist on the same material.
 
 ## Source structure and semantic structure are separate
 
@@ -40,7 +34,6 @@ Source objects answer questions such as:
 - where is this material in XMLittré;
 - what source element contains it;
 - what raw bytes does it occupy;
-- was a boundary introduced by a patch;
 - what rubrique or entry contains it.
 
 Semantic objects answer questions such as:
@@ -155,7 +148,7 @@ Usage axes are named after the TEI Lex-0 closed typology:
 - `geographic`;
 - `hint`.
 
-`register` is deliberately absent. It was a v0.2 source-side catch-all spanning several Lex-0 types. Compound labels such as *familièrement et fig.* may produce multiple qualifications of different axes.
+`register` is deliberately absent: it spans several Lex-0 types at once, so printed labels route directly to the axis or axes they belong to. Compound labels such as *familièrement et fig.* may produce multiple qualifications of different axes.
 
 `proverbial` is not an axis. It is a value under `meaningType`.
 
@@ -193,8 +186,6 @@ stay deterministic products of the committed normalization tables, and a test as
 of qualification facts is byte-identical before and after a scope record is applied. The marker
 selection must land on a printed `<semantique>` or `<nature>` element: an adjudicator may say how
 far a printed label reaches, not invent a label the source does not print.
-
-The transition-resolution labels inherited from v0.2 — strong, medium, intra-sense, zero, and citation veto — may survive as inference metadata for the voice/transition pass. They do not constitute the scope representation itself.
 
 ## Adjudication identity and stale detection
 
@@ -237,7 +228,7 @@ For every eligible block/span and pass, the authoritative store distinguishes:
 - unresolved — examined but no decision is made;
 - absent record — not examined.
 
-This distinction replaces the v0.2 `Unclassified` sentinel as the coverage mechanism.
+An absent record is the ordinary intermediate state and is never read as a negative.
 
 The authoritative store is a committed input. Generated `littre.db` may mirror it for queries but is not the only durable home of judgments.
 
@@ -325,31 +316,14 @@ Workflow state such as "unexamined" is not published as `ana="unclassified"`.
 
 Generated TEI `xml:id` values are rendering identifiers, not adjudication identities.
 
-v0.3 does not promise cross-release `xml:id` stability before 1.0. Adjudication proceeds by classification surfaces, projected selections, a locator, and opaque internal ids, so semantic work is not coupled to positional TEI identifiers.
+Cross-release `xml:id` stability is not promised before 1.0. Adjudication proceeds by classification surfaces, projected selections, a locator, and opaque internal ids, so semantic work is not coupled to positional TEI identifiers.
 
 If stable public ids become a requirement, that is a separate release-contract decision.
 
-## Mapping from v0.2 concepts
+## Passes, not a classification task
 
-| v0.2 concept | v0.3 representation |
-|---|---|
-| `Figurative` | qualification `meaningType=figurative` |
-| `RegisterLabel` | one or more typed Lex-0 qualifications; never `register` |
-| `DomainLabel` | qualification `domain=<norm>` |
-| `NatureLabel` | grammatical property/properties |
-| `CrossReference` | relation |
-| `Proverb` | usually `SubLemma`/sense structure plus `meaningType=proverbial` |
-| `VoiceTransition` | `VoiceVariant` when form-bearing; otherwise grammatical qualification |
-| `Locution` | `SubLemma` |
-| `Unclassified` | no semantic type; examination/coverage state lives in records |
-| `Continuation`, `Elaboration` | no successor; historical documented values never produced by the classifier |
+There is no single corpus-wide "indent classification" task. There are independent adjudication passes for semantic classes and property families. Each may be human-, LLM-, or rule-driven; each can be calibrated against ground truth; and each adds facts monotonically without erasing facts established by another.
 
-`RubriqueKind` was already independent of `IndentRole` and remains source/structural vocabulary rather than a node-axis value.
+A deterministic negative outcome is first-class where a rule genuinely establishes absence. The absence of a heuristic trigger is not itself a negative adjudication.
 
-## Consequence for the adjudication programme
-
-There is no single corpus-wide "indent classification" task.
-
-There are independent **adjudication passes** for semantic classes and property families. Each can be human-, LLM-, or rule-driven, can be calibrated against ground truth, and adds facts monotonically without erasing facts from other passes. Deterministic negative outcomes are first-class where a rule genuinely establishes absence; lack of a heuristic trigger is not by itself a negative adjudication.
-
-A historically reported population of 131 XMLittré locution-tagged items should be retained as an audit/reference artifact until its provenance and quality are reviewed. It is **not assumed to be human-adjudicated ground truth**. In any case, the 25-entry sample already demonstrates untagged multiword units embedded in ordinary definition prose, so XMLittré's locution tag count is not an estimate of the sub-lemma problem.
+XMLittré's own locution tagging is not an estimate of the sub-lemma population: the 25-entry development corpus already contains untagged multiword units embedded in ordinary definition prose.

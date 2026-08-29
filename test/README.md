@@ -20,15 +20,15 @@ Needs no build and no `data/source`. Everything it reads is committed: the devel
 
 ## Reading the assertion count
 
-The total is around 28,400, which overstates behavioural coverage by a wide margin. Two files produce 91% of it:
+The total is 28,278, which overstates behavioural coverage by a wide margin. Two files produce 91% of it:
 
 | file | assertions |
 |---|---|
 | `census/test_census.jl` | 20,749 |
-| `source/test_parser.jl` | 5,063 |
-| everything else, 15 files | ~2,600 |
+| `source/test_parser.jl` | 5,065 |
+| everything else, 16 files | 2,464 |
 
-Both are loops asserting an invariant over every block or node in the corpus. That is the right shape for an invariant and a poor proxy for how much behaviour is pinned. The adjudication core — harness, store, committed store, and the two passes beyond `sublemma` — is 138 assertions.
+Both are loops asserting an invariant over every block or node in the development corpus. That is the right shape for an invariant and a poor proxy for how much behaviour is pinned — `resolve/test_authors.jl` contributes 970 the same way. The adjudication core is smaller than it looks: the harness is 156 assertions, the store 21, the committed store 32, and the `voice_variant` and `qualification_scope` passes 22 and 16.
 
 Line coverage is a separate measurement and sits near 95%:
 
@@ -46,4 +46,6 @@ It is also a poor proxy here, and the reason is worth keeping in mind when addin
 
 `probe_lex0.xml` isolates one Lex-0 construct per minimal entry, paired with controls, and `probe_expected.tsv` records the verdict each one should get. Seven are invalid by design. The probe is the arbiter for schema questions: when the validator and the schema appear to disagree, a new probe entry settles it before anyone debugs by hand. It runs through `test/validate_probe.jl` rather than through this suite, because it needs `jing`.
 
-`lex0_baseline.tsv` records the committed validation totals, ranked error signatures, and invalid entry ids for the full corpus. `sampling/` holds v0.2-era calibration artifacts retained for provenance review; nothing in the suite reads them.
+`lex0_baseline.tsv` records the committed validation totals, ranked error signatures, and invalid entry ids for the full corpus. `sampling/` holds calibration artifacts retained for provenance review; nothing in the suite reads them.
+
+`stress/` is a load harness rather than a test: it replicates the development corpus to corpus scale, authors one verdict per structural block in each structural pass, and reports ingest and build cost. It is run by hand, not by `Pkg.test`. See `stress/README.md`.
