@@ -161,6 +161,7 @@ end
 struct ResolvedRubrique
 	name::String
 	span::RawSpan
+	parent_id::Union{Nothing, String}
 	items::Vector{RubriqueItem}
 	etymology::Vector{AnchoredEtymSegment}
 end

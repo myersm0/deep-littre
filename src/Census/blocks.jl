@@ -43,6 +43,7 @@ struct SourceRubrique
 	raw_span::RawSpan
 	view_span::ViewSpan
 	entry_id::String
+	parent_id::Union{Nothing, String}
 	blocks::Vector{SourceBlock}
 end
 
@@ -182,7 +183,7 @@ function build_rubrique(
 	name = something(Source.attribute(node, "nom"), "")
 	inner = Context(true, false, context.entry_id, source_id)
 	blocks = scan!(document, rubriques, anomalies, node, inner)
-	SourceRubrique(source_id, name, raw, view, context.entry_id, blocks)
+	SourceRubrique(source_id, name, raw, view, context.entry_id, context.parent_id, blocks)
 end
 
 function build_entry(

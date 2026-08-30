@@ -180,7 +180,12 @@ using DeepLittre.Render: render_tei, render_sqlite
 		tei_path = render_tei(local_resolved, joinpath(mktempdir(), "littre.tei.xml"))
 		text = read(tei_path, String)
 		@test length(collect(eachmatch(Regex(proverb), text))) == 1
-		@test occursin("<note type=\"proverbs\">", text)
+		# Littré put PROVERBE inside variante 5; emitting it at entry level would keep the
+		# material and lose which sense it belonged to.
+		sense = match(r"<sense xml:id=\"impossible_s1\".*?\n        </sense>"s, text)
+		@test sense !== nothing
+		@test occursin("<note type=\"proverbs\">", sense.match)
+		@test occursin("<seg type=\"example\">", sense.match)
 		if have_validator()
 			@test jing_errors(tei_path) == String[]
 		else
@@ -228,7 +233,10 @@ using DeepLittre.Render: render_tei, render_sqlite
 		text = read(tei_path, String)
 		@test occursin("<cit type=\"example\" subtype=\"attestation\">", text)
 		@test occursin("<lbl type=\"dateRange\">", text)
-		@test occursin("<hi rend=\"italic\">On ne trouva jamais meilleur messager que soi-même</hi>.", text)
+		@test occursin(
+			"<seg type=\"example\"><hi rend=\"italic\">On ne trouva jamais meilleur messager que soi-même</hi></seg>.",
+			text,
+		)
 		# <note> cannot hold <cit> under Lex-0, so no citation may be nested inside one
 		for note in eachmatch(r"<note\b.*?</note>", text)
 			@test !occursin("<cit ", note.match)

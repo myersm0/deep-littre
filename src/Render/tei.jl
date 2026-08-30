@@ -139,7 +139,12 @@ function render_inline(
 		elseif item isa Resolve.Emphasis
 			language = item.language === nothing || isempty(item.language) ? "" :
 				" xml:lang=\"$(escape_attribute(item.language))\""
-			write(io, "<hi rend=\"italic\"", language, ">", escape_xml(item.text), "</hi>")
+			emphasis = "<hi rend=\"italic\"$(language)>$(escape_xml(item.text))</hi>"
+			# The schema admits no @type on <hi>, and @ana is reserved here for epistemic
+			# provenance, so a source wrapper carrying more than print emphasis keeps its
+			# identity through a <seg> rather than flattening into every other italic phrase.
+			write(io, item.source_element == "exemple" ?
+				"<seg type=\"example\">" * emphasis * "</seg>" : emphasis)
 		else
 			write(io, escape_xml(item.text))
 		end
@@ -217,7 +222,10 @@ implying that an adjudicator positively established an ordinary sense. A positiv
 `SubLemma` becomes a nested `<entry type="relatedEntry">`, which is what lets a sub-lemma sit
 inside the sense that contains it.
 """
-function render_node(io::IO, node::Resolve.ResolvedNode, names::Names, depth::Int)
+function render_node(
+	io::IO, node::Resolve.ResolvedNode, names::Names, depth::Int,
+	rubriques::Vector{Resolve.ResolvedRubrique} = Resolve.ResolvedRubrique[],
+)
 	if node.node_type isa Adjudication.SubLemma
 		render_nested_entry(io, node, names, "relatedEntry", depth)
 		return nothing
@@ -251,7 +259,12 @@ function render_node(io::IO, node::Resolve.ResolvedNode, names::Names, depth::In
 	end
 	for child in node.children
 		newline(io, depth + 1)
-		render_node(io, child, names, depth + 1)
+		render_node(io, child, names, depth + 1, rubriques)
+	end
+	for rubrique in rubriques_under(rubriques, node.node_id)
+		renderable(rubrique) || continue
+		newline(io, depth + 1)
+		render_rubrique(io, rubrique, names, depth + 1)
 	end
 	newline(io, depth)
 	write(io, "</sense>")
@@ -402,6 +415,29 @@ function render_rubrique_item(
 	nothing
 end
 
+"""
+	rubriques_under(rubriques, node_id)
+
+The rubriques the source placed inside a given block. Littré writes PROVERBE inside the very sense
+it illustrates; emitting every rubrique at entry level would keep the material but lose which sense
+it belonged to. A rubrique whose parent is the entry, or another rubrique, is not claimed here.
+"""
+rubriques_under(rubriques::Vector{Resolve.ResolvedRubrique}, node_id::AbstractString) =
+	filter(rubrique -> rubrique.parent_id == node_id, rubriques)
+
+function flatten_nodes(nodes::Vector{Resolve.ResolvedNode})::Vector{Resolve.ResolvedNode}
+	flattened = Resolve.ResolvedNode[]
+	visit(current) = for node in current
+		push!(flattened, node)
+		visit(node.children)
+	end
+	visit(nodes)
+	flattened
+end
+
+renderable(rubrique::Resolve.ResolvedRubrique) =
+	!(isempty(rubrique.items) && isempty(rubrique.etymology))
+
 function render_entry(io::IO, entry::Resolve.ResolvedEntry, names::Names, depth::Int)
 	name = names.entries[entry.span]
 	write(io, "<entry xml:id=\"", name, "\" xml:lang=\"", object_language, "\" type=\"mainEntry\">")
@@ -421,12 +457,15 @@ function render_entry(io::IO, entry::Resolve.ResolvedEntry, names::Names, depth:
 	end
 	for node in entry.nodes
 		newline(io, depth + 1)
-		render_node(io, node, names, depth + 1)
+		render_node(io, node, names, depth + 1, entry.rubriques)
 	end
 	# Source order: Littré puts HISTORIQUE before ÉTYMOLOGIE in some entries and after in others,
 	# and entry content is unordered under Lex-0, so nothing is gained by imposing a house order.
+	claimed = Set(rubrique.span for node in flatten_nodes(entry.nodes)
+		for rubrique in rubriques_under(entry.rubriques, node.node_id))
 	for rubrique in entry.rubriques
-		isempty(rubrique.items) && isempty(rubrique.etymology) && continue
+		renderable(rubrique) || continue
+		rubrique.span in claimed && continue
 		newline(io, depth + 1)
 		render_rubrique(io, rubrique, names, depth + 1)
 	end

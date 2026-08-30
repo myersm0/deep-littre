@@ -629,7 +629,7 @@ function resolve_rubrique(
 			rubrique_items(document, node, rubrique, conventions, resolution, references, findings),
 		)
 	end
-	ResolvedRubrique(rubrique.name, rubrique.raw_span, items, etymology)
+	ResolvedRubrique(rubrique.name, rubrique.raw_span, rubrique.parent_id, items, etymology)
 end
 
 """
