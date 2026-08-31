@@ -5,15 +5,17 @@
 
 Émile Littré's *Dictionnaire de la langue française* is a dictionary in four volumes plus a supplement, published from 1872 to 1877. It survives in digitized form thanks to François Gannaz's [XMLittré](https://bitbucket.org/Mytskine/xmlittre-data), an XML transcription of all 78,599 entries.
 
-Deep-Littré is a new edition built on top of XMLittré. It takes Gannaz's XML, works out even more of the structure from Littré's printed page, and publishes the result as [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html) XML and an SQLite database you can query.
+Deep-Littré is a new edition built on top of XMLittré. It recovers more of the structure implicit in Littré's printed page, and publishes the result as [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html) XML and an SQLite database you can query.
+
+**Status:** v0.3 is in development, with a substantially revised schema for better textual fidelity. The full dictionary builds and validates, but the contextual classification layer has not yet been run. See [Status](#status) and [Known limitations](#known-limitations). I expect to release v0.3 around the end of September, 2026.
 
 ## The problem
 
-Here's a small entry, *tronquer*, from a scan on Gallica:
+Here's a relatievly small entry, *tronquer*, from a scan on Gallica:
 
 ![Source gallica.bnf.fr / Bibliothèque nationale de France](docs/images/tronquer-print.png)
 
-Littré separates divisions with `||`. Three of them are numbered — `1° Retrancher, couper`, `2° Scier sur le tour`, `3° Fig.` — and one is not: `|| En parlant des statues, mutiler en partie`. That unnumbered division is not opening a new context, like the others, but rather narrowing the first sense to a particular context. On the printed page this is evident through its position.
+Littré separates divisions with `||`. The three numbered items are the word's _senses_: `1° Retrancher, couper`, `2° Scier sur le tour`, `3° Fig.`. One of them not numbered: `En parlant des statues, mutiler en partie`. That unnumbered division is not opening a new context, like the others, but rather narrowing the first sense to a particular context. On the printed page this is evident through its position.
 
 Some of that survives in XMLittré and some does not. Deep-Littré attempts to recover whatever structure of this sort that can be recovered unambiguously from the source.
 
@@ -38,7 +40,7 @@ Littré's `ID.` ("same author as above") keeps its printed form and gets a point
 </bibl>
 ```
 
-The etymology reads as running prose on the page. Each language and form in it becomes separately addressable, so you can ask the corpus which entries derive from Latin, or find every Provençal form Littré cites, without parsing sentences at query time:
+The etymology reads as running prose on the page. Each language and form in it becomes separately addressable, so you can ask the corpus which entries derive from Latin, or find every Provençal form Littré cites:
 
 ```xml
 <etym>
@@ -81,21 +83,32 @@ The unnumbered division is harder, and today it comes out coarsely defined, with
 </sense>
 ```
 
-Three things share that definition: *En parlant des statues* names the context this reading applies to, *mutiler en partie* is the definition proper, and the sentence about the statues of Rome is an example. Nothing in the source marks the boundaries between them. Telling them apart requires _context_.
+Three things share that definition: *En parlant des statues* names the context this reading applies to, *mutiler en partie* is the definition proper, and the sentence about the statues of Rome is an example. Nothing in the source marks the boundaries between them. Telling them apart requires context.
 
-## How it works, briefly
+## How it works
 
 XMLittré already tags a great deal: pronunciations, grammatical categories, etymologies, quotations with their authors, cross-references, the named HISTORIQUE and ÉTYMOLOGIE sections. Deep-Littré reconstructs those mechanically. Every published fact stays traceable to a byte offset in the file Gannaz distributes, so you can always check it against the source.
 
 The rest needs contextual judgment. Markers like the `Fig.` above are usually tagged — but roughly 6,900 of them sit in the text as ordinary prose, looking no different from the definitions around them.
 
-The question being asked is deliberately narrow: given a stretch of text, which characters are the expression, which are its definition, and which are a marker qualifying either. It is a question about parsing a sentence, not about deciding what kind of lexicographic object it is. Where the answer is ambiguous, nothing is marked and the text stays as Littré wrote it, undivided. The aim is simply a correct reading and structuring of the text.
+The next stage, coming soon, asks deliberately narrow questions: given a stretch of text, which characters are an expression, which are its definition, and which are a marker qualifying either? Where the answer is ambiguous, nothing is marked and the text remains undivided. The aim is simply a correct reading and structuring of the text.
 
 ## Status
 
-**v0.3, in development.** The pipeline builds the whole dictionary, validates against the TEI Lex-0 schema, and produces both outputs. What you get today is structurally accurate but coarse: every explicit fact from the source is there, correctly placed and anchored, but the contextual judgment layer described above has not been run yet. Divisions like *En parlant des statues* stay as they appear above until it has.
+**v0.3, in development.** The pipeline builds the whole dictionary, validates its XML against the TEI Lex-0 schema, and produces both TEI and SQLite outputs. Most explicitly encoded source structure is already recovered and normalized, but the contextual judgment layer described above has not yet been run. Divisions like _En parlant des statues_ therefore remain coarse, for now.
 
-That work is next, and it is the subject of the project's ongoing research. Expect the structure to grow richer without existing facts moving.
+That classification work is next. It is intended to enrich the structure without replacing the underlying source-derived text.
+
+### Known limitations
+
+Deep-Littré should not yet be treated as a lossless transcription of either XMLittré or Littré's print. In particular:
+
+- Some entry-header text is currently lost. In 3,357 entries, XMLittré has additional conjugational or grammatical text immediately after `<prononciation>` inside `<entete>`. For example, `TRONQUER` continues after "tron-ké" with "je tronquais, nous tronquions [...]." The current pipeline retains the pronunciation itself but discards this trailing material.
+- Some cross-references cannot yet be linked. Reference resolution handles ordinary headwords and comma-separated gender variants, but not every complex headword shape. An entry such as `ADMONÉTER ou ADMONESTER`, for example, is indexed under the full expression rather than under each alternative, so a reference to one alternative may be emitted without a target. Consumers should not assume that a missing target means the referenced entry is absent.
+- Contextual structure is still coarse. Unmarked locutions, qualification boundaries, examples embedded in prose, and similar distinctions remain unresolved until the classification pass is run.
+- The immediate source is XMLittré, not the print. XMLittré contains editorial choices and normalization of its own. Deep-Littré preserves provenance back to that edition; print-level fidelity has been checked selectively rather than exhaustively.
+
+Known issues and design decisions are documented in `docs/`.
 
 ## Using it
 
