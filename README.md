@@ -7,9 +7,10 @@
 
 Deep-Littré is a new edition built on top of XMLittré. It recovers more of the structure implicit in Littré's printed page, and publishes the result as [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html) XML and an SQLite database you can query.
 
-**Status:** v0.3 is in development, with a substantially revised schema for better textual fidelity. The full dictionary builds and validates, but the contextual classification layer has not yet been run. See [Status](#status) and [Known limitations](#known-limitations). I expect to release v0.3 around the end of September, 2026.
+> [!IMPORTANT]
+v0.3 is in development, with a substantially revised schema for better textual fidelity. The full dictionary builds and validates, but the contextual classification layer has not yet been run. See [Status](#status) and [Known limitations](#known-limitations). I expect to release v0.3 around the end of September, 2026.
 
-## The problem
+## A small example: TRONQUER
 
 Here's a relatievly small entry, *tronquer*, from a scan on Gallica:
 
