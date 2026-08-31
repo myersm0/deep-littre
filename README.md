@@ -12,11 +12,11 @@ v0.3 is in development, with a substantially revised schema for better textual f
 
 ## A small example: TRONQUER
 
-Here's a relatievly small entry, *tronquer*, from a scan on Gallica:
+Here's a relatively small entry, *tronquer*, from a scan on Gallica:
 <p align="center">
   <img src="docs/images/tronquer-print.png" width="40%">
 </p>
-Littré separates divisions with `||`. The three numbered items are the word's _senses_: `1° Retrancher, couper`, `2° Scier sur le tour`, `3° Fig.`. One of them not numbered: `En parlant des statues, mutiler en partie`. That unnumbered division is not opening a new context, like the others, but rather narrowing the first sense to a particular context. On the printed page this is evident through its position.
+Littré separates divisions with `||`. The three numbered items are the word's _senses_: `1° Retrancher, couper`, `2° Scier sur le tour`, `3° Fig.`. One of them is not numbered: `En parlant des statues, mutiler en partie`. That unnumbered division is not opening a new context, like the others, but rather narrowing the first sense to a particular context. On the printed page this is evident through its position.
 
 Some of that survives in XMLittré and some does not. Deep-Littré attempts to recover whatever structure of this sort that can be recovered unambiguously from the source.
 
