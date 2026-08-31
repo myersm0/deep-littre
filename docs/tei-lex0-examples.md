@@ -11,7 +11,7 @@ All examples target the pinned TEI Lex-0 v0.9.5 RNG. When an example and the pro
 ```xml
 <entry xml:id="agamie" xml:lang="fr-x-lit19c" type="mainEntry">
   <form type="lemma">
-    <orth norm="agamie">AGAMIE</orth>
+    <orth>AGAMIE</orth>
     <pron>a-ga-mie</pron>
   </form>
   <gramGrp>
@@ -31,7 +31,7 @@ Important points:
 - top-level entries are `type="mainEntry"`;
 - `<form>` is typed;
 - entry grammar is a direct child of `<entry>`;
-- printed casing is preserved while `orth/@norm` supplies a normalized form.
+- the lemma `<orth>` preserves the printed headword; casing normalization is not published merely because the renderer can compute it internally.
 
 ## 2. Cross-reference in etymology: AGAMIE
 
@@ -224,71 +224,68 @@ Proverbial is a `meaningType` value, not a node type or independent property axi
 
 Whether the proverb is a `SubLemma` or belongs on an ordinary sense is an adjudication question separate from the proverbial qualification.
 
-## 9. Etymon and cognates: TRONQUER pattern
 
-A validated structural target for the etymological account is:
+Before a proverb has been adjudicated as entry-shaped, its rubrique may remain coarse while still
+preserving the printed heading and its lifted attestation:
+
+```xml
+<note type="proverb" xml:id="enfanter_proverb_1"><seg type="label">Proverbe.</seg> <seg type="example">C'est la montagne qui enfante une souris</seg>, ou <seg type="example">la montagne a enfanté une souris</seg>, se dit de grands projets qui viennent à rien.</note>
+<cit type="example" xml:id="enfanter_c21" subtype="proverb" corresp="#enfanter_proverb_1">
+  <quote>Que produira l'auteur après tous ces grands cris ? La montagne en travail enfante une souris</quote>
+  <bibl><author>BOILEAU</author><biblScope>Art p. III</biblScope></bibl>
+</cit>
+```
+
+The single note distinguishes the printed heading with `seg/@type="label"` instead of manufacturing a
+second proverb note. `@corresp` preserves the relationship to a citation that Lex-0 requires to be
+lifted outside the note. If adjudication later establishes a `SubLemma`, the proverb becomes a
+`relatedEntry` and its citation can live inside that semantic node instead.
+
+## 9. Etymons and cognate: ACCOUPLER pattern
+
+The reviewed ACCOUPLER etymology is a useful canonical case because it contains compound sources,
+an unmarked connector, punctuation, a regional label, and a cognate:
 
 ```xml
 <etym>
-  <cit type="cognate" xml:lang="oc">
-    <lang expand="provençal" norm="oc">Provenç.</lang>
-    <form><orth>troncar</orth></form>
-  </cit>
-  <lbl>et</lbl>
-  <cit type="cognate" xml:lang="es">
-    <lang expand="espagnol" norm="es">espagn.</lang>
-    <form><orth>troncar</orth></form>
-  </cit>
-  <cit type="cognate" xml:lang="it">
-    <lang expand="italien" norm="it">ital.</lang>
-    <form><orth>troncare</orth></form>
-  </cit>
-  <lbl>du</lbl>
-  <cit type="etymon" xml:lang="la">
-    <lang expand="latin" norm="la">latin</lang>
-    <form><orth>truncare</orth></form>
-  </cit>
-  <xr type="related">
-    <lbl>voy.</lbl>
-    <ref type="entry" target="#tronc">TRONC</ref>
-  </xr>
-  ...historical attestations...
+  <cit type="etymon" xml:lang="fr"><form><orth rend="italic">À</orth></form></cit> et <cit type="etymon" xml:lang="fr"><form><orth rend="italic">couple</orth></form></cit> <pc>;</pc> <cit type="cognate" xml:lang="fr-x-berrich"><lang expand="berrichon" norm="fr-x-berrich">Berry</lang><pc>,</pc><form><orth rend="italic">accoubler</orth></form></cit><pc>.</pc>
 </etym>
 ```
 
-The etymology event/segment model can produce this structure without relying on `IndentRole`.
+`À` and `couple` are lexical sources of the compound, so they use Lex-0's standard `cit/@type="etymon"`
+rather than a project-specific component type. `accoubler` is the cognate. Source capitalization and
+etymological italics are preserved, unmarked `et` remains ordinary text, and punctuation is emitted
+as `<pc>` in source order.
 
-## 10. Historical attestations inside `<etym>`
+## 10. Historical attestations are siblings of `<etym>`
 
-The July document originally proposed direct `<date>` children of `<etym>`. The pinned RNG rejects that structure.
-
-The validated Deep-Littré pattern is:
+Historical material from `HISTORIQUE` is not folded into the etymological account. Century labels and
+attestations serialize at entry level, parallel to `<etym>`:
 
 ```xml
-<etym>
-  ...etymological account...
-  <lbl>XVe s.</lbl>
-  <cit type="example" ana="attestation">
-    <quote>Icellui Perrenet se print à copper et troncer lesdiz ormes</quote>
-    <bibl>
-      <author>DU CANGE</author>
-      <biblScope>troncire.</biblScope>
-      <date notBefore="1401" notAfter="1500">XVe s.</date>
-    </bibl>
-  </cit>
-  <lbl>XVIe s.</lbl>
-  <cit type="example" ana="attestation">
-    <quote>Un corps tronqué de teste</quote>
-    <bibl>
-      <author>RONS.</author>
-      <biblScope>675</biblScope>
-      <date notBefore="1501" notAfter="1600">XVIe s.</date>
-    </bibl>
-  </cit>
-</etym>
+<lbl type="dateRange">XVe s.</lbl>
+<cit type="example" xml:id="tronquer_c1" subtype="attestation">
+  <quote>Icellui Perrenet se print à copper et troncer lesdiz ormes</quote>
+  <bibl>
+    <author>DU CANGE</author>
+    <biblScope>troncire.</biblScope>
+    <date notBefore="1401" notAfter="1500">XVe s.</date>
+  </bibl>
+</cit>
+<lbl type="dateRange">XVIe s.</lbl>
+<cit type="example" xml:id="tronquer_c2" subtype="attestation">
+  <quote>Un corps tronqué de teste</quote>
+  <bibl>
+    <author>RONS.</author>
+    <biblScope>675</biblScope>
+    <date notBefore="1501" notAfter="1600">XVIe s.</date>
+  </bibl>
+</cit>
+<etym>...</etym>
 ```
 
-`ana="attestation"` carries the diachronic distinction while `cit/@type` remains within the schema's accepted vocabulary.
+`subtype="attestation"` carries the diachronic distinction while `cit/@type` stays within the pinned
+schema's closed vocabulary. `@ana` is not used for this processing/structural distinction.
 
 ## 11. Reconstructed etymon and suspect token: VOULOIR pattern
 
@@ -337,7 +334,7 @@ A normal pronunciation:
 
 ```xml
 <form type="lemma">
-  <orth norm="agamie">AGAMIE</orth>
+  <orth>AGAMIE</orth>
   <pron>a-ga-mie</pron>
 </form>
 ```
@@ -373,11 +370,11 @@ The authoritative adjudication store records whether the relevant passes are unr
 These are appropriate corpus-facing annotations in the current project convention:
 
 ```xml
-<cit type="example" ana="attestation">...</cit>
+<cit type="example" subtype="attestation">...</cit>
 <lbl ana="suspect">...</lbl>
 ```
 
-because they state something about the represented material.
+because they state something about the represented material: `subtype="attestation"` is a corpus-facing citation distinction, while `ana="suspect"` is an explicit editorial epistemic claim.
 
 This is not:
 

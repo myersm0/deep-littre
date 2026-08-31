@@ -39,7 +39,10 @@ projected_laminar(left::ProjectedSpan, right::ProjectedSpan)::Bool =
 struct Constituent
 	name::String
 	span::ProjectedSpan
+	value::Union{Nothing, String}
 end
+
+Constituent(name, span) = Constituent(name, span, nothing)
 
 struct NodeAssertion
 	node_id::String
@@ -72,7 +75,10 @@ end
 struct AnchoredConstituent
 	name::String
 	span::RawSpan
+	value::Union{Nothing, String}
 end
+
+AnchoredConstituent(name, span) = AnchoredConstituent(name, span, nothing)
 
 struct AnchoredNodeAssertion
 	node_id::String

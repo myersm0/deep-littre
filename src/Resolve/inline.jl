@@ -177,14 +177,18 @@ function gather_node!(builder::InlineBuilder, child::XML.FlatNode, excluded::Vec
 						resolve_reference(builder.references, reference),
 				))
 			elseif name in ("i", "exemple", "mentioned", "foreign")
-				language = Source.attribute(child, "lang")
-				language === nothing && (language = Source.attribute(child, "xml:lang"))
-				push_item!(builder, Emphasis(
-					collapse_inline(document, child),
-					Source.to_raw(document.transform, span)[1],
-					name,
-					language,
-				))
+				if any(candidate -> !Source.disjoint(candidate, span), excluded)
+					gather_inline!(builder, child, excluded)
+				else
+					language = Source.attribute(child, "lang")
+					language === nothing && (language = Source.attribute(child, "xml:lang"))
+					push_item!(builder, Emphasis(
+						collapse_inline(document, child),
+						Source.to_raw(document.transform, span)[1],
+						name,
+						language,
+					))
+				end
 			else
 				gather_inline!(builder, child, excluded)
 			end

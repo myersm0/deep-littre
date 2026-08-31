@@ -11,24 +11,30 @@ struct PassDefinition
 end
 
 const sublemma_pass = PassDefinition(
-	"sublemma", 1, SubLemma(), "structural_blocks", 1,
+	"sublemma", 1, SubLemma(), "structural_blocks", 2,
 	block_text_projection, block_text_version, true,
 	"Does this material introduce a sub-lemma: a multiword unit presented under the lemma with its own sense material?",
 )
 
 const qualification_scope_pass = PassDefinition(
-	"qualification_scope", 1, nothing, "qualification_blocks", 1,
+	"qualification_scope", 1, nothing, "qualification_blocks", 2,
 	block_text_projection, block_text_version, false,
 	"Does any qualification marker in this material govern something other than the block that contains it?",
 )
 
+const bare_qualification_pass = PassDefinition(
+	"bare_qualification", 1, nothing, "qualification_blocks", 2,
+	block_text_projection, block_text_version, false,
+	"Does this material contain a qualification marker printed as bare prose rather than explicit markup, and if so, what material does it govern?",
+)
+
 const voice_variant_pass = PassDefinition(
-	"voice_variant", 1, VoiceVariant(), "structural_blocks", 1,
+	"voice_variant", 1, VoiceVariant(), "structural_blocks", 2,
 	block_text_projection, block_text_version, true,
 	"Does this material introduce a separately form-bearing pronominal or reflexive variant of the current lemma, rather than merely state a grammatical construction or usage?",
 )
 
-const current_passes = (sublemma_pass, voice_variant_pass, qualification_scope_pass)
+const current_passes = (sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass)
 
 const structural_passes = filter(pass -> pass.node_type !== nothing, current_passes)
 const scope_passes = filter(pass -> pass.node_type === nothing, current_passes)
@@ -42,16 +48,18 @@ in_structural_population(::Census.Indent) = true
 in_structural_population(::Census.Variante) = true
 in_structural_population(::Census.ResumeIndent) = false
 in_structural_population(::Census.ResumeVariante) = false
-in_structural_population(::Census.RubriqueIndent) = false
-in_structural_population(::Census.RubriqueVariante) = false
+in_structural_population(::Census.RubriqueIndent) = true
+in_structural_population(::Census.RubriqueVariante) = true
+in_structural_population(::Census.RubriqueDirect) = true
 in_structural_population(::Census.EnteteNature) = false
 
 in_qualification_population(::Census.Indent) = true
 in_qualification_population(::Census.Variante) = true
 in_qualification_population(::Census.ResumeIndent) = false
 in_qualification_population(::Census.ResumeVariante) = false
-in_qualification_population(::Census.RubriqueIndent) = false
-in_qualification_population(::Census.RubriqueVariante) = false
+in_qualification_population(::Census.RubriqueIndent) = true
+in_qualification_population(::Census.RubriqueVariante) = true
+in_qualification_population(::Census.RubriqueDirect) = true
 in_qualification_population(::Census.EnteteNature) = false
 
 const structural_blocks_population = "structural_blocks"
@@ -88,13 +96,29 @@ struct AdjudicationItem
 	markers::Vector{SurfaceMarker}
 end
 
+struct FormReading
+	selection::String
+	value::Union{Nothing, String}
+end
+
+FormReading(selection::AbstractString) = FormReading(String(selection), nothing)
+
 struct FormSelection
 	node::String
-	form::String
+	forms::Vector{FormReading}
 	gloss::Union{Nothing, String}
 end
 
-FormSelection(node, form) = FormSelection(node, form, nothing)
+FormSelection(node::AbstractString, form::AbstractString) =
+	FormSelection(String(node), FormReading[FormReading(form)], nothing)
+FormSelection(node::AbstractString, form::AbstractString, gloss::Union{Nothing, AbstractString}) =
+	FormSelection(String(node), FormReading[FormReading(form)], gloss === nothing ? nothing : String(gloss))
+FormSelection(node::AbstractString, forms::Vector{<:AbstractString}) =
+	FormSelection(String(node), FormReading[FormReading(form) for form in forms], nothing)
+FormSelection(node::AbstractString, forms::Vector{<:AbstractString}, gloss::Union{Nothing, AbstractString}) =
+	FormSelection(String(node), FormReading[FormReading(form) for form in forms], gloss === nothing ? nothing : String(gloss))
+FormSelection(node::AbstractString, forms::Vector{FormReading}) =
+	FormSelection(String(node), forms, nothing)
 
 struct ScopeSelection
 	marker::String
@@ -377,19 +401,64 @@ function validate_residuals(
 	nothing
 end
 
+
+function constituent_shape_error(constituents)::Union{Nothing, String}
+	all(item -> item.name in ("form", "gloss"), constituents) ||
+		return "unknown constituent name"
+	glosses = filter(item -> item.name == "gloss", constituents)
+	length(glosses) <= 1 || return "a form-bearing node may carry at most one gloss"
+	all(item -> item.name == "form" || item.value === nothing, constituents) ||
+		return "only form constituents may carry an editorial value"
+	forms = filter(item -> item.name == "form", constituents)
+	isempty(forms) && return "a form-bearing node needs at least one form"
+	for form in forms
+		if form.value !== nothing && isempty(strip(form.value))
+			return "a form value may not be empty"
+		end
+	end
+	for left in eachindex(forms), right in (left + 1):lastindex(forms)
+		first_form = forms[left]
+		second_form = forms[right]
+		same = projected_covers(first_form.span, second_form.span) &&
+			projected_covers(second_form.span, first_form.span)
+		if same
+			(first_form.value !== nothing && second_form.value !== nothing &&
+				first_form.value != second_form.value) ||
+				return "coincident form spans require distinct editorial values"
+		elseif !projected_disjoint(first_form.span, second_form.span)
+			return "form spans must be disjoint or coincident readings of one surface span"
+		elseif first_form.span.start_byte > second_form.span.start_byte
+			return "disjoint form spans must be supplied in source order"
+		end
+	end
+	nothing
+end
+
 function build_assertions(
 	item::AdjudicationItem, pass::PassDefinition, decision::Decision,
 )::Vector{NodeAssertion}
 	assertions = NodeAssertion[]
 	for selection in decision.selections
 		span = resolve_selection(item, pass, selection.node, "node")
+		isempty(selection.forms) && throw(ReviewItem(
+			item.item_id, pass.pass, "schema_violation", "a form-bearing node needs at least one form",
+		))
 		constituents = Constituent[
-			Constituent("form", resolve_selection(item, pass, selection.form, "form")),
+			Constituent(
+				"form",
+				resolve_selection(item, pass, form.selection, "form"),
+				form.value,
+			)
+			for form in selection.forms
 		]
 		selection.gloss === nothing || push!(
 			constituents,
 			Constituent("gloss", resolve_selection(item, pass, selection.gloss, "gloss")),
 		)
+		geometry_error = constituent_shape_error(constituents)
+		geometry_error === nothing || throw(ReviewItem(
+			item.item_id, pass.pass, "schema_violation", geometry_error,
+		))
 		form_bearing(pass.node_type) || throw(ReviewItem(
 			item.item_id, pass.pass, "schema_violation",
 			"$(node_type_name(pass.node_type)) is not form-bearing",
@@ -406,23 +475,47 @@ function marker_for_selection(
 	length(matches) == 1 ? only(matches) : nothing
 end
 
+is_bare_marker_pass(pass::PassDefinition)::Bool = pass.pass == bare_qualification_pass.pass
+
+function selected_marker_span(
+	item::AdjudicationItem, pass::PassDefinition, selected::ProjectedSpan,
+)::Union{Nothing, ProjectedSpan}
+	if is_bare_marker_pass(pass)
+		all(marker -> projected_disjoint(marker.span, selected), item.markers) || return nothing
+		return selected
+	end
+	marker = marker_for_selection(item, selected)
+	marker === nothing ? nothing : marker.span
+end
+
+function valid_scope_marker(
+	item::AdjudicationItem, pass::PassDefinition, selected::ProjectedSpan,
+)::Bool
+	if is_bare_marker_pass(pass)
+		return all(marker -> projected_disjoint(marker.span, selected), item.markers)
+	end
+	any(marker -> marker.span == selected, item.markers)
+end
+
 function build_scopes(
 	item::AdjudicationItem, pass::PassDefinition, decision::Decision,
 )::Vector{ScopeAssertion}
 	scopes = ScopeAssertion[]
 	for selection in decision.scopes
 		selected = resolve_selection(item, pass, selection.marker, "marker")
-		marker = marker_for_selection(item, selected)
-		marker === nothing && throw(ReviewItem(
+		marker_span = selected_marker_span(item, pass, selected)
+		marker_span === nothing && throw(ReviewItem(
 			item.item_id, pass.pass, "not_a_marker",
-			"$(repr(selection.marker)) is not an unambiguous qualification marker in this block",
+			is_bare_marker_pass(pass) ?
+				"$(repr(selection.marker)) overlaps an explicit qualification marker" :
+				"$(repr(selection.marker)) is not an unambiguous qualification marker in this block",
 		))
 		target = resolve_selection(item, pass, selection.target, "scope target")
-		projected_disjoint(marker.span, target) || throw(ReviewItem(
+		projected_disjoint(marker_span, target) || throw(ReviewItem(
 			item.item_id, pass.pass, "scope_contains_marker",
 			"a marker may not be inside the material it governs",
 		))
-		push!(scopes, ScopeAssertion(marker.span, target))
+		push!(scopes, ScopeAssertion(marker_span, target))
 	end
 	scopes
 end
@@ -584,6 +677,10 @@ function validate_record_shape(
 		valid_projected_span(item.projection.text, assertion.span) || throw(StoreIntegrityError(
 			"record $(record.record_id) has an invalid node span $(assertion.span)",
 		))
+		geometry_error = constituent_shape_error(assertion.constituents)
+		geometry_error === nothing || throw(StoreIntegrityError(
+			"record $(record.record_id) has invalid form constituents: $(geometry_error)",
+		))
 		for constituent in assertion.constituents
 			valid_projected_span(item.projection.text, constituent.span) || throw(StoreIntegrityError(
 				"record $(record.record_id) has an invalid constituent span $(constituent.span)",
@@ -625,8 +722,8 @@ function validate_record_shape(
 		projected_disjoint(scope.marker, scope.target) || throw(StoreIntegrityError(
 			"record $(record.record_id) has an overlapping scope marker and target",
 		))
-		any(marker -> marker.span == scope.marker, item.markers) || throw(StoreIntegrityError(
-			"record $(record.record_id) names material that is no longer a qualification marker",
+		valid_scope_marker(item, pass, scope.marker) || throw(StoreIntegrityError(
+			"record $(record.record_id) names material that is no longer a valid qualification marker",
 		))
 	end
 	if record.outcome == :positive && pass.exhaustive_extraction
@@ -672,6 +769,7 @@ function materialize_record(
 				AnchoredConstituent(
 					constituent.name,
 					materialize_span(document, item.projection, constituent.span),
+					constituent.value,
 				)
 				for constituent in assertion.constituents
 			],
@@ -680,9 +778,13 @@ function materialize_record(
 	]
 	scopes = AnchoredScopeAssertion[]
 	for scope in record.scopes
-		marker = only(filter(candidate -> candidate.span == scope.marker, item.markers))
+		marker = if is_bare_marker_pass(pass)
+			materialize_span(document, item.projection, scope.marker)
+		else
+			only(filter(candidate -> candidate.span == scope.marker, item.markers)).source
+		end
 		push!(scopes, AnchoredScopeAssertion(
-			marker.source,
+			marker,
 			materialize_span(document, item.projection, scope.target),
 		))
 	end

@@ -67,10 +67,20 @@ using DeepLittre.Render: render_tei, render_sqlite
 		@test occursin("<etym>", text)
 		@test occursin("<cit type=\"etymon\" xml:lang=\"la\">", text)
 		@test occursin("<lang expand=\"provençal\" norm=\"pro\">", text)
-		@test occursin("<form><orth>angustia</orth></form>", text)
-		@test occursin("<author ana=\"resolved\">", text)
-		@test !occursin("<author>ID.</author>", text)
+		@test occursin("<form><orth rend=\"italic\">angustia</orth></form>", text)
+		@test occursin(r"<author corresp=\"#[^\"]+\">ID\.</author>", text)
+		@test occursin(r"<biblScope corresp=\"#[^\"]+\">ib\.", text)
+		@test !occursin("<author ana=\"resolved\">", text)
 		@test occursin("<lbl type=\"dateRange\">", text)
+	end
+
+	@testset "grammatical marker separators survive serialization" begin
+		text = read(tei_path, String)
+		@test occursin(r"<gram[^>]*>v\.</gram> <gram[^>]*>a\.</gram>", text)
+		@test occursin(
+			r"<gram[^>]*>[Ss]\.</gram> <gram[^>]*>m\.</gram> et <gram[^>]*>f\.</gram>",
+			text,
+		)
 	end
 
 	@testset "no workflow state is published as markup" begin
@@ -78,7 +88,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 		# @ana carries epistemic provenance, which is legitimate; it must never carry pipeline
 		# workflow state. Whitelist rather than ban, so a new value has to be considered.
 		values = Set(match.captures[1] for match in eachmatch(r"ana=\"([^\"]+)\"", text))
-		@test values ⊆ Set(["resolved", "suspect"])
+		@test values ⊆ Set(["suspect"])
 		for state in ("unclassified", "unresolved", "stale_context", "underdetermined")
 			@test !occursin(state, text)
 		end
@@ -118,8 +128,17 @@ using DeepLittre.Render: render_tei, render_sqlite
 		@test count_of("select count(*) from rubriques") > 20
 		@test count_of("select count(*) from etymology where kind = 'cit'") >= 30
 		@test count_of("select count(*) from etymology where cit_type = 'etymon'") >= 1
+
+		# The fallback is a fact about this parser, not about Littré or Gannaz, so it travels in
+		# review beside the suspect residue and leaves the published edition alone.
+		@test count_of(
+			"select count(*) from review where category = 'etymology_unsegmented'",
+		) >= 1
+		@test !occursin("unsegmented", read(tei_path, String))
 		@test count_of("select count(*) from citations where resolution = 'resolved'") >= 50
 		@test count_of("select count(*) from citations where author = 'ID.' and resolved_author = 'ID.'") == 0
+		@test count_of("select count(*) from citations where resolution = 'resolved' and author_antecedent_id is not null") >= 50
+		@test count_of("select count(*) from citations where reference_resolution = 'resolved' and reference_antecedent_id is not null") >= 1
 
 		@test count_of("select count(*) from nodes where node_type = 'SubLemma'") == 1
 		@test count_of("select count(*) from nodes where node_type is null") ==
@@ -127,11 +146,13 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 		coverage = first(DBInterface.execute(database,
 			"select population_size, examined, positive from coverage where pass = 'sublemma'"))
-		@test coverage[1] == 351
+		@test coverage[1] == 464
 		@test coverage[2] == 1
 		@test coverage[3] == 1
 
-		@test count_of("select count(*) from review") == 0
+		@test count_of(
+			"select count(*) from review where category not like 'etymology_%'",
+		) == 0
 		@test count_of("select count(*) from constituents") == 2
 		@test first(DBInterface.execute(database,
 			"select separator from nodes where node_type = 'SubLemma'"))[1] == ","
@@ -163,6 +184,12 @@ using DeepLittre.Render: render_tei, render_sqlite
 		@test count_of(
 			"select count(*) from content_segments where source_element = 'exemple'",
 		) >= 1
+		@test count_of(
+			"select count(*) from content_segments where source_element = 'exemple' and editorial_origin = 'gannaz'",
+		) == count_of("select count(*) from content_segments where source_element = 'exemple'")
+		@test count_of(
+			"select count(*) from content_segments where source_element != 'exemple' and editorial_origin is not null",
+		) == 0
 		for owner in ("node", "rubrique", "citation")
 			@test count_of(
 				"select count(*) from content_segments where owner_kind = '$(owner)'",

@@ -149,6 +149,31 @@ function qualification_markers(
 	(qualifications, spans)
 end
 
+
+function bare_qualification_markers(
+	document::Source.SourceDocument, state::AdjudicationState, block::Census.SourceBlock,
+)::Tuple{Vector{Qualification}, Vector{ViewSpan}}
+	record = sole(records_for(state, block, Adjudication.bare_qualification_pass.pass))
+	(record === nothing || record.outcome != :positive) && return (Qualification[], ViewSpan[])
+	node = Adjudication.element_at(document, block.view_span)
+	projection = Adjudication.project(document, node)
+	qualifications = Qualification[]
+	spans = ViewSpan[]
+	seen = Set{Tuple{String, Int, Int}}()
+	for scope in record.scopes
+		key = (scope.marker.file, scope.marker.start_byte, scope.marker.end_byte)
+		key in seen && continue
+		push!(seen, key)
+		view = Source.to_view(document.transform, scope.marker)
+		content = Adjudication.projected_text(projection, view)
+		for qualification in route_qualifications(content, scope.marker)
+			push!(qualifications, rescope(qualification, AssertedScope(scope.target)))
+		end
+		push!(spans, view)
+	end
+	(qualifications, spans)
+end
+
 function route_qualifications(content::AbstractString, span::RawSpan)::Vector{Qualification}
 	qualifications = Qualification[]
 	for (target, printed) in route_spans(content)
@@ -156,8 +181,9 @@ function route_qualifications(content::AbstractString, span::RawSpan)::Vector{Qu
 			push!(qualifications, Qualification(:usg, target.kind, target.norm, printed, span))
 		else
 			for element in target
+				element_printed = length(target) == 1 ? printed : element.printed
 				push!(qualifications, Qualification(
-					:gram, element.kind, element.norm, element.printed, span,
+					:gram, element.kind, element.norm, element_printed, printed, span,
 				))
 			end
 		end
@@ -166,70 +192,93 @@ function route_qualifications(content::AbstractString, span::RawSpan)::Vector{Qu
 end
 
 const anaphoric_author = "ID."
+const anaphoric_reference_pattern = r"(?i)^ib\."
+
+struct CitationAnaphora
+	resolved_author::String
+	author_resolution::Symbol
+	author_antecedent::Union{Nothing, RawSpan}
+	reference_antecedent::Union{Nothing, RawSpan}
+	reference_resolution::Symbol
+end
 
 function build_citation(
 	document::Source.SourceDocument, node::XML.FlatNode, span::ViewSpan,
-	resolution::Dict{Int, Tuple{String, Symbol}}, references::CrossReferenceIndex,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
 )::Citation
 	printed = something(Source.attribute(node, "aut"), "")
-	(resolved, how) = get(resolution, span.start_byte, (printed, :printed))
+	reference = something(Source.attribute(node, "ref"), "")
+	default = CitationAnaphora(
+		printed, isempty(printed) ? :absent : :printed, nothing, nothing,
+		isempty(reference) ? :absent : :printed,
+	)
+	anaphora = get(resolution, span.start_byte, default)
 	Citation(
 		Source.to_raw(document.transform, span)[1],
 		inline_content(document, node, ViewSpan[], references),
 		printed,
-		resolved,
-		how,
-		something(Source.attribute(node, "ref"), ""),
+		anaphora.resolved_author,
+		anaphora.author_resolution,
+		anaphora.author_antecedent,
+		reference,
+		anaphora.reference_antecedent,
+		anaphora.reference_resolution,
 	)
 end
 
-"""
-	author_resolution(document, entry)
-
-Littré writes `ID.` for a citation whose source is the immediately preceding citation. The
-antecedent is a property of the printed page, so resolution walks every citation in the entry in
-*source* order rather than in semantic order — the semantic tree is built later and may attach
-citations to nodes by containment, which would reorder them. An antecedent citation can itself
-carry no author; that is distinct from there being no antecedent at all.
-
-Returns, per citation, the resolved author and how it was arrived at. No author table is involved
-or needed: this is anaphora over what the source already prints.
-"""
 function author_resolution(
 	document::Source.SourceDocument, entry::XML.FlatNode,
-)::Dict{Int, Tuple{String, Symbol}}
-	found = Tuple{Int, String}[]
+)::Dict{Int, CitationAnaphora}
+	found = Tuple{Int, RawSpan, String, String}[]
 	collect_citations!(found, document, entry)
 	sort!(found; by = first)
-	resolution = Dict{Int, Tuple{String, Symbol}}()
+	resolution = Dict{Int, CitationAnaphora}()
+	previous_span = nothing
 	previous_author = ""
-	previous_resolution = :none
-	for (position, author) in found
+	previous_author_resolution = :none
+	for (position, span, author, reference) in found
+		author_antecedent = nothing
 		if author == anaphoric_author
-			if previous_resolution in (:none, :unresolved)
-				resolution[position] = (author, :unresolved)
+			author_antecedent = previous_span
+			if previous_span === nothing || previous_author_resolution in (:none, :unresolved)
+				resolved_author, author_resolution = author, :unresolved
 			elseif isempty(previous_author)
-				resolution[position] = ("", :antecedent_absent)
+				resolved_author, author_resolution = "", :antecedent_absent
 			else
-				resolution[position] = (previous_author, :resolved)
+				resolved_author, author_resolution = previous_author, :resolved
 			end
 		else
-			resolution[position] = isempty(author) ? ("", :absent) : (author, :printed)
+			resolved_author = author
+			author_resolution = isempty(author) ? :absent : :printed
 		end
-		previous_author, previous_resolution = resolution[position]
+		reference_anaphoric = occursin(anaphoric_reference_pattern, reference)
+		reference_antecedent = reference_anaphoric ? previous_span : nothing
+		reference_resolution = reference_anaphoric ?
+			(previous_span === nothing ? :unresolved : :resolved) :
+			(isempty(reference) ? :absent : :printed)
+		resolution[position] = CitationAnaphora(
+			resolved_author, author_resolution, author_antecedent,
+			reference_antecedent, reference_resolution,
+		)
+		previous_span = span
+		previous_author = resolved_author
+		previous_author_resolution = author_resolution
 	end
 	resolution
 end
 
 function collect_citations!(
-	found::Vector{Tuple{Int, String}}, document::Source.SourceDocument, node::XML.FlatNode,
+	found::Vector{Tuple{Int, RawSpan, String, String}}, document::Source.SourceDocument,
+	node::XML.FlatNode,
 )
 	for child in XML.children(node)
 		XML.nodetype(child) == XML.Element || continue
 		if XML.tag(child) == "cit"
+			view = Source.node_view_span(document, child)
 			push!(found, (
-				Source.node_view_span(document, child).start_byte,
+				view.start_byte, Source.to_raw(document.transform, view)[1],
 				something(Source.attribute(child, "aut"), ""),
+				something(Source.attribute(child, "ref"), ""),
 			))
 		else
 			collect_citations!(found, document, child)
@@ -240,7 +289,7 @@ end
 
 function citations(
 	document::Source.SourceDocument, node::XML.FlatNode,
-	resolution::Dict{Int, Tuple{String, Symbol}}, references::CrossReferenceIndex,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
 )::Tuple{Vector{Citation}, Vector{ViewSpan}}
 	found = Citation[]
 	spans = ViewSpan[]
@@ -281,11 +330,15 @@ function asserted_nodes(
 
 	function build(index::Int)::ResolvedNode
 		assertion = assertions[index]
-		anchors = Dict(item.name => item.span for item in assertion.constituents)
-		form = get(anchors, "form", nothing)
-		gloss = get(anchors, "gloss", nothing)
+		form_assertions = filter(item -> item.name == "form", assertion.constituents)
+		forms = NodeForm[
+			NodeForm(item.span, visible(item.span), item.value) for item in form_assertions
+		]
+		gloss_assertion = findfirst(item -> item.name == "gloss", assertion.constituents)
+		gloss = gloss_assertion === nothing ? nothing : assertion.constituents[gloss_assertion].span
+		separator_form = isempty(forms) ? nothing : last(sort(forms; by = item -> item.span.end_byte)).span
 		constituents = NodeConstituent[
-			NodeConstituent(item.name, item.span, visible(item.span))
+			NodeConstituent(item.name, item.span, visible(item.span), item.value)
 			for item in assertion.constituents
 		]
 		ResolvedNode(
@@ -293,9 +346,10 @@ function asserted_nodes(
 			assertion.node_type,
 			assertion.span,
 			nothing,
-			form === nothing ? nothing : visible(form),
+			isempty(forms) ? nothing : form_value(first(forms)),
+			forms,
 			constituents,
-			separator_between(document, form, gloss),
+			separator_between(document, separator_form, gloss),
 			gloss === nothing ? Inline[] : Inline[TextRun(visible(gloss), gloss)],
 			Qualification[],
 			Citation[],
@@ -329,7 +383,7 @@ end
 
 function resolve_block(
 	harness::Adjudication.Harness, state::AdjudicationState, block::Census.SourceBlock,
-	resolution::Dict{Int, Tuple{String, Symbol}}, references::CrossReferenceIndex,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
 )::ResolvedNode
 	document = harness.documents[block.raw_span.file]
 	node = Adjudication.element_at(document, block.view_span)
@@ -338,6 +392,9 @@ function resolve_block(
 	isempty(reason) || record_review!(state, block, reason)
 
 	(qualifications, marker_spans) = qualification_markers(document, node)
+	(bare_qualifications, bare_marker_spans) = bare_qualification_markers(document, state, block)
+	append!(qualifications, bare_qualifications)
+	append!(marker_spans, bare_marker_spans)
 	(quotations, citation_spans) = citations(document, node, resolution, references)
 	(asserted, asserted_spans) = asserted_nodes(document, state, block)
 	children = ResolvedNode[
@@ -367,6 +424,7 @@ function resolve_block(
 		block.raw_span,
 		Source.attribute(node, "num"),
 		nothing,
+		NodeForm[],
 		NodeConstituent[],
 		nothing,
 		definition,
@@ -423,7 +481,7 @@ function attach_contained(
 )::ResolvedNode
 	children = ResolvedNode[attach_contained(child, qualifications, quotations) for child in node.children]
 	ResolvedNode(
-		node.node_id, node.node_type, node.span, node.number, node.form, node.constituents,
+		node.node_id, node.node_type, node.span, node.number, node.form, node.forms, node.constituents,
 		node.separator, node.definition,
 		filter(item -> attaches_to(item, node) && !attaches_to_any(item, children), qualifications),
 		filter(item -> Source.covers(node.span, item.span) && !contained_in_any(item.span, children), quotations),
@@ -433,7 +491,7 @@ end
 
 function with_children(node::ResolvedNode, children::Vector{ResolvedNode})::ResolvedNode
 	ResolvedNode(
-		node.node_id, node.node_type, node.span, node.number, node.form, node.constituents,
+		node.node_id, node.node_type, node.span, node.number, node.form, node.forms, node.constituents,
 		node.separator, node.definition, node.qualifications, node.citations, children,
 	)
 end
@@ -496,13 +554,20 @@ const rubrique_conventions = Dict(
 	"SYNONYME" => (note = "synonymy", subtype = "synonym"),
 	"REMARQUE" => (note = "usage", subtype = "remark"),
 	"REMARQUES" => (note = "usage", subtype = "remark"),
-	"PROVERBE" => (note = "proverbs", subtype = "proverb"),
-	"PROVERBES" => (note = "proverbs", subtype = "proverb"),
+	"PROVERBE" => (note = "proverb", subtype = "proverb"),
+	"PROVERBES" => (note = "proverb", subtype = "proverb"),
 	"SUPPLÉMENT AU DICTIONNAIRE" => (note = "supplement", subtype = "supplement"),
 )
 
 conventions_for(name::AbstractString) =
 	get(rubrique_conventions, name, (note = "other", subtype = "other"))
+
+const rubrique_headings = Dict(
+	"PROVERBE" => "Proverbe.",
+	"PROVERBES" => "Proverbes.",
+)
+
+rubrique_heading(name::AbstractString) = get(rubrique_headings, name, nothing)
 
 # A century header is printed once over the group of attestations it introduces. Recognition is a
 # committed pattern with counted residue, not an inference: unmatched lead text stays prose and
@@ -609,41 +674,195 @@ function historique_lead(
 	(labels, excluded)
 end
 
+function projected_citation_offset(
+	projection::Adjudication.ProjectedView, citation::ViewSpan,
+)::Int
+	positions = Int[
+		segment.projected_end for segment in projection.segments
+		if !segment.synthetic && segment.view_end <= citation.start_byte
+	]
+	isempty(positions) ? 1 : maximum(positions)
+end
+
+function attach_projected_citations(
+	document::Source.SourceDocument, block::Census.SourceBlock,
+	nodes::Vector{ResolvedNode}, quotations::Vector{Citation}, citation_spans::Vector{ViewSpan},
+)::Vector{ResolvedNode}
+	isempty(nodes) && return nodes
+	projection = Adjudication.project(document, Adjudication.element_at(document, block.view_span))
+	flat = ResolvedNode[]
+	visit(items) = for node in items
+		push!(flat, node)
+		visit(node.children)
+	end
+	visit(nodes)
+	projected = Dict{String, Adjudication.ProjectedSpan}()
+	for node in flat
+		span = Adjudication.to_projected(projection, Source.to_view(document.transform, node.span))
+		span === nothing || (projected[node.node_id] = span)
+	end
+	assigned = Dict{String, Vector{Citation}}()
+	for (quotation, citation_span) in zip(quotations, citation_spans)
+		offset = projected_citation_offset(projection, citation_span)
+		candidates = ResolvedNode[
+			node for node in flat if haskey(projected, node.node_id) &&
+			projected[node.node_id].start_byte <= offset <= projected[node.node_id].end_byte
+		]
+		isempty(candidates) && continue
+		target = first(sort(candidates; by = node -> length(projected[node.node_id])))
+		push!(get!(assigned, target.node_id, Citation[]), quotation)
+	end
+	function rewrite(node::ResolvedNode)::ResolvedNode
+		children = ResolvedNode[rewrite(child) for child in node.children]
+		citations = copy(node.citations)
+		seen = Set((citation.span.file, citation.span.start_byte, citation.span.end_byte) for citation in citations)
+		for citation in get(assigned, node.node_id, Citation[])
+			key = (citation.span.file, citation.span.start_byte, citation.span.end_byte)
+			key in seen && continue
+			push!(citations, citation)
+			push!(seen, key)
+		end
+		sort!(citations; by = citation -> citation.span.start_byte)
+		ResolvedNode(
+			node.node_id, node.node_type, node.span, node.number, node.form, node.forms, node.constituents,
+			node.separator, node.definition, node.qualifications, citations, children,
+		)
+	end
+	ResolvedNode[rewrite(node) for node in nodes]
+end
+
+function resolve_rubrique_block_nodes(
+	harness::Adjudication.Harness, state::AdjudicationState, block::Census.SourceBlock,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
+)::Vector{ResolvedNode}
+	document = harness.documents[block.raw_span.file]
+	node = Adjudication.element_at(document, block.view_span)
+	conflict = structural_conflict(structural_assertions(state, block))
+	conflict === nothing || record_review!(state, block, "structural conflict: $(conflict)")
+	(qualifications, _) = qualification_markers(document, node)
+	(bare_qualifications, _) = bare_qualification_markers(document, state, block)
+	append!(qualifications, bare_qualifications)
+	(quotations, citation_spans) = citations(document, node, resolution, references)
+	(asserted, _) = asserted_nodes(document, state, block)
+	children = ResolvedNode[]
+	for child in block.children
+		append!(children, resolve_rubrique_block_nodes(harness, state, child, resolution, references))
+	end
+	qualifications = apply_scopes(state, block, qualifications)
+	asserted = ResolvedNode[attach_contained(item, qualifications, quotations) for item in asserted]
+	asserted = attach_projected_citations(document, block, asserted, quotations, citation_spans)
+	merge_source_children(asserted, children)
+end
+
+function rubrique_semantic_nodes(
+	harness::Adjudication.Harness, state::AdjudicationState, rubrique::Census.SourceRubrique,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
+)::Vector{ResolvedNode}
+	nodes = ResolvedNode[]
+	for block in rubrique.blocks
+		append!(nodes, resolve_rubrique_block_nodes(harness, state, block, resolution, references))
+	end
+	sort!(nodes; by = node -> node.span.start_byte)
+	nodes
+end
+
+function semantic_exclusions(
+	document::Source.SourceDocument, nodes::Vector{ResolvedNode},
+)::Tuple{Vector{ViewSpan}, Vector{RawSpan}}
+	views = ViewSpan[]
+	spans = RawSpan[]
+	function visit(items)
+		for node in items
+			push!(spans, node.span)
+			push!(views, Source.to_view(document.transform, node.span))
+			for qualification in node.qualifications
+				push!(views, Source.to_view(document.transform, qualification.span))
+			end
+			for citation in node.citations
+				push!(views, Source.to_view(document.transform, citation.span))
+			end
+			visit(node.children)
+		end
+	end
+	visit(nodes)
+	(views, spans)
+end
+
+function split_rubrique_content(
+	content::Vector{Inline}, separators::Vector{RawSpan},
+)::Vector{Vector{Inline}}
+	isempty(content) && return Vector{Inline}[]
+	groups = Vector{Inline}[Inline[first(content)]]
+	previous = first(content).span
+	for item in Iterators.drop(content, 1)
+		span = item.span
+		cut = any(separator ->
+			previous.end_byte <= separator.start_byte && separator.end_byte <= span.start_byte,
+			separators,
+		)
+		cut && push!(groups, Inline[])
+		push!(last(groups), item)
+		previous = span
+	end
+	groups
+end
+
+function rubrique_item_span(item::RubriqueLabel)::RawSpan
+	item.span
+end
+
+function rubrique_item_span(item::RubriqueCitation)::RawSpan
+	item.citation.span
+end
+
+function rubrique_item_span(item::RubriqueProse)::RawSpan
+	item.span
+end
+
+function rubrique_item_span(item::RubriqueNode)::RawSpan
+	item.node.span
+end
+
 function resolve_rubrique(
-	harness::Adjudication.Harness, rubrique::Census.SourceRubrique,
-	resolution::Dict{Int, Tuple{String, Symbol}}, references::CrossReferenceIndex,
-	findings::Vector{ReviewFinding},
+	harness::Adjudication.Harness, state::AdjudicationState, rubrique::Census.SourceRubrique,
+	resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
+	findings::Vector{ReviewFinding}, headword::AbstractString,
 )::ResolvedRubrique
 	document = harness.documents[rubrique.raw_span.file]
 	node = Adjudication.element_at(document, rubrique.view_span)
 	items = RubriqueItem[]
 	etymology = AnchoredEtymSegment[]
+	semantic_nodes = rubrique_semantic_nodes(harness, state, rubrique, resolution, references)
+	(excluded, semantic_spans) = semantic_exclusions(document, semantic_nodes)
 	conventions = conventions_for(rubrique.name)
 	if rubrique.name == etymology_rubrique
 		for child in XML.children(node)
 			XML.nodetype(child) == XML.Element && XML.tag(child) in ("indent", "variante") || continue
-			append!(etymology, segment_paragraph(document, child, references))
+			append!(etymology, segment_paragraph(document, child, references, headword))
+		end
+		if !isempty(semantic_nodes)
+			etymology = AnchoredEtymSegment[
+				segment for segment in etymology
+				if !any(span -> Source.covers(span, segment.span), semantic_spans)
+			]
+			append!(items, RubriqueNode[RubriqueNode(node) for node in semantic_nodes])
 		end
 	else
-		items = carry_date_range(
-			rubrique_items(document, node, rubrique, conventions, resolution, references, findings),
-		)
+		items = carry_date_range(rubrique_items(
+			document, node, rubrique, conventions, resolution, references, findings;
+			excluded, semantic_spans,
+		))
+		append!(items, RubriqueNode[RubriqueNode(node) for node in semantic_nodes])
+		sort!(items; by = item -> rubrique_item_span(item).start_byte)
 	end
 	ResolvedRubrique(rubrique.name, rubrique.raw_span, rubrique.parent_id, items, etymology)
 end
 
-"""
-	rubrique_items(document, node, rubrique, conventions, resolution, references, findings)
-
-Walk a rubrique's content in source order, splitting it into citations and the prose between them.
-Nested `<indent>`/`<variante>` are recursed into rather than flattened, because citations sit at
-any depth and the rubrique's own direct text is content too. A century header leading a paragraph
-becomes a `dateRange` label; anything else stays prose and, in HISTORIQUE, is counted.
-"""
 function rubrique_items(
 	document::Source.SourceDocument, node::XML.FlatNode, rubrique::Census.SourceRubrique,
-	conventions, resolution::Dict{Int, Tuple{String, Symbol}}, references::CrossReferenceIndex,
-	findings::Vector{ReviewFinding},
+	conventions, resolution::Dict{Int, CitationAnaphora}, references::CrossReferenceIndex,
+	findings::Vector{ReviewFinding}; excluded::Vector{ViewSpan} = ViewSpan[],
+	semantic_spans::Vector{RawSpan} = RawSpan[],
 )::Vector{RubriqueItem}
 	items = RubriqueItem[]
 	pending = XML.FlatNode[]
@@ -652,25 +871,26 @@ function rubrique_items(
 	function flush!()
 		isempty(pending) && return nothing
 		labels = RubriqueLabel[]
-		excluded = ViewSpan[]
+		lead_excluded = ViewSpan[]
 		if leading && rubrique.name == "HISTORIQUE"
-			labels, excluded = historique_lead(document, pending)
+			labels, lead_excluded = historique_lead(document, pending)
 			append!(items, labels)
 		end
-		content = inline_from(document, pending, references; excluded)
+		content = inline_from(document, pending, references; excluded = vcat(excluded, lead_excluded))
 		empty!(pending)
-		if !isempty(content)
+		for group in split_rubrique_content(content, semantic_spans)
+			isempty(group) && continue
 			span = RawSpan(
 				rubrique.raw_span.file,
-				first(content).span.start_byte,
-				last(content).span.end_byte,
+				first(group).span.start_byte,
+				last(group).span.end_byte,
 			)
-			text = strip(plain_text(content))
+			text = strip(plain_text(group))
 			range = century_range(text)
 			if leading && isempty(labels) && range !== nothing
 				push!(items, RubriqueLabel(date_range_label, String(text), range[1], range[2], span))
 			elseif !isempty(text)
-				push!(items, RubriqueProse(content, span))
+				push!(items, RubriqueProse(group, span))
 				leading && rubrique.name == "HISTORIQUE" && isempty(labels) &&
 					push!(findings, ReviewFinding(
 						"century_unrecognized", String(first(text, 60)), span,
@@ -686,14 +906,21 @@ function rubrique_items(
 			flush!()
 			leading = false
 			span = Source.node_view_span(document, child)
+			carved(span, excluded) && continue
 			push!(items, RubriqueCitation(
 				build_citation(document, child, span, resolution, references), conventions.subtype,
 			))
 		elseif name == "indent" || name == "variante"
 			flush!()
 			leading = false
+			child_span = Source.node_view_span(document, child)
+			child_excluded = ViewSpan[
+				span for span in excluded if !Source.covers(span, child_span)
+			]
 			append!(items, rubrique_items(
-				document, child, rubrique, conventions, resolution, references, findings))
+				document, child, rubrique, conventions, resolution, references, findings;
+				excluded = child_excluded, semantic_spans,
+			))
 		else
 			push!(pending, child)
 		end
@@ -733,13 +960,14 @@ end
 
 function segment_paragraph(
 	document::Source.SourceDocument, node::XML.FlatNode, references::CrossReferenceIndex,
+	headword::AbstractString,
 )::Vector{AnchoredEtymSegment}
 	inner = inner_span(document, node)
 	isempty(inner) && return AnchoredEtymSegment[]
 	content = String(Source.slice(document.parser_view, inner))
 	(block, _) = Source.to_raw(document.transform, inner)
 	anchored = AnchoredEtymSegment[]
-	for segment in segment_etymology(content)
+	for segment in segment_etymology(content; headword)
 		range = segment_range(segment)
 		span = if isempty(range)
 			block
@@ -750,7 +978,7 @@ function segment_paragraph(
 				inner.start_byte + last(range),
 			))[1]
 		end
-		push!(anchored, AnchoredEtymSegment(resolve_segment(segment, references), span))
+		push!(anchored, AnchoredEtymSegment(resolve_segment(segment, references), span, block))
 	end
 	anchored
 end
@@ -794,7 +1022,7 @@ function resolve_entry(
 		ResolvedNode[resolve_block(harness, state, block, resolution, references) for block in entry.blocks
 			if !(block.kind isa Census.EnteteNature)],
 		ResolvedRubrique[
-			resolve_rubrique(harness, rubrique, resolution, references, findings)
+			resolve_rubrique(harness, state, rubrique, resolution, references, findings, entry.headword)
 			for rubrique in entry.rubriques
 		],
 	)
@@ -807,6 +1035,23 @@ function entry_citations(entry::ResolvedEntry)::Vector{Citation}
 		gather(node.children)
 	end
 	gather(entry.nodes)
+	for rubrique in entry.rubriques
+		for item in rubrique.items
+			item isa RubriqueNode || continue
+			gather(ResolvedNode[item.node])
+		end
+	end
+	found
+end
+
+function all_entry_citations(entry::ResolvedEntry)::Vector{Citation}
+	found = entry_citations(entry)
+	for rubrique in entry.rubriques
+		for item in rubrique.items
+			item isa RubriqueCitation || continue
+			push!(found, item.citation)
+		end
+	end
 	found
 end
 
@@ -840,7 +1085,15 @@ function check_node_identity(entries::Vector{ResolvedEntry})
 			visit(node.children)
 		end
 	end
-	foreach(entry -> visit(entry.nodes), entries)
+	for entry in entries
+		visit(entry.nodes)
+		for rubrique in entry.rubriques
+			for item in rubrique.items
+				item isa RubriqueNode || continue
+				visit(ResolvedNode[item.node])
+			end
+		end
+	end
 	nothing
 end
 
@@ -861,13 +1114,24 @@ function resolve(
 	check_node_identity(entries)
 	unresolved_authors = ReviewFinding[
 		ReviewFinding("author_unresolved", "ID. with no antecedent in the entry", citation.span)
-		for entry in entries for citation in entry_citations(entry)
-		if citation.resolution == :unresolved
+		for entry in entries for citation in all_entry_citations(entry)
+		if citation.resolution == :unresolved && citation.author_antecedent === nothing
+	]
+	unresolved_references = ReviewFinding[
+		ReviewFinding("reference_unresolved", "ib. with no antecedent in the entry", citation.span)
+		for entry in entries for citation in all_entry_citations(entry)
+		if citation.reference_resolution == :unresolved
 	]
 	suspects = ReviewFinding[
 		ReviewFinding("etymology_suspect", anchored.segment.token, anchored.span)
 		for entry in entries for rubrique in entry.rubriques
 		for anchored in rubrique.etymology if anchored.segment isa EtymSuspect
+	]
+	unsegmented = ReviewFinding[
+		ReviewFinding("etymology_unsegmented", String(anchored.segment.fallback), anchored.span)
+		for entry in entries for rubrique in entry.rubriques
+		for anchored in rubrique.etymology
+		if anchored.segment isa EtymProse && anchored.segment.fallback != :none
 	]
 	review = vcat(
 		ReviewFinding[
@@ -876,7 +1140,9 @@ function resolve(
 		],
 		state.findings,
 		suspects,
+		unsegmented,
 		unresolved_authors,
+		unresolved_references,
 	)
 	ResolvedCorpus(entries, review, PassCoverage[
 		coverage(harness, state, pass) for pass in Adjudication.current_passes

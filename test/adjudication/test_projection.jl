@@ -1,5 +1,5 @@
 using DeepLittre.Source: read_corpus, slice, covers
-using DeepLittre.Census: census, all_blocks, Indent
+using DeepLittre.Census: census, all_blocks, Indent, RubriqueDirect
 using DeepLittre.Adjudication: project, locate, locate_projected, to_projected, to_view, projected_text, SelectionFailure,
 	block_text_projection, block_text_version, ProjectedSpan
 
@@ -19,6 +19,32 @@ using DeepLittre.Adjudication: project, locate, locate_projected, to_projected, 
 		@test !occursin("Je vous présente", projection.text)
 		@test !occursin('<', projection.text)
 		@test !occursin('\n', projection.text)
+	end
+
+	@testset "rubrique direct projection excludes child blocks" begin
+		hardeau = only(filter(entry -> entry.headword == "HARDEAU", DeepLittre.Census.all_entries(corpus)))
+		supplement = only(filter(
+			rubrique -> rubrique.name == "SUPPLÉMENT AU DICTIONNAIRE", hardeau.rubriques,
+		))
+		direct = only(filter(candidate -> candidate.kind isa RubriqueDirect, supplement.blocks))
+		target = harness.documents[direct.raw_span.file]
+		direct_projection = project(
+			target, DeepLittre.Adjudication.element_at(target, direct.view_span),
+		)
+		@test direct_projection.text == "HARDEAU. Ajoutez :"
+		@test !occursin("Vaurien", direct_projection.text)
+		@test !occursin("XVIe", direct_projection.text)
+	end
+
+	@testset "every rubrique direct block has a nonempty projection" begin
+		for candidate in all_blocks(corpus)
+			candidate.kind isa RubriqueDirect || continue
+			target = harness.documents[candidate.raw_span.file]
+			direct_projection = project(
+				target, DeepLittre.Adjudication.element_at(target, candidate.view_span),
+			)
+			@test !isempty(direct_projection.text)
+		end
 	end
 
 	@testset "literal segments are byte-identical copies" begin

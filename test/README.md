@@ -14,21 +14,21 @@ Needs no build and no `data/source`. Everything it reads is committed: the devel
 
 `census/` checks block geometry, kind assignment by ancestry, and the population hash that fixes the adjudication denominator.
 
-`adjudication/` covers the projection and its provenance map, the authoring harness including stale-surface and geometry checks, the canonical store writer, the committed development store, and the `voice_variant` and `qualification_scope` passes.
+`adjudication/` covers the projection and its provenance map, the authoring harness including stale-surface and geometry checks, the canonical store writer, the committed development store, and the `voice_variant`, `qualification_scope`, and `bare_qualification` passes.
 
 `resolve/` covers sense derivation and closure, etymology segmentation, and author resolution through the `ID.` anaphora chain. `render/` covers both renderers, their cross-output parity, and rubrique structure.
 
 ## Reading the assertion count
 
-The total is 28,278, which overstates behavioural coverage by a wide margin. Two files produce 91% of it:
+The current total is 29,164, which overstates behavioural coverage by a wide margin. Two files still dominate it:
 
 | file | assertions |
 |---|---|
-| `census/test_census.jl` | 20,749 |
+| `census/test_census.jl` | 20,938 |
 | `source/test_parser.jl` | 5,065 |
-| everything else, 16 files | 2,464 |
+| everything else | 3,161 |
 
-Both are loops asserting an invariant over every block or node in the development corpus. That is the right shape for an invariant and a poor proxy for how much behaviour is pinned — `resolve/test_authors.jl` contributes 970 the same way. The adjudication core is smaller than it looks: the harness is 156 assertions, the store 21, the committed store 32, and the `voice_variant` and `qualification_scope` passes 22 and 16.
+Both large files are loops asserting an invariant over every block or node in the development corpus. That is the right shape for an invariant and a poor proxy for how much behaviour is pinned — `resolve/test_authors.jl` contributes 1,514 the same way. The adjudication core is smaller than the headline total suggests: the authoring harness contributes 161 assertions, the canonical store 21, the committed development store 37, and the pass-specific suites remain in the tens rather than the thousands.
 
 Line coverage is a separate measurement and sits near 95%:
 

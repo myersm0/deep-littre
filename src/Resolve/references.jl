@@ -1,7 +1,9 @@
 """
 Littré writes a cross-reference as a lemma, optionally with a homograph index and a variante
-number: `abject`, `avoir.1`, `zéro#var2`, `faux.1#var26`. None of those is an identifier of
-anything the pipeline emits, so the reference has to be resolved against the corpus before either
+number: `abject`, `avoir.1`, `zéro#var2`, `faux.1#var26`. A homograph index names the source
+entry whose `sens` attribute carries that number; it is not an ordinal in document order. None of
+those references is an identifier of anything the pipeline emits, so the reference has to be resolved
+against the corpus before either
 renderer can point at its destination.
 
 Resolution produces a raw anchor, not a rendered identifier. `xml:id` values are the TEI renderer's
@@ -43,6 +45,15 @@ function target_entries(index::CrossReferenceIndex, lemma::AbstractString)::Vect
 	get(index.by_lemma, folded, Census.SourceEntry[])
 end
 
+function only_or_nothing(entries)::Union{Nothing, Census.SourceEntry}
+	result = nothing
+	for entry in entries
+		result === nothing || return nothing
+		result = entry
+	end
+	result
+end
+
 function variante_span(entry::Census.SourceEntry, number::Int)::Union{Nothing, RawSpan}
 	position = 0
 	for block in entry.blocks
@@ -57,8 +68,9 @@ end
 	resolve_reference(index, reference)
 
 The raw anchor a `<a ref="...">` names, or `nothing` where no honest answer exists: a lemma no
-entry carries, a homograph index past the end of the homograph run, a variante number the entry
-does not have, or a bare lemma shared by several entries that the source declined to disambiguate.
+entry carries, a homograph index that no candidate carries in its source `sens` attribute, a variante
+number the entry does not have, or a bare lemma shared by several entries that the source declined
+to disambiguate.
 """
 function resolve_reference(
 	index::CrossReferenceIndex, reference::AbstractString,
@@ -71,9 +83,10 @@ function resolve_reference(
 	entry = if isempty(homograph)
 		length(candidates) == 1 ? only(candidates) : nothing
 	else
-		position = tryparse(Int, homograph)
-		position === nothing || !(1 <= position <= length(candidates)) ? nothing :
-			candidates[position]
+		number = tryparse(Int, homograph)
+		number === nothing ? nothing : only_or_nothing(
+			entry for entry in candidates if entry.homograph == number
+		)
 	end
 	entry === nothing && return nothing
 	isempty(variante) && return entry.raw_span

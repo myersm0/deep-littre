@@ -1,8 +1,8 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Indent, Variante
 using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
-	ScopeSelection, sublemma_pass, voice_variant_pass, qualification_scope_pass, write_pass!,
-	ReviewItem, SubLemma
+	ScopeSelection, sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass,
+	write_pass!, ReviewItem, SubLemma, materialize_record
 using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, scope_name
 
 @testset "qualification scope pass" begin
@@ -38,9 +38,11 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 			)], residuals = ["Familièrement."]); decision_procedure = "test")])
 	end
 
-	@testset "the pass asserts no node type" begin
+	@testset "scope passes assert no node type" begin
 		@test qualification_scope_pass.node_type === nothing
+		@test bare_qualification_pass.node_type === nothing
 		@test occursin("govern", qualification_scope_pass.question)
+		@test occursin("bare prose", bare_qualification_pass.question)
 	end
 
 	@testset "containment is the default and needs no record" begin
@@ -106,6 +108,49 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 			Decision(:positive; scopes = [ScopeSelection(
 				"Avaler des poires d'angoisse", "subir des mortifications, de vifs déplaisirs.",
 			)]); decision_procedure = "test")
+	end
+
+
+	@testset "bare qualification markers are adjudicated, then routed deterministically" begin
+		harness = fresh()
+		block = block_containing(harness, "Adverbialement. Parler français", Indent)
+		item = present(harness, bare_qualification_pass, block)
+		target = "Parler français, s'exprimer en langage français. Cet étranger parle français."
+		record = commit(
+			harness, bare_qualification_pass, item,
+			Decision(:positive; scopes = [ScopeSelection("Adverbialement.", target)]);
+			decision_procedure = "test",
+		)
+		applied = materialize_record(harness, record)
+		@test applied !== nothing
+		document = harness.documents[block.raw_span.file]
+		scope = only(applied.scopes)
+		@test slice(document.raw_text, scope.marker) == "Adverbialement."
+		@test slice(document.raw_text, scope.target) == target
+
+		write_pass!(harness.store, "bare_qualification", [record])
+		resolved = resolve(harness)
+		node = find_node(entry_named(resolved, "FRANÇAIS, AISE").nodes, candidate -> candidate.span == block.raw_span)
+		@test node !== nothing
+		@test plain_text(node.definition) == target
+		qualification = only(node.qualifications)
+		@test qualification.channel == :gram
+		@test qualification.type == "construction"
+		@test qualification.norm == "adverbial"
+		@test qualification.printed == "Adverbialement."
+		@test qualification.span == scope.marker
+		@test qualification.scope isa AssertedScope
+		@test qualification.scope.target == scope.target
+	end
+
+	@testset "bare qualification pass cannot duplicate explicit markup" begin
+		harness = fresh()
+		block = block_containing(harness, "Avaler des poires", Indent)
+		@test_throws ReviewItem commit(
+			harness, bare_qualification_pass, present(harness, bare_qualification_pass, block),
+			Decision(:positive; scopes = [ScopeSelection("Familièrement.", sublemma_text)]);
+			decision_procedure = "test",
+		)
 	end
 
 	@testset "a marker may not sit inside what it governs" begin

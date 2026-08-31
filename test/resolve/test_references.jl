@@ -36,20 +36,28 @@ using DeepLittre.Resolve: cross_reference_index, resolve_reference
 		@test resolve_reference(index, "angoisse#var0") === nothing
 	end
 
-	@testset "a homograph index selects among entries sharing a lemma" begin
-		shared = filter(collect(keys(index.by_lemma))) do lemma
-			length(index.by_lemma[lemma]) > 1
-		end
-		if !isempty(shared)
-			lemma = first(shared)
-			candidates = index.by_lemma[lemma]
-			# Bare, the source declined to disambiguate and so does the resolver.
-			@test resolve_reference(index, lemma) === nothing
-			@test resolve_reference(index, "$(lemma).1") == first(candidates).raw_span
-			@test resolve_reference(index, "$(lemma).$(length(candidates))") ==
-				last(candidates).raw_span
-			@test resolve_reference(index, "$(lemma).$(length(candidates) + 1)") === nothing
-		end
+	@testset "a homograph index follows source sens, not document position" begin
+		local_documents = read_corpus(joinpath(fixture_root, "synthetic", "references"))
+		local_corpus = census(local_documents)
+		local_index = cross_reference_index(local_corpus)
+		pairs = filter(e -> e.headword == "PAIR", all_entries(local_corpus))
+		@test [entry.homograph for entry in pairs] == [2, 1]
+		@test resolve_reference(local_index, "pair") === nothing
+		@test resolve_reference(local_index, "pair.1") ==
+			only(e for e in pairs if e.homograph == 1).raw_span
+		@test resolve_reference(local_index, "pair.2") ==
+			only(e for e in pairs if e.homograph == 2).raw_span
+		@test resolve_reference(local_index, "pair.3") === nothing
+	end
+
+	@testset "a homograph index does not fall back to candidate position" begin
+		local_documents = read_corpus(joinpath(fixture_root, "synthetic", "references"))
+		local_corpus = census(local_documents)
+		local_index = cross_reference_index(local_corpus)
+		solo = only(e for e in all_entries(local_corpus) if e.headword == "SOLO")
+		@test solo.homograph == 2
+		@test resolve_reference(local_index, "solo.1") === nothing
+		@test resolve_reference(local_index, "solo.2") == solo.raw_span
 	end
 
 	@testset "a reference with a dot that is not a homograph index stays a lemma" begin

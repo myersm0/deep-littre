@@ -32,9 +32,10 @@ plain_text(items::Vector{Inline})::String = join(inline_text(item) for item in i
 
 """
 A qualification is never merely "on the block": its scope is an explicit target reference.
-`ContainedScope` is the deterministic default — the marker governs the innermost node containing
-it — and needs no adjudication. `AssertedScope` records a departure established by the
-qualification-scope pass, carrying the raw span of the material the marker actually governs.
+`ContainedScope` is the deterministic default — an explicit marker governs the innermost node
+containing it — and needs no adjudication. `AssertedScope` carries the raw span established by an
+adjudication when explicit-marker scope departs from containment or when a bare marker is first
+identified and scoped.
 """
 abstract type ScopeTarget end
 
@@ -48,25 +49,31 @@ scope_name(::ContainedScope) = "containment"
 scope_name(::AssertedScope) = "adjudicated"
 
 """
-A qualification recovered deterministically from explicit source markup. `printed` is what
-Littré prints; `norm` is the committed normalization. `usg` and `gram` are distinguished because
-they occupy different TEI positions.
+A qualification whose printed marker has been identified either by explicit source markup or by
+a bare-marker adjudication. Once the span is known, its semantic routing is deterministic.
+`printed` is the token assigned to this normalized fact, while `marker_printed` retains the complete
+source marker so separators between grammatical facts remain reconstructable. `usg` and `gram`
+are distinguished because they occupy different TEI positions.
 """
 struct Qualification
 	channel::Symbol
 	type::String
 	norm::String
 	printed::String
+	marker_printed::String
 	span::RawSpan
 	scope::ScopeTarget
 end
 
 Qualification(channel, type, norm, printed, span) =
-	Qualification(channel, type, norm, printed, span, ContainedScope())
+	Qualification(channel, type, norm, printed, printed, span, ContainedScope())
+
+Qualification(channel, type, norm, printed, marker_printed, span) =
+	Qualification(channel, type, norm, printed, marker_printed, span, ContainedScope())
 
 rescope(qualification::Qualification, scope::ScopeTarget) = Qualification(
 	qualification.channel, qualification.type, qualification.norm, qualification.printed,
-	qualification.span, scope,
+	qualification.marker_printed, qualification.span, scope,
 )
 
 """
@@ -78,12 +85,23 @@ struct NodeConstituent
 	name::String
 	span::RawSpan
 	text::String
+	value::Union{Nothing, String}
 end
 
+NodeConstituent(name, span, text) = NodeConstituent(name, span, text, nothing)
+
+struct NodeForm
+	span::RawSpan
+	printed::String
+	value::Union{Nothing, String}
+end
+
+form_value(form::NodeForm)::String = something(form.value, form.printed)
+
 """
-`author` is what Littré prints. Where that is `ID.`, `resolved_author` carries the antecedent
-author when the immediately preceding citation names one. `resolution` distinguishes a recovered
-name, a valid antecedent with no author, and a genuinely missing antecedent.
+`author` and `reference` are what Littré prints. Anaphoric `ID.` and `ib.` retain those surfaces.
+`resolved_author` carries the recovered author value where available; the antecedent spans record the
+source-order citation links without reconstructing an unprinted bibliographic reference.
 """
 struct Citation
 	span::RawSpan
@@ -91,7 +109,10 @@ struct Citation
 	author::String
 	resolved_author::String
 	resolution::Symbol
+	author_antecedent::Union{Nothing, RawSpan}
 	reference::String
+	reference_antecedent::Union{Nothing, RawSpan}
+	reference_resolution::Symbol
 end
 
 """
@@ -108,6 +129,7 @@ struct ResolvedNode
 	span::RawSpan
 	number::Union{Nothing, String}
 	form::Union{Nothing, String}
+	forms::Vector{NodeForm}
 	constituents::Vector{NodeConstituent}
 	separator::Union{Nothing, String}
 	definition::Vector{Inline}
@@ -119,7 +141,10 @@ end
 struct AnchoredEtymSegment
 	segment::Any
 	span::RawSpan
+	container_span::RawSpan
 end
+
+AnchoredEtymSegment(segment, span) = AnchoredEtymSegment(segment, span, span)
 
 """
 Rubrique content in source order. `<note>` cannot hold `<cit>` under Lex-0, so a rubrique's
@@ -156,6 +181,10 @@ RubriqueCitation(citation, subtype) = RubriqueCitation(citation, subtype, "", no
 struct RubriqueProse <: RubriqueItem
 	content::Vector{Inline}
 	span::RawSpan
+end
+
+struct RubriqueNode <: RubriqueItem
+	node::ResolvedNode
 end
 
 struct ResolvedRubrique

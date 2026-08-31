@@ -23,17 +23,19 @@ The serialization is deterministic and length-prefixed and is hashed once as `su
 
 The producer selects exact substrings in projected text. The harness requires each selection to have exactly one match and converts it to a half-open `ProjectedSpan`.
 
-Durable structural assertions therefore store projected node, form, gloss, and residual intervals. Scope assertions store projected marker and target intervals. Current raw spans are reconstructed only when a valid record is applied.
+Durable structural assertions therefore store projected node, form, gloss, and residual intervals. A structural selection may name several forms. Disjoint selections represent separately printed forms; repeated selection of one surface span is permitted only when every coincident form carries a distinct editorial value. Scope assertions store projected marker and target intervals. Current raw spans are reconstructed only when a valid record is applied.
 
 ## Structural decisions
 
 `sublemma` and `voice_variant` are exhaustive structural alternatives. A positive answer must provide a complete partition of source-visible projected text into asserted node spans and residual spans. Negative and unresolved answers carry no assertions.
 
-Crossing/coincident structural claims and constituents outside their node fail closed.
+Crossing/coincident structural claims and constituents outside their node fail closed. Form constituents are the deliberate exception to coincident constituent spans: coincident forms are valid only as distinct editorial readings of the same printed surface. Partially overlapping form spans fail closed.
 
 ## Scope decisions
 
-`qualification_scope` only changes where an explicit source marker applies. The meaning of the marker is still resolved deterministically by the committed normalization tables. A scope marker must correspond to an explicit marker detected in the current classification surface.
+`qualification_scope` only changes where an explicit `<semantique>`/`<nature>` marker applies. Its marker selection must correspond to one of the explicit markers detected in the classification surface.
+
+`bare_qualification` handles the complementary case in which the source prints a qualification label as ordinary prose. Its positive assertion selects that exact prose span as the marker and a projected target span as its scope; it may not claim text already represented by an explicit marker. Both passes adjudicate boundary/scope only. The meaning of the selected marker is still resolved deterministically by the committed normalization tables.
 
 ## Record applicability
 

@@ -55,10 +55,15 @@ using DeepLittre.Resolve: resolve
 		@test coverage["voice_variant"].negative == 2
 		@test coverage["qualification_scope"].positive == 1
 		@test coverage["qualification_scope"].negative == 1
+		@test coverage["bare_qualification"].positive == 0
+		@test coverage["bare_qualification"].negative == 0
 		for record in values(coverage)
 			@test record.unresolved == 0
 			@test record.stale == 0
-			@test record.population_size == 351
 		end
+		@test coverage["sublemma"].population_size == 464
+		@test coverage["voice_variant"].population_size == 464
+		@test coverage["qualification_scope"].population_size == 464
+		@test coverage["bare_qualification"].population_size == 464
 	end
 end

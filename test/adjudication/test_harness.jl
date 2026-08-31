@@ -1,7 +1,7 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: present, commit, check, materialize_record, Decision, FormSelection,
-	ReviewItem, sublemma_pass, voice_variant_pass, eligible, SubLemma, applicable, validate_store,
+	ReviewItem, sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass, eligible, SubLemma, applicable, validate_store,
 	StoreIntegrityError, Store, write_pass!, read_pass, projected_text, ExaminationRecord,
 	applicable_record, target_block
 
@@ -56,11 +56,23 @@ using DeepLittre.Adjudication: present, commit, check, materialize_record, Decis
 		rm(unknown; recursive = true)
 	end
 
-	@testset "eligible population is version 1" begin
-		pool = eligible(sublemma_pass, corpus)
-		@test length(pool) == 351
+	@testset "eligible populations are version 2" begin
+		structural_pool = eligible(sublemma_pass, corpus)
+		@test sublemma_pass.population_version == 2
+		@test length(structural_pool) == 464
+
+		qualification_pool = eligible(qualification_scope_pass, corpus)
+		@test qualification_scope_pass.population_version == 2
+		@test bare_qualification_pass.population_version == 2
+		@test length(qualification_pool) == 464
+		@test Set(block.source_id for block in qualification_pool) ==
+			Set(block.source_id for block in structural_pool)
+
 		@test all(candidate -> candidate.kind isa DeepLittre.Census.Indent ||
-			candidate.kind isa DeepLittre.Census.Variante, pool)
+			candidate.kind isa DeepLittre.Census.Variante ||
+			candidate.kind isa DeepLittre.Census.RubriqueIndent ||
+			candidate.kind isa DeepLittre.Census.RubriqueVariante ||
+			candidate.kind isa DeepLittre.Census.RubriqueDirect, structural_pool)
 	end
 
 	@testset "durable selections are projection-relative" begin
