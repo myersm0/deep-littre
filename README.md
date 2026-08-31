@@ -11,7 +11,7 @@ Deep-Littré is a new edition built on top of XMLittré. It takes Gannaz's XML, 
 
 Here's a small entry, *tronquer*, from a scan on Gallica:
 
-![The entry TRONQUER in the 1872 printing](docs/images/tronquer-print.png)
+![Source gallica.bnf.fr / Bibliothèque nationale de France](docs/images/tronquer-print.png)
 
 Littré separates divisions with `||`. Three of them are numbered — `1° Retrancher, couper`, `2° Scier sur le tour`, `3° Fig.` — and one is not: `|| En parlant des statues, mutiler en partie`. That unnumbered division is not opening a new context, like the others, but rather narrowing the first sense to a particular context. On the printed page this is evident through its position.
 
@@ -167,3 +167,5 @@ A paper describing Deep-Littré is in preparation. Until then:
 ## License
 
 CC-BY-SA 4.0. See [LICENSE](LICENSE).
+
+The page image is from the Bibliothèque nationale de France's Gallica digitization (Source gallica.bnf.fr / Bibliothèque nationale de France) and is reproduced under BnF's terms for non-commercial and academic reuse. It is not covered by this repository's license.
