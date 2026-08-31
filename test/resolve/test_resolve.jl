@@ -13,6 +13,12 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		build_harness(documents, corpus)
 	end
 
+	# Etymology findings are deterministic enrichment residue, reconstructed every build; these
+	# assertions are about what adjudication contributes.
+	adjudication_findings(resolved) = filter(
+		finding -> !startswith(finding.category, "etymology_"), resolved.review,
+	)
+
 	function angoisse_record(harness)
 		block = angoisse_block(harness, corpus)
 		item = present(harness, sublemma_pass, block)
@@ -54,6 +60,20 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 			any(q -> q.norm == "familiar", node.qualifications))
 		@test familiar !== nothing
 		@test occursin("Avaler des poires", plain_text(familiar.definition))
+	end
+
+	@testset "lifted nature markers preserve source separator punctuation" begin
+		resolved = resolve(fresh_harness())
+
+		dispenser = entry_named(resolved, "DISPENSER")
+		reflexive = find_node(dispenser.nodes, node -> occursin("Être départi", plain_text(node.definition)))
+		@test reflexive !== nothing
+		@test startswith(plain_text(reflexive.definition), "Se dispenser, Être départi.")
+
+		francais = entry_named(resolved, "FRANÇAIS, AISE")
+		adjectival = find_node(francais.nodes, node -> occursin("Ce qui n'est pas clair", plain_text(node.definition)))
+		@test adjectival !== nothing
+		@test startswith(plain_text(adjectival.definition), ". Ce qui n'est pas clair")
 	end
 
 	@testset "residual text anchors do not cover carved facts" begin
@@ -230,7 +250,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		write_pass!(harness.store, "sublemma", [angoisse_record(harness)])
 		resolved = resolve(harness)
 		sublemma = first(filter(record -> record.pass == "sublemma", resolved.coverage))
-		@test sublemma.population_size == 351
+		@test sublemma.population_size == 464
 		@test sublemma.examined == 1
 		@test sublemma.positive == 1
 		@test sublemma.stale == 0
@@ -293,7 +313,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		@test derived !== nothing
 		@test derived.span == block.raw_span
 		@test any(child -> child.node_type isa SubLemma, derived.children)
-		@test isempty(resolved.review)
+		@test isempty(adjudication_findings(resolved))
 
 		# closure is derived per block, so a block nobody examined stays underdetermined
 		untouched = find_node(angoisse.nodes, node ->
@@ -323,7 +343,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 
 	@testset "unexamined blocks are not review findings" begin
 		resolved = resolve(fresh_harness())
-		@test isempty(resolved.review)
+		@test isempty(adjudication_findings(resolved))
 	end
 
 	@testset "a stale classification surface is skipped rather than aborting" begin
@@ -333,8 +353,9 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		write_pass!(harness.store, "sublemma", [stale])
 
 		resolved = resolve(harness)
-		@test length(resolved.review) == 1
-		@test first(resolved.review).category == "stale"
+		findings = adjudication_findings(resolved)
+		@test length(findings) == 1
+		@test first(findings).category == "stale"
 		@test length(resolved.entries) == 25
 
 		angoisse = entry_named(resolved, "ANGOISSE")

@@ -86,15 +86,15 @@ The renderer may emit a coarse `<sense><def>…</def></sense>` for material whos
 
 Every `<form>` carries a `type` accepted by the pinned schema.
 
-Entry lemmas use:
+Entry lemmas preserve the printed form directly:
 
 ```xml
 <form type="lemma">
-  <orth norm="...">PRINTED FORM</orth>
+  <orth>PRINTED FORM</orth>
 </form>
 ```
 
-Printed casing is preserved in element text; normalized casing may be stored in `@norm`.
+The renderer does not add a casing-normalization claim merely because it can normalize a headword internally. Editorially reconstructed/read forms use the separate `@value` convention below.
 
 Where a form is editorially extracted rather than printed as a standalone lemma, use the validated condensed-lemma pattern with `@value` rather than pretending that the source printed a separate orthographic token:
 
@@ -104,7 +104,9 @@ Where a form is editorially extracted rather than printed as a standalone lemma,
 </form>
 ```
 
-Inflectional variants may be nested forms when the schema admits the required structure. Any use of less common `form/@type` values must be represented in the probe before becoming project policy.
+A form-bearing semantic node may carry several forms. The first is emitted as `form type="lemma"` and additional alternatives as sibling `form type="variant"`; `variant` is admitted by the pinned Lex-0 schema. If several editorial readings share one printed source span, each reading uses the condensed `<orth value="…"/>` shape rather than duplicating the coordinated source wording as element text.
+
+Inflectional variants may be nested forms when the schema admits the required structure. Any other use of less common `form/@type` values must be represented in the probe before becoming project policy.
 
 ## Grammatical information
 
@@ -200,19 +202,21 @@ Synchronic examples use the validated form:
 
 The pinned schema has a closed `cit/@type` vocabulary. Do not use bare `<cit>` merely because an external etymology example does so if the probe rejects it.
 
-Resolved author information may be represented in `<author>` while retaining the printed abbreviation/provenance required by the data model.
+Littré's citation anaphors are resolved over the entry in **source** order — the semantic tree is
+built later and may reattach citations by containment, which would otherwise reorder them. The
+printed surface is never replaced. A resolved author therefore remains `<author corresp="#…">ID.</author>` in
+text, with `@corresp` pointing to the immediately preceding citation; an anaphoric `ib.` remains the
+printed `<biblScope>` text with the same kind of link. Every synchronic citation receives an
+`xml:id` so these links survive semantic reattachment.
 
-Littré writes `ID.` for a citation whose source is the immediately preceding citation. v0.3
-resolves this by anaphora over the entry in **source** order — the semantic tree is built later and
-may reattach citations to nodes by containment, which would reorder them. No author table is
-involved. If the antecedent names an author, a resolved name renders as
-`<author ana="resolved">MOL.</author>`, marking that the name was supplied rather than printed.
-If the antecedent citation carries no author, the printed `ID.` is retained without inventing one
-and the resolution state is `antecedent_absent`. Only an `ID.` with no antecedent citation becomes
-an `author_unresolved` review finding.
+SQLite additionally carries the resolved author value for `ID.` because that value is established
+without bibliographic inference. It does not synthesize a resolved string for `ib.`: forms such as
+`ib. III` can retain the preceding work while changing the locus, so the durable fact is the
+antecedent citation rather than a guessed normalized reference. An `ID.` or `ib.` with no preceding
+citation produces an `author_unresolved` or `reference_unresolved` review finding respectively.
 
-`@ana` carries epistemic provenance only — `resolved`, `suspect`. It must never carry pipeline
-workflow state, and a test enforces the whitelist rather than banning the attribute.
+`@ana` carries epistemic provenance only. Anaphora resolution is a processing relation, not an
+epistemic classification, so it is not encoded there.
 
 Bibliographic normalization beyond what can be established safely from Littré remains incremental; missing `biblScope/@unit` is not repaired by guessing.
 
@@ -282,7 +286,15 @@ and:
 </cit>
 ```
 
-Connective text may use `<lbl>` or schema-valid prose/segment structures. Etymological cross-references use the same `<xr>/<ref>` contract as elsewhere.
+Unmarked etymological connectors such as `et`, `de`, and `ou` remain ordinary source text; the renderer does not promote them to `<lbl>` merely from position. Explicit labels and etymological cross-references use their dedicated schema-valid structures, with cross-references following the same `<xr>/<ref>` contract as elsewhere.
+
+Compound constituents are not cognates. A source form identified deterministically as a constituent is rendered with Lex-0's standard `<cit type="etymon"><form><orth>…</orth></form></cit>` pattern; for an unlabelled French constituent, `xml:lang="fr"` is supplied. The resolver may retain the internal constituent distinction, but the TEI does not invent a `component` value where the Lex-0 etymon vocabulary already expresses the derivational relation. The detector is intentionally conservative: it only promotes a leading coordinated run of italic form events when at least two forms occur in headword order.
+
+Source typography in etymologies is retained explicitly rather than treated as implicit in `<orth>`. A form originating in XMLittré `<i>` therefore emits `<orth rend="italic">…</orth>`, whether it is an etymon or a cognate. This preserves the reliable italic/roman distinction observed in Littré's etymologies while keeping all lexical forms in the same `<cit>/<form>/<orth>` structure. Source capitalization is preserved; structural rendering does not silently normalize sentence-initial `À` to `à`.
+
+Punctuation that separates recognized etymology events remains visible in source order rather than being discarded or hoisted. Punctuation-only source gaps are emitted as `<pc>`; punctuation belonging inside a language/cognate unit is emitted as `<pc>` there. Etymology paragraphs are ordered as source units and their segment order is preserved internally, preventing unanchored connectors or punctuation from floating ahead of precisely anchored forms.
+
+Regional language labels use the committed language table just like language abbreviations. `Berry` routes to the existing Berrichon private-use code `fr-x-berrich`, so a following cognate carries `xml:lang="fr-x-berrich"` and the printed `Berry` remains in `<lang>`.
 
 A reconstructed/uncertain marker such as Littré's *fictif* may use the established fallback:
 
@@ -304,6 +316,20 @@ generated `etymology_suspect` review finding rather than a stored judgment. Segm
 is known — form events and anchors — carry a raw anchor; connectors and prose are located by their
 containing rubrique block. Anchoring granularity follows adjudication need, so if an etymological
 fact later requires a durable judgment, it acquires its own span at that point.
+
+### Unsegmented etymologies are counted, not marked
+
+Segmentation keys on Gannaz's italic and anchor markup, and that markup is uneven: an etymology
+carrying neither is often the same string a marked one would be, so it falls back to a single prose
+segment. The fallback emits an `etymology_unsegmented` review finding anchored to the containing
+block, with detail `no_events` when the paragraph carried no recognized markup and
+`unrecognized_markup` when markup outside the event inventory could have been severed across
+segments. That count is the denominator classification coverage is reported against.
+
+The finding is the whole of the record. It is not marked in the TEI and not mirrored in the
+`etymology` table, because it states where this parser stopped rather than anything about Littré or
+Gannaz — `ana="suspect"` is a claim about a token in the text, `unsegmented` would be workflow
+state, and the published edition carries the first and not the second.
 
 ### Rubriques do not fold into `<etym>`
 
@@ -341,11 +367,24 @@ Encoding:
 
 `lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
 convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the
-committed `dateRange` and `supplement`.
+committed `dateRange` and `supplement`. Proverb material uses the singular token `proverb` both as
+`note/@type` and `cit/@subtype`.
 
-The cost: a rubrique that mixes prose and citations splits across a `<note>` and sibling `<cit>`s,
-and **the rubrique boundary is not expressed in TEI**. The `subtype` distinguishes the kind, and
-SQLite retains `origin`, `rubrique`, and the raw anchor, so the grouping stays fully recoverable.
+A `PROVERBE` or `PROVERBES` rubrique additionally preserves the printed heading, `Proverbe.` or
+`Proverbes.`. A direct `<lbl>` would be preferable in the abstract, but the pinned Lex-0 schema does
+not admit `<lbl>` inside `<sense>`, and proverb rubriques can occur there. When coarse proverb prose
+is the first rubrique content, the heading and prose therefore share one note:
+`<note type="proverb" xml:id="…"><seg type="label">Proverbe.</seg> …</note>`. This avoids a
+second indistinguishable proverb note and removes the generic outer `<seg>` formerly wrapped around
+the note content. Where no coarse prose note is available to carry the heading, the fallback remains
+a distinct `<note type="proverb" subtype="label">Proverbe.</note>`.
+
+Where a coarse proverb contains prose plus lifted attestations, the content note receives an
+`xml:id` and each following proverb citation points back to that note with `@corresp`. This retains
+the relationship even though Lex-0 forbids `<cit>` inside `<note>`. Citation-only proverb material
+is left unlinked rather than given an invented target. For rubriques other than proverbs, the
+rubrique boundary is not expressed in TEI; the `subtype` distinguishes the kind, and SQLite retains
+`origin`, `rubrique`, and the raw anchor, so the grouping stays fully recoverable.
 
 Two further findings from the same validation pass: `<dictScrap>` does not exist in Lex-0 v0.9.5,
 so the `remarque`-via-`dictScrap` plan is unimplementable and remarque citations take the same
@@ -358,6 +397,8 @@ alongside `<citedRange>`.
 XMLittré source wrappers such as `<exemple>`, `<mentioned>`, `<foreign>`, and verbatim italic `<i>` are not assumed to be legal in every Lex-0 content model.
 
 Where a wrapper represents only print emphasis and the richer source element is disallowed, v0.2 established a validated fallback to `<hi rend="italic">`, preserving `xml:lang` when available. Nested `<hi>` must respect the pinned content model; flatten redundant nesting rather than generating invalid markup.
+
+`<exemple>` is not such a wrapper. Comparison with the print shows that its contents are roman text and that the element records an XMLittré editorial judgment rather than typographic emphasis. Coarse output therefore preserves the inherited span as `<seg type="example">…</seg>` without `<hi>`. This explicitly supersedes the earlier v0.3 decision that rendered `<exemple>` as `<seg type="example"><hi rend="italic">…</hi></seg>`.
 
 Semantic structures such as etymons or examples should be represented by their dedicated Lex-0 elements when adjudication has established them, not merely by italic presentation.
 
@@ -379,7 +420,6 @@ Therefore:
 
 Project annotations that express a corpus fact or editorial epistemic claim may remain where the schema admits them, including:
 
-- `ana="resolved"` for an author name supplied by anaphora rather than printed at that citation;
 - `ana="suspect"` for explicitly preserved unresolved source tokens.
 
 `@ana` carries epistemic provenance only, and its permitted values are whitelisted by test so a new

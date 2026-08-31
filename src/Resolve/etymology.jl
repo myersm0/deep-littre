@@ -41,7 +41,10 @@ struct EtymCue
 	printed::String
 	expand::String
 	code::String
+	trailing::String
 end
+
+EtymCue(printed, expand, code) = EtymCue(printed, expand, code, "")
 
 struct EtymCit
 	cit_type::Symbol
@@ -51,11 +54,23 @@ struct EtymCit
 	forms::Vector{String}
 	gloss::String
 	defaulted::Bool
+	italic::Bool
 	range::UnitRange{Int}
 end
 
 EtymCit(cit_type, language, cue, fictif, forms, gloss, defaulted) =
-	EtymCit(cit_type, language, cue, fictif, forms, gloss, defaulted, no_range)
+	EtymCit(cit_type, language, cue, fictif, forms, gloss, defaulted, false, no_range)
+
+struct EtymComponent
+	language::String
+	forms::Vector{String}
+	italic::Bool
+	range::UnitRange{Int}
+end
+
+struct EtymLiteral
+	printed::String
+end
 
 struct EtymConnector
 	printed::String
@@ -74,18 +89,24 @@ EtymCrossReference(label, target, printed, range) =
 
 struct EtymProse
 	text::String
+	fallback::Symbol
 end
+
+EtymProse(text) = EtymProse(text, :none)
 
 struct EtymSuspect
 	token::String
 	anchor::String
 end
 
-const EtymSegment = Union{EtymCit, EtymConnector, EtymCrossReference, EtymProse, EtymSuspect}
+const EtymSegment = Union{
+	EtymCit, EtymComponent, EtymLiteral, EtymConnector, EtymCrossReference, EtymProse,
+	EtymSuspect,
+}
 
 with_gloss(cit::EtymCit, gloss::AbstractString)::EtymCit = EtymCit(
 	cit.cit_type, cit.language, cit.cue, cit.fictif, cit.forms, String(gloss),
-	cit.defaulted, cit.range,
+	cit.defaulted, cit.italic, cit.range,
 )
 
 const etym_connector_words =
@@ -95,6 +116,7 @@ const etym_derivational_pattern = r"\b(?:du|des)\b|\bdériv|\btiré|^de\b"
 const etym_reference_label_tail = r"((?:[Vv]oy(?:ez)?|[Cc]f|[Cc]omparez)\.?)\s*$"
 const etym_greek_pattern = r"[\p{Greek}][\p{Greek}\p{M}']*"
 const etym_punctuation_characters = [' ', ',', ';', '.', '(', ')', ':']
+const etym_literal_punctuation = Set([',', ';', '.', '(', ')', ':'])
 
 strip_tags(markup::AbstractString)::String = strip(replace(markup, r"<[^>]+>" => ""))
 
@@ -124,6 +146,7 @@ struct EtymEvent
 	language::String
 	target::String
 	printed::String
+	italic::Bool
 end
 
 function etym_events(content::AbstractString)::Vector{EtymEvent}
@@ -137,18 +160,18 @@ function etym_events(content::AbstractString)::Vector{EtymEvent}
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
 		push!(spans, range)
 		isempty(forms) && continue
-		push!(events, EtymEvent(:form, range, forms, language, "", ""))
+		push!(events, EtymEvent(:form, range, forms, language, "", "", true))
 	end
 	for matched in eachmatch(r"<a ref=\"([^\"]*)\">(.*?)</a>"s, content)
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
 		push!(spans, range)
 		push!(events, EtymEvent(:anchor, range, String[], "",
-			String(matched.captures[1]), strip_tags(String(matched.captures[2]))))
+			String(matched.captures[1]), strip_tags(String(matched.captures[2])), false))
 	end
 	for matched in eachmatch(etym_greek_pattern, content)
 		any(matched.offset in span for span in spans) && continue
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
-		push!(events, EtymEvent(:form, range, String[String(matched.match)], "grc", "", ""))
+		push!(events, EtymEvent(:form, range, String[String(matched.match)], "grc", "", "", false))
 	end
 	sort!(events; by = event -> first(event.range))
 end
@@ -191,9 +214,12 @@ function match_cue_at(
 		candidate = normalize_etym_token(join(tokens[key_start:(key_start + key_length - 1)], ' '))
 		key = etym_language_key(table, candidate)
 		key === nothing && continue
-		printed = strip(join(tokens[start:(key_start + key_length - 1)], ' '), [',', ' '])
+		raw_printed = strip(join(tokens[start:(key_start + key_length - 1)], ' '))
+		matched_printed = match(r"^(.*?)([,;:()]*)$", raw_printed)
+		printed = String(strip(matched_printed.captures[1]))
+		trailing = String(matched_printed.captures[2])
 		(code, expand) = table.languages[key]
-		return (EtymCue(String(printed), expand, code), key_start + key_length - start, key)
+		return (EtymCue(printed, expand, code, trailing), key_start + key_length - start, key)
 	end
 	(nothing, 0, "")
 end
@@ -322,6 +348,10 @@ function process_chunk!(
 )
 	text = strip(chunk)
 	isempty(text) && return nothing
+	if all(character -> character in etym_literal_punctuation, text)
+		push!(segments, EtymLiteral(String(text)))
+		return nothing
+	end
 	if occursin('<', text)
 		push_prose!(segments, text)
 		return nothing
@@ -435,11 +465,70 @@ function process_gap!(
 		(gloss, remaining) = extract_gloss(gap, next_event != :none, table)
 		isempty(gloss) || (segments[end] = with_gloss(segments[end], gloss))
 	end
-	chunks = split(remaining, r"[;()]")
-	for (index, chunk) in enumerate(chunks)
-		adjacent = index == length(chunks) ? next_event : :none
-		process_chunk!(segments, pending, chunk, table; adjacent_event = adjacent)
+	cursor = firstindex(remaining)
+	for matched in eachmatch(r"[;()]", remaining)
+		if cursor < matched.offset
+			chunk = remaining[cursor:prevind(remaining, matched.offset)]
+			process_chunk!(segments, pending, chunk, table; adjacent_event = :none)
+		end
+		push!(segments, EtymLiteral(String(matched.match)))
+		cursor = matched.offset + ncodeunits(matched.match)
 	end
+	if cursor <= ncodeunits(remaining)
+		process_chunk!(segments, pending, remaining[cursor:end], table; adjacent_event = next_event)
+	end
+	nothing
+end
+
+
+function component_key(text::AbstractString)::String
+	folded = Unicode.normalize(lowercase(text); stripmark = true)
+	replace(folded, r"[^\p{L}\p{N}]" => "")
+end
+
+function leading_component_ranges(
+	content::AbstractString, events::Vector{EtymEvent}, headword::AbstractString,
+)::Set{UnitRange{Int}}
+	isempty(headword) && return Set{UnitRange{Int}}()
+	isempty(events) && return Set{UnitRange{Int}}()
+	first_event = first(events)
+	first_event.kind == :form || return Set{UnitRange{Int}}()
+	prefix = first(first_event.range) > 1 ? content[1:prevind(content, first(first_event.range))] : ""
+	isempty(strip(prefix)) || return Set{UnitRange{Int}}()
+
+	candidates = EtymEvent[first_event]
+	previous = first_event
+	for event in Iterators.drop(events, 1)
+		event.kind == :form || break
+		gap = last(previous.range) + 1 <= first(event.range) - 1 ?
+			content[(last(previous.range) + 1):prevind(content, first(event.range))] : ""
+		gap_text = strip(gap)
+		isempty(gap_text) && break
+		(all(character -> character == ',', gap_text) ||
+			normalize_etym_token(gap_text) == "et") || break
+		push!(candidates, event)
+		previous = event
+	end
+	length(candidates) >= 2 || return Set{UnitRange{Int}}()
+	all(event -> event.italic && length(event.forms) == 1, candidates) || return Set{UnitRange{Int}}()
+
+	headword_key = component_key(headword)
+	cursor = firstindex(headword_key)
+	for event in candidates
+		needle = component_key(only(event.forms))
+		isempty(needle) && return Set{UnitRange{Int}}()
+		found = findnext(needle, headword_key, cursor)
+		found === nothing && return Set{UnitRange{Int}}()
+		cursor = nextind(headword_key, last(found))
+	end
+	Set(event.range for event in candidates)
+end
+
+function emit_component_event!(
+	segments::Vector{EtymSegment}, pending::EtymPending, event::EtymEvent,
+)
+	push!(segments, EtymComponent(event.language, copy(event.forms), event.italic, event.range))
+	reset_pending!(pending)
 	nothing
 end
 
@@ -451,12 +540,14 @@ function emit_form_event!(
 			index > 1 && push!(segments,
 				EtymConnector(pending.connectors[min(index - 1, length(pending.connectors))]))
 			push!(segments, EtymCit(cit_type_of(pending), cue.code, cue,
-				pending.fictif, copy(event.forms), "", is_defaulted(pending), event.range))
+				pending.fictif, copy(event.forms), "", is_defaulted(pending), event.italic,
+				event.range))
 		end
 	else
 		language = isempty(event.language) ? pending.language_hint : event.language
 		push!(segments, EtymCit(cit_type_of(pending), language, nothing,
-			pending.fictif, copy(event.forms), "", is_defaulted(pending), event.range))
+			pending.fictif, copy(event.forms), "", is_defaulted(pending), event.italic,
+			event.range))
 	end
 	reset_pending!(pending)
 end
@@ -489,17 +580,24 @@ end
 	segment_etymology(content, table)
 
 Markup outside the recognized event inventory could be severed across segments, so such content
-falls back to a single prose segment rather than being emitted half-formed.
+falls back to a single prose segment rather than being emitted half-formed. The fallback carries
+its reason so that an etymology which was never analyzed is distinguishable from one that was: the
+segmentation keys on Gannaz's italic and anchor markup, and an etymology carrying neither is the
+same string a marked one would be. That distinction is the denominator classification reports
+against, so it is recorded rather than left to validate clean.
 """
 function segment_etymology(
-	content::AbstractString, table::EtymLanguageTable = etym_language_table,
+	content::AbstractString, table::EtymLanguageTable = etym_language_table;
+	headword::AbstractString = "",
 )::Vector{EtymSegment}
 	stripped = strip(content)
 	isempty(stripped) && return EtymSegment[]
 	events = etym_events(content)
-	isempty(events) && return EtymSegment[EtymProse(strip_tags(stripped))]
-	segmentable(content, events) || return EtymSegment[EtymProse(strip_tags(stripped))]
+	isempty(events) && return EtymSegment[EtymProse(strip_tags(stripped), :no_events)]
+	segmentable(content, events) ||
+		return EtymSegment[EtymProse(strip_tags(stripped), :unrecognized_markup)]
 
+	component_ranges = leading_component_ranges(content, events, headword)
 	segments = EtymSegment[]
 	pending = EtymPending()
 	cursor = 1
@@ -509,7 +607,11 @@ function segment_etymology(
 			content[cursor:prevind(content, first(event.range))] : ""
 		process_gap!(segments, pending, gap, table; previous_form, next_event = event.kind)
 		if event.kind == :form
-			emit_form_event!(segments, pending, event)
+			if event.range in component_ranges
+				emit_component_event!(segments, pending, event)
+			else
+				emit_form_event!(segments, pending, event)
+			end
 			previous_form = true
 		else
 			emit_anchor_event!(segments, pending, event)
@@ -523,5 +625,6 @@ function segment_etymology(
 end
 
 segment_range(segment::EtymCit) = segment.range
+segment_range(segment::EtymComponent) = segment.range
 segment_range(segment::EtymCrossReference) = segment.range
 segment_range(::EtymSegment) = no_range

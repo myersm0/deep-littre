@@ -1,7 +1,7 @@
 using DeepLittre.Source: read_corpus, slice, covers, crosses
 using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, population_hash,
 	kind_name, Indent, Variante, ResumeIndent, ResumeVariante, RubriqueIndent, RubriqueVariante,
-	EnteteNature
+	RubriqueDirect, EnteteNature
 
 @testset "source block census" begin
 	documents = read_corpus(corpus_source)
@@ -19,6 +19,7 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 		@test tally["resume_variante"] == 69
 		@test tally["rubrique_indent"] == 105
 		@test tally["rubrique_variante"] == 3
+		@test tally["rubrique_direct"] == 5
 		@test tally["entete_nature"] == 25
 		@test length(blocks) == sum(values(tally))
 	end
@@ -92,10 +93,21 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 		@test !isempty(rubriques)
 		for rubrique in rubriques
 			for block in rubrique.blocks
-				@test block.kind isa RubriqueIndent || block.kind isa RubriqueVariante
+				@test block.kind isa RubriqueIndent || block.kind isa RubriqueVariante ||
+					block.kind isa RubriqueDirect
 				@test covers(rubrique.raw_span, block.raw_span)
 			end
 		end
+	end
+
+	@testset "direct rubrique content is a census block" begin
+		messager = only(filter(entry -> entry.headword == "MESSAGER, ÈRE", entries))
+		proverb = only(filter(rubrique -> rubrique.name == "PROVERBE", messager.rubriques))
+		direct = only(filter(block -> block.kind isa RubriqueDirect, proverb.blocks))
+		@test direct.raw_span == proverb.raw_span
+		@test direct.view_span == proverb.view_span
+		@test direct.parent_id == proverb.source_id
+		@test direct.source_id != proverb.source_id
 	end
 
 	# The full corpus contains three <indent> elements directly inside <résumé> (FAIRE, LAISSER,

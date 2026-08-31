@@ -72,6 +72,7 @@ end
 write_json(io::IO, constituent::Constituent) = object(io) do writer
 	field!(writer, "name", constituent.name)
 	field!(writer, "span", constituent.span)
+	constituent.value === nothing || field!(writer, "value", constituent.value)
 end
 
 write_json(io::IO, assertion::NodeAssertion) = object(io) do writer

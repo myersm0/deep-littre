@@ -12,6 +12,8 @@ data/adjudication/
     d.jsonl
   qualification_scope/
     a.jsonl
+  bare_qualification/
+    a.jsonl
 ```
 
 JSONL is canonical and deterministic. There is no store manifest.
@@ -34,7 +36,9 @@ Positive `SubLemma` and `VoiceVariant` assertions become explicit child nodes. T
 
 ## Qualification scope
 
-Explicit `<semantique>` and `<nature>` facts are always reconstructed deterministically. Containment is their default scope. An applicable scope assertion may move the marker to its adjudicated target but does not change the marker normalization.
+Explicit `<semantique>` and `<nature>` facts are always reconstructed deterministically. Containment is their default scope. An applicable `qualification_scope` assertion may move an explicit marker to its adjudicated target but does not change its normalization.
+
+A `bare_qualification` assertion first establishes that an exact prose span is a qualification marker and records what it governs. Resolution then removes those marker bytes from the coarse definition and routes the printed marker text through the same committed normalization tables. The durable record does not store the normalized semantic value.
 
 ## Coverage
 
@@ -55,6 +59,7 @@ The TEI renderer:
 
 - serializes the node hierarchy already present in `Resolve`;
 - serializes `SubLemma` as nested `entry type="relatedEntry"` and form-bearing `VoiceVariant` as the corresponding entry-like variant representation;
+- serializes the first resolved form as `form type="lemma"` and additional forms as `form type="variant"`; a form carrying an editorial value uses condensed `<orth value="…"/>` rather than fabricated printed text;
 - emits resolved qualifications, grammatical facts, relations, rubriques, and citations on their resolved targets;
 - may introduce wrapper structure required by Lex-0, but must not turn an underdetermined workflow state into a semantic assertion;
 - emits no `ana="unclassified"` workflow marker;
@@ -68,7 +73,7 @@ SQLite is a queryable mirror of the same resolved facts, not an independent inte
 
 - `node_type` remains null where semantic type is underdetermined;
 - node raw spans are container extents;
-- ordered `content_segments` preserve direct inline content and its structure rather than flattening it away;
+- ordered `content_segments` preserve direct inline content and its structure rather than flattening it away; spans inherited from XMLittré `<exemple>` carry `editorial_origin = 'gannaz'`, while other source wrappers leave that field null;
 - constituent spans, qualifications, relations, rubriques, citations, provenance, review findings, and coverage remain queryable;
 - output-local keys may use current raw anchors where appropriate, but those keys are not durable adjudication identity.
 

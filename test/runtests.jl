@@ -82,6 +82,7 @@ try
 		run_test_file("census/test_census.jl")
 		run_test_file("adjudication/test_projection.jl")
 		run_test_file("adjudication/test_harness.jl")
+		run_test_file("adjudication/test_multi_form.jl")
 		run_test_file("adjudication/test_store.jl")
 		run_test_file("adjudication/test_committed_store.jl")
 		run_test_file("adjudication/test_voice_variant.jl")

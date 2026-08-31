@@ -19,6 +19,9 @@ create table nodes (
 	node_id text primary key,
 	entry_id text not null references entries(entry_id),
 	parent_id text references nodes(node_id),
+	origin text not null,
+	rubrique_id text,
+	rubrique text,
 	node_type text,
 	position integer not null,
 	number text,
@@ -50,6 +53,7 @@ create table constituents (
 	node_id text not null references nodes(node_id),
 	name text not null,
 	text text not null,
+	value text,
 	file text not null,
 	start_byte integer not null,
 	end_byte integer not null
@@ -69,7 +73,10 @@ create table citations (
 	author text,
 	resolved_author text,
 	resolution text,
+	author_antecedent_id text,
 	reference text,
+	reference_antecedent_id text,
+	reference_resolution text,
 	file text not null,
 	start_byte integer not null,
 	end_byte integer not null
@@ -78,6 +85,7 @@ create table citations (
 create table rubriques (
 	rubrique_id text primary key,
 	entry_id text not null references entries(entry_id),
+	parent_rubrique_id text references rubriques(rubrique_id),
 	name text not null,
 	position integer not null,
 	content text not null,
@@ -117,6 +125,7 @@ create table content_segments (
 	resolved_start_byte integer,
 	resolved_end_byte integer,
 	source_element text,
+	editorial_origin text,
 	language text,
 	file text not null,
 	start_byte integer not null,
@@ -196,21 +205,22 @@ function insert_segments!(
 	items::Vector{Resolve.Inline}, offset::Int = 0,
 )::Int
 	for (index, item) in enumerate(items)
-		(kind, target, source_element, language) = if item isa Resolve.CrossReference
-			("cross_reference", item.target, missing, missing)
+		(kind, target, source_element, editorial_origin, language) = if item isa Resolve.CrossReference
+			("cross_reference", item.target, missing, missing, missing)
 		elseif item isa Resolve.Emphasis
 			("emphasis", missing, item.source_element,
+				item.source_element == "exemple" ? "gannaz" : missing,
 				item.language === nothing ? missing : item.language)
 		else
-			("text", missing, missing, missing)
+			("text", missing, missing, missing, missing)
 		end
 		resolved = item isa Resolve.CrossReference ? item.resolved : nothing
 		insert_row!(
 			writer,
-			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
 				owner_kind, owner_id, offset + index, kind, Resolve.inline_text(item),
-				target, resolved_columns(resolved)..., source_element, language,
+				target, resolved_columns(resolved)..., source_element, editorial_origin, language,
 				item.span.file, item.span.start_byte, item.span.end_byte,
 			),
 		)
@@ -220,13 +230,16 @@ end
 
 function insert_node!(
 	writer, entry::Resolve.ResolvedEntry, node::Resolve.ResolvedNode,
-	parent::Union{Nothing, String}, position::Int,
+	parent::Union{Nothing, String}, position::Int; origin::AbstractString = "entry",
+	rubrique_id = nothing, rubrique = nothing, citation_subtype = nothing,
 )
 	insert_row!(
 		writer,
-		"insert into nodes values (?,?,?,?,?,?,?,?,?,?,?,?)",
+		"insert into nodes values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
-			node.node_id, entry.entry_id, parent === nothing ? missing : parent,
+			node.node_id, entry.entry_id, parent === nothing ? missing : parent, origin,
+			rubrique_id === nothing ? missing : rubrique_id,
+			rubrique === nothing ? missing : rubrique,
 			node_type_column(node.node_type), position,
 			node.number === nothing ? missing : node.number,
 			node.form === nothing ? missing : node.form,
@@ -239,9 +252,10 @@ function insert_node!(
 	for constituent in node.constituents
 		insert_row!(
 			writer,
-			"insert into constituents values (?,?,?,?,?,?)",
+			"insert into constituents values (?,?,?,?,?,?,?)",
 			(
 				node.node_id, constituent.name, constituent.text,
+				constituent.value === nothing ? missing : constituent.value,
 				constituent.span.file, constituent.span.start_byte, constituent.span.end_byte,
 			),
 		)
@@ -259,23 +273,33 @@ function insert_node!(
 		)
 	end
 	for (index, citation) in enumerate(node.citations)
+		citation_origin = origin == "rubrique" ? "rubrique" : "sense"
+		citation_rubrique = origin == "rubrique" ? rubrique : missing
+		citation_subtype_value = citation_subtype === nothing ? missing : citation_subtype
 		insert_row!(
 			writer,
-			"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+			"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
-				anchor_id(citation.span), node.node_id, entry.entry_id, "sense", missing, missing,
-				index, missing, missing, Resolve.plain_text(citation.quotation),
+				anchor_id(citation.span), node.node_id, entry.entry_id, citation_origin,
+				citation_rubrique, citation_subtype_value, index, missing, missing,
+				Resolve.plain_text(citation.quotation),
 				isempty(citation.author) ? missing : citation.author,
 				isempty(citation.resolved_author) ? missing : citation.resolved_author,
 				String(citation.resolution),
+				citation.author_antecedent === nothing ? missing : anchor_id(citation.author_antecedent),
 				isempty(citation.reference) ? missing : citation.reference,
+				citation.reference_antecedent === nothing ? missing :
+					anchor_id(citation.reference_antecedent),
+				String(citation.reference_resolution),
 				citation.span.file, citation.span.start_byte, citation.span.end_byte,
 			),
 		)
 		insert_segments!(writer, "citation", anchor_id(citation.span), citation.quotation)
 	end
 	for (index, child) in enumerate(node.children)
-		insert_node!(writer, entry, child, node.node_id, index)
+		insert_node!(
+			writer, entry, child, node.node_id, index; origin, rubrique_id, rubrique, citation_subtype,
+		)
 	end
 	nothing
 end
@@ -283,11 +307,23 @@ end
 etymology_row(segment::Resolve.EtymCit) = (
 	"cit", String(segment.cit_type),
 	isempty(segment.language) ? missing : segment.language,
-	segment.cue === nothing ? missing : segment.cue.printed,
+	segment.cue === nothing ? missing : string(segment.cue.printed, segment.cue.trailing),
 	segment.cue === nothing || isempty(segment.cue.expand) ? missing : segment.cue.expand,
 	segment.fictif ? 1 : 0, join(segment.forms, "|"),
 	isempty(segment.gloss) ? missing : segment.gloss,
 	segment.defaulted ? 1 : 0, missing, missing,
+)
+
+
+etymology_row(segment::Resolve.EtymComponent) = (
+	"component", missing,
+	isempty(segment.language) ? missing : segment.language,
+	missing, missing, missing, join(segment.forms, "|"), missing, missing, missing, missing,
+)
+
+etymology_row(segment::Resolve.EtymLiteral) = (
+	"literal", missing, missing, missing, missing, missing, missing, missing, missing,
+	segment.printed, missing,
 )
 
 etymology_row(segment::Resolve.EtymConnector) = (
@@ -321,10 +357,20 @@ function insert_etymology!(writer, entry, anchored, position::Int)
 	nothing
 end
 
+rubrique_node_text(node::Resolve.ResolvedNode)::String = join(
+	filter(!isempty, String[
+		[Resolve.form_value(form) for form in node.forms]...,
+		Resolve.plain_text(node.definition),
+		[Resolve.plain_text(citation.quotation) for citation in node.citations]...,
+	]),
+	" ",
+)
+
 rubrique_text(rubrique::Resolve.ResolvedRubrique)::String = join(
 	(
 		item isa Resolve.RubriqueProse ? Resolve.plain_text(item.content) :
 			item isa Resolve.RubriqueLabel ? item.text :
+			item isa Resolve.RubriqueNode ? rubrique_node_text(item.node) :
 			Resolve.plain_text(item.citation.quotation)
 		for item in rubrique.items
 	),
@@ -335,7 +381,7 @@ function insert_rubrique_citation!(writer, entry, rubrique, item, position::Int)
 	citation = item.citation
 	insert_row!(
 		writer,
-		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
 			anchor_id(citation.span), missing, entry.entry_id, "rubrique", rubrique.name, item.subtype,
 			position,
@@ -345,7 +391,11 @@ function insert_rubrique_citation!(writer, entry, rubrique, item, position::Int)
 			isempty(citation.author) ? missing : citation.author,
 			isempty(citation.resolved_author) ? missing : citation.resolved_author,
 			String(citation.resolution),
+			citation.author_antecedent === nothing ? missing : anchor_id(citation.author_antecedent),
 			isempty(citation.reference) ? missing : citation.reference,
+			citation.reference_antecedent === nothing ? missing :
+				anchor_id(citation.reference_antecedent),
+			String(citation.reference_resolution),
 			citation.span.file, citation.span.start_byte, citation.span.end_byte,
 		),
 	)
@@ -393,6 +443,17 @@ function render_sqlite(
 			for (index, node) in enumerate(entry.nodes)
 				insert_node!(writer, entry, node, nothing, index)
 			end
+			for rubrique in entry.rubriques
+				rubrique_id = anchor_id(rubrique.span)
+				for (index, item) in enumerate(rubrique.items)
+					item isa Resolve.RubriqueNode || continue
+					insert_node!(
+						writer, entry, item.node, nothing, index; origin = "rubrique",
+						rubrique_id, rubrique = rubrique.name,
+						citation_subtype = Resolve.conventions_for(rubrique.name).subtype,
+					)
+				end
+			end
 			position = 0
 			for rubrique in entry.rubriques
 				for anchored in rubrique.etymology
@@ -406,13 +467,17 @@ function render_sqlite(
 					insert_rubrique_citation!(writer, entry, rubrique, item, index)
 				end
 			end
-			for (index, rubrique) in enumerate(entry.rubriques)
+			rubrique_ids = Set(anchor_id(rubrique.span) for rubrique in entry.rubriques)
+			ordered_rubriques = sort(entry.rubriques; by = rubrique -> rubrique.span.start_byte)
+			for (index, rubrique) in enumerate(ordered_rubriques)
+				parent_rubrique_id = rubrique.parent_id !== nothing && rubrique.parent_id in rubrique_ids ?
+					rubrique.parent_id : missing
 				insert_row!(
 					writer,
-					"insert into rubriques values (?,?,?,?,?,?,?,?)",
+					"insert into rubriques values (?,?,?,?,?,?,?,?,?)",
 					(
-						anchor_id(rubrique.span), entry.entry_id, rubrique.name, index,
-						rubrique_text(rubrique),
+						anchor_id(rubrique.span), entry.entry_id, parent_rubrique_id,
+						rubrique.name, index, rubrique_text(rubrique),
 						rubrique.span.file, rubrique.span.start_byte, rubrique.span.end_byte,
 					),
 				)

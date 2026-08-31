@@ -112,22 +112,24 @@ or usage.
 
 A `SubLemma` may carry constituent spans such as:
 
-- `form`;
-- `gloss`.
+- one or more `form` constituents;
+- at most one `gloss`.
 
-These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting.
+These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting. A form constituent may also carry an editorial `value` when one printed surface span licenses more than one normalized reading.
+
+Two multi-form geometries are admitted. Distinct printed forms use disjoint source spans on one node. Alternative readings of one coordinated printed form use coincident form spans with distinct editorial values. Partially overlapping form spans fail closed. The first resolved form is the node's primary form for naming and convenience queries; all forms remain explicit constituents.
 
 Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation
 that belongs to neither span. Durable adjudication stores their intervals in projected classifier
 text. When a valid verdict is applied, those intervals are materialized to current raw spans inside
-the node's raw extent; the material between the materialized form and gloss is therefore recoverable
+the node's raw extent; the material between the final printed form span and gloss is therefore recoverable
 as the node's `separator`. Constituent spans are retained through resolution into both outputs rather
 than being reduced to their text, and no renderer may drop the separator or graft it onto a
 constituent it does not belong to. A constituent's semantic text is reconstructed through the same
 projection used for adjudication rather than by blindly slicing its raw interval, because a
 contiguous source interval may legitimately cover interior markup.
 
-A block may contain more than one sub-lemma. A node's primary span is contiguous; if shared or discontinuous material later requires representation, attach multiple explicit constituent/source spans rather than silently redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
+A block may contain more than one sub-lemma. A node's primary span is contiguous; discontinuous form material is represented by multiple explicit constituent/source spans rather than by redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
 
 Semantic node spans are laminar: two nodes are disjoint or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review; the resolver and renderers do not invent a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
 
@@ -173,19 +175,23 @@ Containment is the deterministic default: a marker governs the innermost resolve
 contains it. That is a stated geometric rule, not a heuristic guess, so it needs no adjudication
 and the absence of a record never becomes a claim.
 
-The `qualification_scope` pass records **departures** from that default. Its question is whether
-any marker in the material governs something other than the block containing it; a negative
-outcome is the positive statement that every marker here scopes by containment. A positive
-outcome carries scope assertions naming the printed marker and the projected span of the material it
-governs — a span rather than a node id, because the node it lands on may be derived at resolution
-and have no durable identity. Valid records materialize both projected intervals to current raw
-spans before resolution.
+The `qualification_scope` pass records **departures** from that default for explicit
+`<semantique>`/`<nature>` markers. Its question is whether any such marker governs something other
+than the block containing it; a negative outcome is the positive statement that every explicit
+marker here scopes by containment. A positive outcome carries scope assertions naming the printed
+marker and the projected span of the material it governs — a span rather than a node id, because
+the node it lands on may be derived at resolution and have no durable identity.
 
-A scope adjudication moves **where** a marker applies, never **what** it means. The type and norm
-stay deterministic products of the committed normalization tables, and a test asserts the full set
-of qualification facts is byte-identical before and after a scope record is applied. The marker
-selection must land on a printed `<semantique>` or `<nature>` element: an adjudicator may say how
-far a printed label reaches, not invent a label the source does not print.
+The `bare_qualification` pass handles the separate case where Littré prints a qualification label
+as ordinary prose and XMLittré supplies no marker element. A positive record identifies the exact
+printed marker span and the projected span it governs. It may not claim text already represented by
+an explicit marker. Valid records from either pass materialize their projected intervals to current
+raw spans before resolution.
+
+Neither pass adjudicates **what** a marker means. Type and norm remain deterministic products of
+the committed normalization tables. `qualification_scope` changes only the target of an explicit
+marker; `bare_qualification` establishes a previously unmarked printed boundary plus its target,
+after which the same resolver-side routing applies.
 
 ## Adjudication identity and stale detection
 
@@ -242,6 +248,7 @@ Initial `SourceBlock` kinds include:
 - `<variante>`;
 - `<résumé>`-internal `<indent>` and `<variante>`;
 - rubrique-internal `<indent>` and `<variante>`;
+- direct rubrique content with no intervening block element;
 - `<entete>/<nature>`.
 
 Containment is decided by ancestry, not element name, and résumé ancestry is consulted for both `<indent>` and `<variante>`. Résumé material summarizes senses represented elsewhere in the entry and is excluded from the structural population.
@@ -250,7 +257,7 @@ Containment is decided by ancestry, not element name, and résumé ancestry is c
 
 The `SourceBlock` census is universal over the defined adjudication-relevant block population, not over all XMLittré content. It answers “which source blocks exist for adjudication?”. Each adjudication pass declares a versioned eligible population drawn from that census.
 
-A pass can therefore state honestly that it has completed all ordinary indents while deliberately deferring rubrique internals, without making deferred blocks disappear from the denominator. Qualification passes whose phenomena occur at `<variante>` level include variantes in their version-1 eligible populations; the census does not merely count them and then silently exclude them from usage adjudication.
+The current structural and qualification populations use population version 2 and contain the same 341,125 full-corpus blocks: ordinary indents/variantes plus all three rubrique block kinds. Résumé blocks and `<entete>/<nature>` remain outside those populations. This equality is deliberate: structural judgments and qualification judgments must be able to reach the same rubrique material, including bare labels embedded there.
 
 ## Deriving ordinary `Sense`
 

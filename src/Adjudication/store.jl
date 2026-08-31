@@ -81,7 +81,11 @@ function read_projected_span(entry)::ProjectedSpan
 end
 
 function read_constituent(entry)::Constituent
-	Constituent(entry["name"], read_projected_span(entry["span"]))
+	Constituent(
+		entry["name"],
+		read_projected_span(entry["span"]),
+		get(entry, "value", nothing),
+	)
 end
 
 function read_assertion(entry)::NodeAssertion

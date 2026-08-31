@@ -1,8 +1,8 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: Harness, Store
-using DeepLittre.Resolve: resolve, segment_etymology, EtymCit, EtymConnector, EtymProse,
-	EtymSuspect, EtymCrossReference, EtymSegment, etym_language_table
+using DeepLittre.Resolve: resolve, segment_etymology, EtymCit, EtymComponent, EtymLiteral,
+	EtymConnector, EtymProse, EtymSuspect, EtymCrossReference, EtymSegment, etym_language_table
 
 @testset "etymology" begin
 	documents = read_corpus(corpus_source)
@@ -28,6 +28,52 @@ using DeepLittre.Resolve: resolve, segment_etymology, EtymCit, EtymConnector, Et
 		latin = first(filter(cit -> cit.language == "la", cits))
 		@test latin.cit_type == :etymon
 		@test latin.forms == ["angustia"]
+	end
+
+	@testset "compound constituents, regional scope, and punctuation remain distinct" begin
+		segments = segment_etymology(
+			"<i>À</i> et <i>couple</i> ; Berry, <i>accoubler</i>.";
+			headword = "ACCOUPLER",
+		)
+		components = filter(segment -> segment isa EtymComponent, segments)
+		@test length(components) == 2
+		@test [only(component.forms) for component in components] == ["À", "couple"]
+		@test all(component -> component.italic, components)
+		connectors = [segment.printed for segment in segments if segment isa EtymConnector]
+		@test connectors == ["et"]
+
+		cognates = filter(segment -> segment isa EtymCit, segments)
+		@test length(cognates) == 1
+		berry = only(cognates)
+		@test berry.cit_type == :cognate
+		@test berry.language == "fr-x-berrich"
+		@test berry.cue.printed == "Berry"
+		@test berry.cue.trailing == ","
+		@test berry.forms == ["accoubler"]
+		@test berry.italic
+
+		literals = [segment.printed for segment in segments if segment isa EtymLiteral]
+		@test literals == [";", "."]
+
+		io = IOBuffer()
+		names = DeepLittre.Render.Names(
+			Dict{DeepLittre.Source.RawSpan, String}(),
+			Dict{DeepLittre.Source.RawSpan, DeepLittre.Render.NodeNames}(),
+			Dict{DeepLittre.Source.RawSpan, String}(),
+		)
+		for segment in segments
+			DeepLittre.Render.render_etym_segment(io, segment, names)
+		end
+		rendered = String(take!(io))
+		@test occursin(
+			"<cit type=\"etymon\" xml:lang=\"fr\"><form><orth rend=\"italic\">À</orth></form></cit> et <cit type=\"etymon\" xml:lang=\"fr\"><form><orth rend=\"italic\">couple</orth></form></cit> <pc>;</pc> ",
+			rendered,
+		)
+		@test occursin(
+			"<cit type=\"cognate\" xml:lang=\"fr-x-berrich\"><lang expand=\"berrichon\" norm=\"fr-x-berrich\">Berry</lang><pc>,</pc><form><orth rend=\"italic\">accoubler</orth></form></cit><pc>.</pc>",
+			rendered,
+		)
+		@test !occursin("type=\"component\"", rendered)
 	end
 
 	@testset "a lang attribute wins over the preceding cue" begin
@@ -68,6 +114,35 @@ using DeepLittre.Resolve: resolve, segment_etymology, EtymCit, EtymConnector, Et
 		@test length(segments) == 1
 		@test only(segments) isa EtymProse
 		@test !occursin('<', only(segments).text)
+		@test only(segments).fallback == :unrecognized_markup
+	end
+
+	@testset "the fallback records why it fired" begin
+		unmarked = segment_etymology("Provenç libertat ; du latin libertatem, de liber, libre.")
+		@test only(unmarked) isa EtymProse
+		@test only(unmarked).fallback == :no_events
+
+		segmented = segment_etymology("du latin <i lang=\"la\">angustia</i>, resserrement")
+		prose = filter(segment -> segment isa EtymProse, segmented)
+		@test all(segment -> segment.fallback == :none, prose)
+	end
+
+	@testset "an unsegmented etymology becomes a review finding" begin
+		unsegmented = filter(
+			finding -> finding.category == "etymology_unsegmented", resolved.review,
+		)
+		marked = [
+			anchored for entry in resolved.entries for rubrique in entry.rubriques
+			for anchored in rubrique.etymology
+			if anchored.segment isa EtymProse && anchored.segment.fallback != :none
+		]
+		@test length(unsegmented) == length(marked)
+		@test !isempty(unsegmented)
+		@test all(finding -> finding.detail in ("no_events", "unrecognized_markup"), unsegmented)
+
+		liberte = etymology_of("LIBERTÉ")
+		@test all(anchored -> anchored.segment isa EtymProse, liberte.etymology)
+		@test only(liberte.etymology).segment.fallback == :no_events
 	end
 
 	@testset "empty content yields no segments" begin

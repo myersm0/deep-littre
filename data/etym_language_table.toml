@@ -51,6 +51,7 @@
 "basque" = { code = "eu", expand = "basque", note = "Basque" }
 "berrich." = { code = "fr-x-berrich", expand = "berrichon", note = "Berrichon" }
 "berrichon" = { code = "fr-x-berrich", expand = "berrichon", note = "Berrichon" }
+"berry" = { code = "fr-x-berrich", expand = "berrichon", note = "Berrichon regional label" }
 "bourg." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
 "bourguig." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }
 "bourguign." = { code = "fr-x-bourg", expand = "bourguignon", note = "Bourguignon" }

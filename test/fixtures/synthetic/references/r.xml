@@ -40,4 +40,31 @@
 </variante>
 </corps>
 </entree>
+<entree terme="PAIR" sens="2">
+<entete>
+	<prononciation>pèr</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Second homographe dans l'ordre lexical explicite.</variante>
+</corps>
+</entree>
+<entree terme="PAIR" sens="1">
+<entete>
+	<prononciation>pèr</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Premier homographe dans l'ordre lexical explicite.</variante>
+</corps>
+</entree>
+<entree terme="SOLO" sens="2">
+<entete>
+	<prononciation>so-lo</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Entrée isolée qui porte pourtant le numéro d'homographe 2.</variante>
+</corps>
+</entree>
 </xmlittre>

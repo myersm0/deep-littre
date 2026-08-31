@@ -11,6 +11,7 @@ struct ResumeIndent <: BlockKind end
 struct ResumeVariante <: BlockKind end
 struct RubriqueIndent <: BlockKind end
 struct RubriqueVariante <: BlockKind end
+struct RubriqueDirect <: BlockKind end
 struct EnteteNature <: BlockKind end
 
 kind_name(::Indent) = "indent"
@@ -19,11 +20,12 @@ kind_name(::ResumeIndent) = "resume_indent"
 kind_name(::ResumeVariante) = "resume_variante"
 kind_name(::RubriqueIndent) = "rubrique_indent"
 kind_name(::RubriqueVariante) = "rubrique_variante"
+kind_name(::RubriqueDirect) = "rubrique_direct"
 kind_name(::EnteteNature) = "entete_nature"
 
 const block_kinds = (
 	Indent(), Variante(), ResumeIndent(), ResumeVariante(),
-	RubriqueIndent(), RubriqueVariante(), EnteteNature(),
+	RubriqueIndent(), RubriqueVariante(), RubriqueDirect(), EnteteNature(),
 )
 
 struct SourceBlock
@@ -170,6 +172,35 @@ function check_resume_marking(
 	nothing
 end
 
+const rubrique_direct_exclusions = ("indent", "variante", "rubrique", "résumé", "cit")
+
+function has_rubrique_direct_content(
+	document::Source.SourceDocument, node::XML.FlatNode,
+)::Bool
+	for child in XML.children(node)
+		kind = XML.nodetype(child)
+		if kind == XML.Text
+			text = Source.slice(document.parser_view, Source.node_view_span(document, child))
+			isempty(strip(XML.unescape(text))) || return true
+		elseif kind == XML.Element
+			XML.tag(child) in rubrique_direct_exclusions && continue
+			has_rubrique_direct_content(document, child) && return true
+		end
+	end
+	false
+end
+
+function rubrique_direct_block(
+	document::Source.SourceDocument, node::XML.FlatNode, context::Context, rubrique_id::String,
+)::SourceBlock
+	view = Source.node_view_span(document, node)
+	(raw, synthetic) = Source.node_raw_span(document, node)
+	SourceBlock(
+		string(anchor_id(raw), ":direct"), RubriqueDirect(), raw, view, synthetic,
+		context.entry_id, rubrique_id, SourceBlock[],
+	)
+end
+
 function build_rubrique(
 	document::Source.SourceDocument,
 	rubriques::Vector{SourceRubrique},
@@ -183,6 +214,9 @@ function build_rubrique(
 	name = something(Source.attribute(node, "nom"), "")
 	inner = Context(true, false, context.entry_id, source_id)
 	blocks = scan!(document, rubriques, anomalies, node, inner)
+	if has_rubrique_direct_content(document, node)
+		pushfirst!(blocks, rubrique_direct_block(document, node, inner, source_id))
+	end
 	SourceRubrique(source_id, name, raw, view, context.entry_id, context.parent_id, blocks)
 end
 
