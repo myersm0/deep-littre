@@ -87,6 +87,7 @@ try
 		run_test_file("adjudication/test_committed_store.jl")
 		run_test_file("adjudication/test_voice_variant.jl")
 		run_test_file("adjudication/test_scope.jl")
+		run_test_file("adjudication/test_expressiveness.jl")
 		run_test_file("resolve/test_resolve.jl")
 		run_test_file("resolve/test_references.jl")
 		run_test_file("resolve/test_etymology.jl")
