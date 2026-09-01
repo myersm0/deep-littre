@@ -87,16 +87,43 @@ function name_node!(
 			normalize = false)
 		inner = mint!(identifiers, sense_candidate(entry, 1, false); normalize = false)
 		names.nodes[node.span] = NodeNames(entry, inner)
-		for (position, child) in enumerate(node.children)
+		position = 0
+		for child in node.children
+			positional = !(child.node_type isa Adjudication.SubLemma ||
+				child.node_type isa Adjudication.VoiceVariant)
+			positional && (position += 1)
 			name_node!(names, identifiers, child, inner, position, true)
 		end
 	else
 		sense = mint!(identifiers, sense_candidate(prefix, index, nested); normalize = false)
 		names.nodes[node.span] = NodeNames(nothing, sense)
-		for (position, child) in enumerate(node.children)
+		position = 0
+		for child in node.children
+			positional = !(child.node_type isa Adjudication.SubLemma ||
+				child.node_type isa Adjudication.VoiceVariant)
+			positional && (position += 1)
 			name_node!(names, identifiers, child, sense, position, true)
 		end
 	end
+	nothing
+end
+
+# definition content that is nothing but punctuation; carried as `<pc>`
+function punctuation_only(definition::Vector{Resolve.Inline})::Bool
+	isempty(definition) && return false
+	all(definition) do item
+		item isa Resolve.TextRun || return false
+		text = strip(item.text)
+		!isempty(text) && all(character -> ispunct(character), text)
+	end
+end
+
+function render_punctuation(io::IO, definition::Vector{Resolve.Inline})
+	write(io, "<pc>")
+	for item in definition
+		write(io, escape_xml(strip(item.text)))
+	end
+	write(io, "</pc>")
 	nothing
 end
 
@@ -335,9 +362,13 @@ function render_node(
 	end
 	if !isempty(node.definition)
 		newline(io, depth + 1)
-		write(io, "<def>")
-		render_inline(io, node.definition, names)
-		write(io, "</def>")
+		if punctuation_only(node.definition)
+			render_punctuation(io, node.definition)
+		else
+			write(io, "<def>")
+			render_inline(io, node.definition, names)
+			write(io, "</def>")
+		end
 	end
 	for citation in node.citations
 		newline(io, depth + 1)
@@ -394,9 +425,13 @@ function render_nested_entry(
 	end
 	if !isempty(node.definition)
 		newline(io, depth + 2)
-		write(io, "<def>")
-		render_inline(io, node.definition, names)
-		write(io, "</def>")
+		if punctuation_only(node.definition)
+			render_punctuation(io, node.definition)
+		else
+			write(io, "<def>")
+			render_inline(io, node.definition, names)
+			write(io, "</def>")
+		end
 	end
 	for citation in node.citations
 		newline(io, depth + 2)
