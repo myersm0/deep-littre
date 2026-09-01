@@ -9,11 +9,15 @@ struct AdjudicationState
 	findings::Vector{ReviewFinding}
 end
 
-reviewable(reason::AbstractString)::Bool = startswith(reason, "structural conflict:")
+review_category(reason::AbstractString)::Union{Nothing, String} =
+	startswith(reason, "structural conflict:") ? "structural_conflict" :
+	endswith(reason, " is unresolved") ? "unresolved" :
+	nothing
 
 function record_review!(state::AdjudicationState, block::Census.SourceBlock, reason::AbstractString)
-	reviewable(reason) || return nothing
-	push!(state.findings, ReviewFinding("structural_conflict", reason, block.raw_span))
+	category = review_category(reason)
+	category === nothing && return nothing
+	push!(state.findings, ReviewFinding(category, reason, block.raw_span))
 	nothing
 end
 

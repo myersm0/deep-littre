@@ -6,6 +6,10 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, FormRea
 	bare_qualification_pass, eligible
 using DeepLittre.Resolve: resolve
 
+# What one verdict can and cannot say. Each testset states a capability claim about the durable
+# record and exercises it against real corpus material, so the boundary is executable rather than
+# described. `@test_broken` marks a claim the record shape admits but the pipeline does not honour;
+# it reports Broken now and errors the moment the capability lands.
 @testset "verdict expressiveness" begin
 	documents = read_corpus(corpus_source)
 	corpus = census(documents)
@@ -50,22 +54,30 @@ using DeepLittre.Resolve: resolve
 			residuals = ["Familièrement."],
 		)) == "schema_violation"
 
-		# Only `form` and `gloss` are constructible, and a node carries at most one gloss.
+		# Only `form` and `gloss` are constructible, and a node carries at most one gloss. There is
+		# no third constituent name and no authoring surface that could supply one.
 		@test fieldnames(FormSelection) == (:node, :forms, :gloss)
 	end
 
 	@testset "nodes nest by geometry and may not cross" begin
-		@test accepts(sublemma_pass, angoisse_item, Decision(
+		# Nesting is expressible where the inner node falls in the part of the outer node that its
+		# own constituents do not claim.
+		nesting = present(harness, sublemma_pass, block_containing("Mener une entreprise à bien"))
+		@test accepts(sublemma_pass, nesting, Decision(
 			:positive; exhaustive = true,
 			selections = [
 				FormSelection(
-					sublemma_text,
-					"Avaler des poires d'angoisse",
-					"subir des mortifications, de vifs déplaisirs.",
+					"À bien, loc. adv. D'une façon qui réussit. Mener une entreprise à bien, faire qu'elle réussisse.",
+					"À bien",
+					"D'une façon qui réussit.",
 				),
-				FormSelection("poires d'angoisse", "poires d'angoisse"),
+				FormSelection(
+					"Mener une entreprise à bien, faire qu'elle réussisse.",
+					"Mener une entreprise à bien",
+					"faire qu'elle réussisse.",
+				),
 			],
-			residuals = ["Familièrement."],
+			residuals = ["Aller à bien, venir à bien, se terminer à bien, réussir."],
 		))
 
 		@test rejection(sublemma_pass, angoisse_item, Decision(
@@ -77,10 +89,8 @@ using DeepLittre.Resolve: resolve
 			residuals = ["Familièrement."],
 		)) == "structural_conflict"
 
-		# A node asserted inside another node's constituent is incoherent (it makes a sub-lemma
-		# of part of a form) but nothing rejects it, because constituent geometry is only ever
-		# checked within a single assertion.
-		@test_broken rejection(sublemma_pass, angoisse_item, Decision(
+		# A node asserted inside another node's constituent makes a sub-lemma of part of a form.
+		@test rejection(sublemma_pass, angoisse_item, Decision(
 			:positive; exhaustive = true,
 			selections = [
 				FormSelection(
@@ -105,7 +115,7 @@ using DeepLittre.Resolve: resolve
 			residuals = ["Familièrement."],
 		))
 
-		# Coincident spans are alternative editorial readings of one printed form, so
+		# Coincident spans are alternative editorial readings of one printed form, so they are
 		# admitted only when their values differ.
 		@test accepts(sublemma_pass, angoisse_item, Decision(
 			:positive; exhaustive = true,
@@ -195,32 +205,25 @@ using DeepLittre.Resolve: resolve
 		a_bien = block_containing("Mener une entreprise à bien")
 		item = present(harness, qualification_scope_pass, a_bien)
 
-		# Two targets for one marker commit and validate, but resolution applies only the first
-		# and drops the rest silently. TOGO: fix this
-		record = commit(harness, qualification_scope_pass, item, Decision(
+		# Resolution applies the first scope it finds for a marker, so a second target could only
+		# be accepted and then silently dropped. It is refused at commit instead.
+		@test rejection(qualification_scope_pass, item, Decision(
 			:positive;
 			scopes = [
 				ScopeSelection("loc. adv.", "À bien"),
 				ScopeSelection("loc. adv.", "Mener une entreprise à bien"),
 			],
-		); decision_procedure = "expressiveness")
-		@test length(record.scopes) == 2
+		)) == "schema_violation"
 
-		store = Store(mktempdir())
-		write_pass!(store, qualification_scope_pass.pass, [record])
-		resolved = resolve(DeepLittre.Adjudication.Harness(documents, corpus, store))
-		targets = Set{String}()
-		function collect_scopes(node)
-			for qualification in node.qualifications
-				qualification.scope isa DeepLittre.Resolve.AssertedScope || continue
-				push!(targets, DeepLittre.Source.anchor_id(qualification.scope.target))
-			end
-			foreach(collect_scopes, node.children)
-		end
-		for entry in resolved.entries, node in entry.nodes
-			collect_scopes(node)
-		end
-		@test_broken length(targets) == 2
+		# Distinct markers still govern distinct material.
+		bare = present(harness, bare_qualification_pass, a_bien)
+		@test accepts(bare_qualification_pass, bare, Decision(
+			:positive;
+			scopes = [
+				ScopeSelection("D'une façon qui réussit.", "Mener une entreprise à bien"),
+				ScopeSelection("réussisse.", "Aller à bien"),
+			],
+		))
 	end
 
 	@testset "the bare pass claims only material no explicit marker covers" begin
@@ -299,6 +302,9 @@ using DeepLittre.Resolve: resolve
 		store = Store(mktempdir())
 		write_pass!(store, sublemma_pass.pass, [first_record, second_record])
 		@test_throws StoreIntegrityError read_pass(store, sublemma_pass.pass)
+
+		# There is no confidence field: `unresolved` is the only hedge the record can express.
+		@test :confidence ∉ fieldnames(ExaminationRecord)
 	end
 
 	@testset "an examined-but-unresolved block is indistinguishable from an unexamined one" begin
@@ -335,12 +341,28 @@ using DeepLittre.Resolve: resolve
 			found === nothing ? nothing : found.node_type
 		end
 
+		function findings_for(voice_decision)
+			store = Store(mktempdir())
+			write_pass!(store, sublemma_pass.pass, [sublemma_record])
+			if voice_decision !== nothing
+				write_pass!(store, voice_variant_pass.pass, [commit(
+					harness, voice_variant_pass, present(harness, voice_variant_pass, angoisse),
+					voice_decision; decision_procedure = "expressiveness",
+				)])
+			end
+			resolved = resolve(DeepLittre.Adjudication.Harness(documents, corpus, store))
+			[finding.category for finding in resolved.review
+				if finding.span == angoisse.raw_span]
+		end
+
 		@test node_type_for(Decision(:negative)) isa DeepLittre.Adjudication.Sense
 		@test node_type_for(Decision(:unresolved; notes = "cannot tell")) === nothing
 		@test node_type_for(nothing) === nothing
 
-		# Both leave the block short of closure and the model records no trace of which happened.
-		# The distinction survives only in per-pass coverage counts.
-		@test_broken node_type_for(Decision(:unresolved)) != node_type_for(nothing)
+		# Both leave the block short of closure, so the distinction is carried by the review queue
+		# rather than by the node: an examined-but-unresolved block raises a finding, an unexamined
+		# one does not.
+		@test findings_for(Decision(:unresolved; notes = "cannot tell")) == ["unresolved"]
+		@test isempty(findings_for(nothing))
 	end
 end

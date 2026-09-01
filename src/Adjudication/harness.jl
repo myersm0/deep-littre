@@ -292,6 +292,15 @@ function validate_geometry(item::AdjudicationItem, pass::PassDefinition, asserti
 			"$(constituent.name) lies outside its node",
 		))
 	end
+	for outer in assertions, inner in assertions
+		outer === inner && continue
+		for constituent in outer.constituents
+			projected_covers(constituent.span, inner.span) && throw(ReviewItem(
+				item.item_id, pass.pass, "structural_conflict",
+				"a node lies inside the $(constituent.name) of another node",
+			))
+		end
+	end
 	nothing
 end
 
@@ -509,6 +518,12 @@ function build_scopes(
 			is_bare_marker_pass(pass) ?
 				"$(repr(selection.marker)) overlaps an explicit qualification marker" :
 				"$(repr(selection.marker)) is not an unambiguous qualification marker in this block",
+		))
+		# Resolution applies the first scope it finds for a marker, so a second target would be
+		# accepted here and then silently dropped.
+		any(scope -> scope.marker == marker_span, scopes) && throw(ReviewItem(
+			item.item_id, pass.pass, "schema_violation",
+			"$(repr(selection.marker)) already governs material in this block",
 		))
 		target = resolve_selection(item, pass, selection.target, "scope target")
 		projected_disjoint(marker_span, target) || throw(ReviewItem(
