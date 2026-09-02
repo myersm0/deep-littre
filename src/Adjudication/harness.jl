@@ -584,9 +584,12 @@ end
 
 function commit(
 	harness::Harness, pass::PassDefinition, item::AdjudicationItem, decision::Decision;
-	decision_procedure::AbstractString = "", decision_reference = nothing,
+	decision_procedure::AbstractString, decision_reference = nothing,
 	now::AbstractString = timestamp(),
 )::ExaminationRecord
+	isempty(strip(decision_procedure)) && throw(ReviewItem(
+		item.item_id, pass.pass, "schema_violation", "record names no decision procedure",
+	))
 	decision.outcome in outcomes || throw(ReviewItem(
 		item.item_id, pass.pass, "schema_violation", "unknown outcome $(decision.outcome)",
 	))

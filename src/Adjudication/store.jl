@@ -141,6 +141,9 @@ function read_pass(store::Store, pass::AbstractString)::Vector{ExaminationRecord
 			shard_of(record) == shard || throw(StoreIntegrityError(
 				"$(path):$(line_number): record $(record.record_id) belongs in shard $(shard_of(record))",
 			))
+			isempty(strip(record.decision_procedure)) && throw(StoreIntegrityError(
+				"$(path):$(line_number): record $(record.record_id) names no decision procedure",
+			))
 			record.record_id in seen_ids && throw(StoreIntegrityError(
 				"duplicate record id $(record.record_id) in pass $(pass)",
 			))
