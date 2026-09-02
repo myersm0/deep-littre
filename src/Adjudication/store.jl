@@ -158,3 +158,31 @@ function read_pass(store::Store, pass::AbstractString)::Vector{ExaminationRecord
 	end
 	sort(records; by = sort_key)
 end
+
+locator(record::ExaminationRecord) =
+	(record.source.file, record.source.start_byte, record.source.end_byte)
+
+"""
+	merge_pass!(store, pass, records)
+
+Add records to a pass without rewriting the verdicts already in it. A record whose locator is
+already held is refused; superseding a verdict must be intentional, by
+regenerating the pass with `write_pass!`.
+"""
+function merge_pass!(store::Store, pass::AbstractString, records::Vector{ExaminationRecord})
+	existing = read_pass(store, pass)
+	held = Set(locator(record) for record in existing)
+	incoming = Set{Tuple{String, Int, Int}}()
+	for record in records
+		key = locator(record)
+		key in held && throw(StoreIntegrityError(
+			"pass $(pass) already holds a record for $(record.source)",
+		))
+		key in incoming && throw(StoreIntegrityError(
+			"merge batch has more than one record for $(record.source)",
+		))
+		push!(incoming, key)
+	end
+	write_pass!(store, pass, vcat(existing, records))
+	nothing
+end
