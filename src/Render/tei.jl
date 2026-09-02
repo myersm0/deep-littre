@@ -82,28 +82,28 @@ function name_node!(
 	names::Names, identifiers::Identifiers, node::Resolve.ResolvedNode,
 	prefix::AbstractString, index::Int, nested::Bool,
 )
-	if node.node_type isa Adjudication.SubLemma || node.node_type isa Adjudication.VoiceVariant
+	if Adjudication.form_bearing(node.node_type)
 		entry = mint!(identifiers, string(prefix, "_", slug(something(node.form, "")));
 			normalize = false)
 		inner = mint!(identifiers, sense_candidate(entry, 1, false); normalize = false)
 		names.nodes[node.span] = NodeNames(entry, inner)
-		position = 0
-		for child in node.children
-			positional = !(child.node_type isa Adjudication.SubLemma ||
-				child.node_type isa Adjudication.VoiceVariant)
-			positional && (position += 1)
-			name_node!(names, identifiers, child, inner, position, true)
-		end
+		name_children!(names, identifiers, node, inner)
 	else
 		sense = mint!(identifiers, sense_candidate(prefix, index, nested); normalize = false)
 		names.nodes[node.span] = NodeNames(nothing, sense)
-		position = 0
-		for child in node.children
-			positional = !(child.node_type isa Adjudication.SubLemma ||
-				child.node_type isa Adjudication.VoiceVariant)
-			positional && (position += 1)
-			name_node!(names, identifiers, child, sense, position, true)
-		end
+		name_children!(names, identifiers, node, sense)
+	end
+	nothing
+end
+
+# form-bearing children are named from their form, so they take no positional slot
+function name_children!(
+	names::Names, identifiers::Identifiers, node::Resolve.ResolvedNode, prefix::AbstractString,
+)
+	position = 0
+	for child in node.children
+		Adjudication.form_bearing(child.node_type) || (position += 1)
+		name_node!(names, identifiers, child, prefix, position, true)
 	end
 	nothing
 end

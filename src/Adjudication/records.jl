@@ -14,6 +14,7 @@ node_type(name::AbstractString)::NodeType =
 	name == "VoiceVariant" ? VoiceVariant() :
 	error("unknown node type $(name)")
 
+form_bearing(::Nothing) = false
 form_bearing(::Sense) = false
 form_bearing(::SubLemma) = true
 form_bearing(::VoiceVariant) = true
