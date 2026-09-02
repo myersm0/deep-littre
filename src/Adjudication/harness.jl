@@ -138,11 +138,28 @@ Decision(outcome::Symbol; exhaustive = false, selections = FormSelection[],
 	scopes = ScopeSelection[], residuals = String[], notes = "") =
 	Decision(outcome, exhaustive, selections, scopes, residuals, notes)
 
+const rejection_categories = (
+	"schema_violation",
+	"ineligible_target",
+	"unmappable_selection",
+	"structural_conflict",
+	"constituent_escapes_node",
+	"residual_overlaps_node",
+	"residuals_overlap",
+	"incomplete_partition",
+	"not_a_marker",
+	"scope_contains_marker",
+)
+
 struct ReviewItem <: Exception
 	item_id::String
 	pass::String
 	category::String
 	detail::String
+	function ReviewItem(item_id, pass, category, detail)
+		category in rejection_categories || error("unknown rejection category $(repr(category))")
+		new(item_id, pass, category, detail)
+	end
 end
 
 Base.showerror(io::IO, item::ReviewItem) = print(

@@ -21,6 +21,7 @@ include("references.jl")
 include("inline.jl")
 include("derive.jl")
 
-export ResolvedCorpus, ResolvedEntry, ResolvedNode, Qualification, Citation, resolve
+export ResolvedCorpus, ResolvedEntry, ResolvedNode, Qualification, Citation, resolve,
+	finding_categories
 
 end

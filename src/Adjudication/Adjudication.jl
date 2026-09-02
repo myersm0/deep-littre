@@ -21,6 +21,6 @@ include("harness.jl")
 
 export ProjectedView, ProjectedSpan, ExaminationRecord, NodeAssertion, AppliedRecord,
 	AnchoredNodeAssertion, Decision, FormReading, FormSelection, Harness, Store, PassDefinition, ReviewItem,
-	StoreIntegrityError
+	StoreIntegrityError, rejection_categories
 
 end

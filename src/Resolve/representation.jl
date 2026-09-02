@@ -206,10 +206,25 @@ struct ResolvedEntry
 	rubriques::Vector{ResolvedRubrique}
 end
 
+const finding_categories = (
+	"structural_conflict",
+	"unresolved",
+	"stale",
+	"author_unresolved",
+	"reference_unresolved",
+	"century_unrecognized",
+	"etymology_suspect",
+	"etymology_unsegmented",
+)
+
 struct ReviewFinding
 	category::String
 	detail::String
 	span::RawSpan
+	function ReviewFinding(category, detail, span)
+		category in finding_categories || error("unknown finding category $(repr(category))")
+		new(category, detail, span)
+	end
 end
 
 struct PassCoverage
