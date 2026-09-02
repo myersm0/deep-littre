@@ -281,6 +281,48 @@ end
 
 surface_sha256(item::AdjudicationItem)::String = Source.text_sha256(surface_text(item))
 
+struct SurfaceExport
+	pass::PassDefinition
+	item::AdjudicationItem
+end
+
+"""
+	surface_json(pass, item)
+
+The classification surface as a producer sees it: everything `surface_sha256` covers, plus the
+pass, its question, and the locator and hash a response must quote to be committed. Nothing here
+is interpreted on the way back in; the producer answers in text and `commit` locates it.
+"""
+surface_json(pass::PassDefinition, item::AdjudicationItem)::String =
+	canonical_json(SurfaceExport(pass, item))
+
+write_json(io::IO, marker::SurfaceMarker) = object(io) do writer
+	field!(writer, "kind", marker.kind)
+	field!(writer, "span", marker.span)
+	field!(writer, "text", marker.text)
+end
+
+write_json(io::IO, context::ContextItem) = object(io) do writer
+	field!(writer, "role", context.role)
+	field!(writer, "text", context.text)
+end
+
+write_json(io::IO, surface::SurfaceExport) = object(io) do writer
+	item = surface.item
+	pass = surface.pass
+	field!(writer, "item_id", item.item_id)
+	field!(writer, "pass", pass.pass)
+	field!(writer, "pass_version", pass.pass_version)
+	field!(writer, "question", pass.question)
+	field!(writer, "exhaustive_extraction", pass.exhaustive_extraction)
+	field!(writer, "source", item.block.raw_span)
+	field!(writer, "surface_sha256", surface_sha256(item))
+	field!(writer, "kind", Census.kind_name(item.block.kind))
+	field!(writer, "target", item.projection.text)
+	field!(writer, "markers", item.markers)
+	field!(writer, "context", item.context)
+end
+
 function resolve_selection(
 	item::AdjudicationItem, pass::PassDefinition, selection::AbstractString, label::AbstractString,
 )::ProjectedSpan
