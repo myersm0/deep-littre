@@ -173,6 +173,8 @@ Compound printed labels may yield more than one `<usg>` element, including eleme
 
 The decision that a span is a `SubLemma` comes from adjudication, not punctuation or an XMLittré locution tag alone.
 
+Punctuation between a nested entry's form and its gloss is recovered from the source and emitted as `<pc>` between `<form>` and `<sense>`, so `Tenir cabinet, tenir conseil.` round-trips as `<orth>Tenir cabinet</orth><pc>,</pc>…<def>tenir conseil.</def>`. The punctuation belongs to neither constituent and is not silently dropped.
+
 A source block may simultaneously yield a sub-lemma and one or more usage qualifications. The `<usg>` elements are attached to the semantic target established by the adjudication record; they do not compete with the sub-lemma for a single block classification.
 
 A proverb is not a separate usage axis. Where proverbial status is applicable, it is `meaningType=proverbial`, attached to the sense or sub-lemma it qualifies.
@@ -188,6 +190,10 @@ Source `<mentioned>` material requires semantic handling:
 - a phrase wrapper that merely preserves print emphasis may flatten to schema-valid `<hi rend="italic">` in contexts where the original source wrapper has no Lex-0 counterpart.
 
 The v0.3 renderer does not run heuristics over definition punctuation to invent this structure. It serializes resolved facts and otherwise preserves coarse prose.
+
+A `<def>` is never punctuation alone. Littré prints a full stop after a label that XMLittré encloses without it — `<nature>Absolument</nature>.` — and once the surrounding material is claimed by markers and asserted nodes, that stop is all the definition content left. It is source-visible and is kept, but as `<pc>.</pc>` following the `<gramGrp>` or `<usg>`, not as `<def>.</def>`; a `<def>` asserts a definition that is not there. `<pc>` is schema-valid directly inside `<sense>`. The same rule covers any punctuation-only remainder, whatever the mark.
+
+Two uses of `<pc>` therefore occur inside a sense: separating a nested entry's form from its gloss, and carrying terminal punctuation of a label. Nothing in the markup distinguishes them; both are punctuation the source prints and no element owns.
 
 ## Citations
 
@@ -437,7 +443,9 @@ the second sense inside it. Dots are legal, since `xml:id` is an `xsd:ID` and th
 Every sense is numbered, including an only child. Uniqueness is guarded separately, for the cases
 where two entries normalize to the same headword slug, so the ordinal always means position.
 
-These ids are rendering identifiers. v0.3 does not promise stability across pre-1.0 releases while structural adjudication is still splitting and regrouping material. Readability is not durability: a positional id moves whenever adjudication regroups the material under it.
+Only source blocks take a positional slot. A `SubLemma` or `VoiceVariant` is named from its form (`angoisse_avaler_des_poires_d_angoisse`) and is not counted among its siblings, so asserting one inside a block does not renumber the source senses that follow it. A sense id is therefore stable under adjudication: verdicts landing over the course of a campaign leave every existing positional id naming the same source material.
+
+The ids are not stable under source change. A patch or upstream revision that adds or removes a block renumbers the blocks after it. v0.3 does not promise stability across pre-1.0 releases on that axis; a frozen identifier registry would be needed, and none is planned before 1.0.
 
 Internal adjudication validity uses the canonical classification surface plus projected selections; the stored raw block span is only a locator. Opaque record/node ids identify authored objects without coupling them to positional TEI ids.
 
