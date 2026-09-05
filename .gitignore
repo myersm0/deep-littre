@@ -1,14 +1,13 @@
 __pycache__/
 *.pyc
 data/source/
-data/littre.tei.xml
+data/output/
 *.egg-info/
 .venv/
 env/
 .meta
 temp/
 Manifest.toml
-data/
 bak/
 .DS_Store
 test/reports/
