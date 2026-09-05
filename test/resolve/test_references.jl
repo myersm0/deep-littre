@@ -64,6 +64,56 @@ using DeepLittre.Resolve: cross_reference_index, resolve_reference
 		@test resolve_reference(index, "angoisse.x") === nothing
 	end
 
+	@testset "a rubrique fragment reaches that rubrique" begin
+		local_documents = read_corpus(joinpath(fixture_root, "synthetic", "fragments"))
+		local_corpus = census(local_documents)
+		local_index = cross_reference_index(local_corpus)
+		local_entries = Dict(entry.headword => entry for entry in all_entries(local_corpus))
+		named(entry, name) = only(filter(rubrique -> rubrique.name == name, entry.rubriques))
+
+		tache = local_entries["TACHE"]
+		@test resolve_reference(local_index, "tache#etymologie") ==
+			named(tache, "ÉTYMOLOGIE").raw_span
+		# The fragment is unaccented and abbreviated against a three-word @nom.
+		@test resolve_reference(local_index, "tache#supplement") ==
+			named(tache, "SUPPLÉMENT AU DICTIONNAIRE").raw_span
+		# The entry carries no rubrique of that name, so nothing rather than the entry.
+		@test resolve_reference(local_index, "tache#historique") === nothing
+
+		# A plural fragment reaches a singular @nom, at whatever depth the source printed it.
+		battant = local_entries["BATTANT, ANTE"]
+		@test resolve_reference(local_index, "battant#proverbes") ==
+			named(battant, "PROVERBE").raw_span
+
+		# Two rubriques of one name inside senses: the source names no one of them.
+		@test resolve_reference(local_index, "indice#proverbes") === nothing
+	end
+
+	@testset "a homograph index narrows to the exact headword first" begin
+		local_documents = read_corpus(joinpath(fixture_root, "synthetic", "fragments"))
+		local_corpus = census(local_documents)
+		local_index = cross_reference_index(local_corpus)
+		homograph(headword, number) = only(filter(
+			entry -> entry.headword == headword && entry.homograph == number,
+			all_entries(local_corpus),
+		))
+
+		# PRIME and PRIME, ÉE both carry sens="1"; only the exact headword set separates them.
+		@test resolve_reference(local_index, "prime.1") == homograph("PRIME", 1).raw_span
+
+		# The exact set answers, so the wider one is never consulted.
+		@test resolve_reference(local_index, "garde.1") == homograph("GARDE", 1).raw_span
+
+		# The exact set carries no sens 4, so the lemma set still has to be tried.
+		@test resolve_reference(local_index, "garde.4") == homograph("GARDE, ÉE", 4).raw_span
+
+		# Neither set carries it.
+		@test resolve_reference(local_index, "garde.9") === nothing
+
+		# A bare lemma several entries share stays unresolved under either set.
+		@test resolve_reference(local_index, "garde") === nothing
+	end
+
 	@testset "a multibyte lemma splits on a codepoint boundary" begin
 		# `zéro#var2` puts `#` immediately after a two-byte character, so slicing by byte
 		# arithmetic lands mid-codepoint. Absent from the 25-entry corpus; found on the full one.
