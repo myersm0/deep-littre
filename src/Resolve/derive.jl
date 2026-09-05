@@ -566,6 +566,10 @@ const rubrique_conventions = Dict(
 conventions_for(name::AbstractString) =
 	get(rubrique_conventions, name, (note = "other", subtype = "other"))
 
+# The one note type that is not a rubrique convention. It names a position in the entry header, so
+# it has no entry in the table above and is whitelisted by the same output test from here.
+const header_note_type = "header"
+
 const rubrique_headings = Dict(
 	"PROVERBE" => "Proverbe.",
 	"PROVERBES" => "Proverbes.",
@@ -998,6 +1002,47 @@ function entry_grammar(document::Source.SourceDocument, node::XML.FlatNode)::Vec
 	qualifications
 end
 
+const header_boundaries = ("prononciation", "nature")
+
+"""
+	entry_header(document, node, references)
+
+The entete material that is neither the pronunciation nor a part-of-speech label, as one note per
+contiguous run. `<prononciation>` and `<nature>` are the boundaries; everything between them — loose
+text, an `<indent>`, a cross-reference — belongs to the run it sits in. A run that prints no letter
+or digit is separator punctuation and carries nothing.
+"""
+function entry_header(
+	document::Source.SourceDocument, node::XML.FlatNode, references::CrossReferenceIndex,
+)::Vector{HeaderNote}
+	header = Source.element_children(node, "entete")
+	isempty(header) && return HeaderNote[]
+	notes = HeaderNote[]
+	pending = XML.FlatNode[]
+	function flush!()
+		isempty(pending) && return nothing
+		content = inline_from(document, pending, references)
+		empty!(pending)
+		(isempty(content) || !any(character -> isletter(character) || isdigit(character),
+			plain_text(content))) && return nothing
+		push!(notes, HeaderNote(content, RawSpan(
+			first(content).span.file,
+			first(content).span.start_byte,
+			last(content).span.end_byte,
+		)))
+		nothing
+	end
+	for child in XML.children(first(header))
+		if XML.nodetype(child) == XML.Element && XML.tag(child) in header_boundaries
+			flush!()
+		else
+			push!(pending, child)
+		end
+	end
+	flush!()
+	notes
+end
+
 function entry_pronunciation(
 	document::Source.SourceDocument, node::XML.FlatNode,
 )::Union{Nothing, String}
@@ -1023,8 +1068,9 @@ function resolve_entry(
 		entry.raw_span,
 		entry_pronunciation(document, node),
 		entry_grammar(document, node),
+		entry_header(document, node, references),
 		ResolvedNode[resolve_block(harness, state, block, resolution, references) for block in entry.blocks
-			if !(block.kind isa Census.EnteteNature)],
+			if !(block.kind isa Census.EnteteNature || block.kind isa Census.EnteteIndent)],
 		ResolvedRubrique[
 			resolve_rubrique(harness, state, rubrique, resolution, references, findings, entry.headword)
 			for rubrique in entry.rubriques

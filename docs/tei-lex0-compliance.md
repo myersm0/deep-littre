@@ -371,6 +371,13 @@ Encoding:
 - rubriques render in **source order**. Entry content is unordered, and Littré puts `HISTORIQUE`
   before `ÉTYMOLOGIE` in some entries and after in others.
 
+`note/@type="header"` carries the entete material that is neither the pronunciation nor a
+part-of-speech label — 3,034 entries have some, and it is heterogeneous enough that any type naming
+the content would be a classification the source does not state. The type names its position
+instead: one note per contiguous run, in source order, after `<gramGrp>`, mirroring where Littré
+prints it. `<note>` is available at entry level via `model.global`. A later pass can lift a header
+note into `<form type="inflected">`, an extended `<gram>`, or a typed note without a schema change.
+
 `lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
 convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the
 committed `dateRange` and `supplement`. Proverb material uses the singular token `proverb` both as

@@ -82,6 +82,15 @@ create table citations (
 	end_byte integer not null
 );
 
+create table header_notes (
+	entry_id text not null references entries(entry_id),
+	position integer not null,
+	content text not null,
+	file text not null,
+	start_byte integer not null,
+	end_byte integer not null
+);
+
 create table rubriques (
 	rubrique_id text primary key,
 	entry_id text not null references entries(entry_id),
@@ -437,6 +446,16 @@ function render_sqlite(
 						qualification.printed, scope_columns(qualification)...,
 						qualification.span.file,
 						qualification.span.start_byte, qualification.span.end_byte,
+					),
+				)
+			end
+			for (index, note) in enumerate(entry.header)
+				insert_row!(
+					writer,
+					"insert into header_notes values (?,?,?,?,?,?)",
+					(
+						entry.entry_id, index, Resolve.plain_text(note.content),
+						note.span.file, note.span.start_byte, note.span.end_byte,
 					),
 				)
 			end

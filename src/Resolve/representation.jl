@@ -195,6 +195,17 @@ struct ResolvedRubrique
 	etymology::Vector{AnchoredEtymSegment}
 end
 
+"""
+Material Littré prints in the entry header beside the pronunciation and the part of speech, kept
+under a type that names its position rather than its kind. The 3,034 entries carrying it are
+heterogeneous — inflected forms, a derivational pointer, a domain label, an editorial remark — so
+any type naming the content would be a classification the source does not state.
+"""
+struct HeaderNote
+	content::Vector{Inline}
+	span::RawSpan
+end
+
 struct ResolvedEntry
 	entry_id::String
 	headword::String
@@ -202,6 +213,7 @@ struct ResolvedEntry
 	span::RawSpan
 	pronunciation::Union{Nothing, String}
 	grammar::Vector{Qualification}
+	header::Vector{HeaderNote}
 	nodes::Vector{ResolvedNode}
 	rubriques::Vector{ResolvedRubrique}
 end

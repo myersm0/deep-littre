@@ -61,9 +61,9 @@ using DeepLittre.Resolve: resolve
 			@test record.unresolved == 0
 			@test record.stale == 0
 		end
-		@test coverage["sublemma"].population_size == 464
-		@test coverage["voice_variant"].population_size == 464
-		@test coverage["qualification_scope"].population_size == 464
-		@test coverage["bare_qualification"].population_size == 464
+		@test coverage["sublemma"].population_size == 466
+		@test coverage["voice_variant"].population_size == 466
+		@test coverage["qualification_scope"].population_size == 466
+		@test coverage["bare_qualification"].population_size == 466
 	end
 end

@@ -51,6 +51,7 @@ in_structural_population(::Census.ResumeVariante) = false
 in_structural_population(::Census.RubriqueIndent) = true
 in_structural_population(::Census.RubriqueVariante) = true
 in_structural_population(::Census.RubriqueDirect) = true
+in_structural_population(::Census.EnteteIndent) = false
 in_structural_population(::Census.EnteteNature) = false
 
 in_qualification_population(::Census.Indent) = true
@@ -60,6 +61,7 @@ in_qualification_population(::Census.ResumeVariante) = false
 in_qualification_population(::Census.RubriqueIndent) = true
 in_qualification_population(::Census.RubriqueVariante) = true
 in_qualification_population(::Census.RubriqueDirect) = true
+in_qualification_population(::Census.EnteteIndent) = false
 in_qualification_population(::Census.EnteteNature) = false
 
 const structural_blocks_population = "structural_blocks"

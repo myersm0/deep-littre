@@ -702,6 +702,12 @@ function render_entry(io::IO, entry::Resolve.ResolvedEntry, names::Names, depth:
 		newline(io, depth + 1)
 		render_qualification(io, qualification)
 	end
+	for note in entry.header
+		newline(io, depth + 1)
+		write(io, "<note type=\"", Resolve.header_note_type, "\">")
+		render_inline(io, note.content, names; wrap_cross_reference = false)
+		write(io, "</note>")
+	end
 	for node in entry.nodes
 		newline(io, depth + 1)
 		render_node(io, node, names, depth + 1, entry.rubriques)

@@ -12,6 +12,7 @@ struct ResumeVariante <: BlockKind end
 struct RubriqueIndent <: BlockKind end
 struct RubriqueVariante <: BlockKind end
 struct RubriqueDirect <: BlockKind end
+struct EnteteIndent <: BlockKind end
 struct EnteteNature <: BlockKind end
 
 kind_name(::Indent) = "indent"
@@ -21,11 +22,12 @@ kind_name(::ResumeVariante) = "resume_variante"
 kind_name(::RubriqueIndent) = "rubrique_indent"
 kind_name(::RubriqueVariante) = "rubrique_variante"
 kind_name(::RubriqueDirect) = "rubrique_direct"
+kind_name(::EnteteIndent) = "entete_indent"
 kind_name(::EnteteNature) = "entete_nature"
 
 const block_kinds = (
 	Indent(), Variante(), ResumeIndent(), ResumeVariante(),
-	RubriqueIndent(), RubriqueVariante(), RubriqueDirect(), EnteteNature(),
+	RubriqueIndent(), RubriqueVariante(), RubriqueDirect(), EnteteIndent(), EnteteNature(),
 )
 
 struct SourceBlock
@@ -72,16 +74,18 @@ end
 struct Context
 	within_rubrique::Bool
 	within_resume::Bool
+	within_entete::Bool
 	entry_id::String
 	parent_id::Union{Nothing, String}
 end
 
 descend(context::Context, parent_id::String) =
-	Context(context.within_rubrique, context.within_resume, context.entry_id, parent_id)
+	Context(context.within_rubrique, context.within_resume, false, context.entry_id, parent_id)
 
 function block_kind(name::AbstractString, context::Context)::BlockKind
 	if name == "indent"
-		context.within_resume ? ResumeIndent() :
+		context.within_entete ? EnteteIndent() :
+			context.within_resume ? ResumeIndent() :
 			context.within_rubrique ? RubriqueIndent() : Indent()
 	elseif name == "variante"
 		context.within_resume ? ResumeVariante() :
@@ -112,13 +116,21 @@ function scan!(
 		elseif name == "indent" || name == "variante"
 			push!(blocks, build_block(document, rubriques, anomalies, child, context, name))
 		elseif name == "résumé"
-			inner = Context(context.within_rubrique, true, context.entry_id, context.parent_id)
+			inner = Context(
+				context.within_rubrique, true, context.within_entete,
+				context.entry_id, context.parent_id,
+			)
 			append!(blocks, scan!(document, rubriques, anomalies, child, inner))
 		elseif name == "entete"
-			for nature in Source.element_children(child, "nature")
-				push!(blocks, leaf_block(document, nature, EnteteNature(), context))
-			end
-		elseif name == "prononciation" || name == "nature"
+			inner = Context(
+				context.within_rubrique, context.within_resume, true,
+				context.entry_id, context.parent_id,
+			)
+			append!(blocks, scan!(document, rubriques, anomalies, child, inner))
+		elseif name == "nature"
+			context.within_entete &&
+				push!(blocks, leaf_block(document, child, EnteteNature(), context))
+		elseif name == "prononciation"
 			continue
 		else
 			append!(blocks, scan!(document, rubriques, anomalies, child, context))
@@ -212,7 +224,7 @@ function build_rubrique(
 	(raw, _) = Source.node_raw_span(document, node)
 	source_id = anchor_id(raw)
 	name = something(Source.attribute(node, "nom"), "")
-	inner = Context(true, false, context.entry_id, source_id)
+	inner = Context(true, false, false, context.entry_id, source_id)
 	blocks = scan!(document, rubriques, anomalies, node, inner)
 	if has_rubrique_direct_content(document, node)
 		pushfirst!(blocks, rubrique_direct_block(document, node, inner, source_id))
@@ -227,7 +239,7 @@ function build_entry(
 	(raw, _) = Source.node_raw_span(document, node)
 	source_id = anchor_id(raw)
 	rubriques = SourceRubrique[]
-	context = Context(false, false, source_id, nothing)
+	context = Context(false, false, false, source_id, nothing)
 	blocks = scan!(document, rubriques, anomalies, node, context)
 	SourceEntry(
 		source_id,

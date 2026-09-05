@@ -47,9 +47,20 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 
 	@testset "an empty store still yields every explicit fact" begin
 		resolved = resolve(fresh_harness())
-		@test length(resolved.entries) == 25
+		@test length(resolved.entries) == 26
+
+		ancrure = entry_named(resolved, "ANCRURE")
+		@test [plain_text(note.content) for note in ancrure.header] == ["Technologie."]
+		@test length(ancrure.nodes) == 2
+
+		imagé = entry_named(resolved, "IMAGÉ, ÉE")
+		@test [plain_text(note.content) for note in imagé.header] == ["d'imager"]
+
+		ni = entry_named(resolved, "NI")
+		@test startswith(only(ni.header).content |> plain_text, "négative qui ne se dit jamais")
 
 		angoisse = entry_named(resolved, "ANGOISSE")
+		@test isempty(angoisse.header)
 		@test angoisse.pronunciation == "an-goi-s', et non an-goi-z'"
 		@test [(q.type, q.norm) for q in angoisse.grammar] ==
 			[("pos", "noun"), ("gender", "feminine")]
@@ -250,7 +261,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		write_pass!(harness.store, "sublemma", [angoisse_record(harness)])
 		resolved = resolve(harness)
 		sublemma = first(filter(record -> record.pass == "sublemma", resolved.coverage))
-		@test sublemma.population_size == 464
+		@test sublemma.population_size == 466
 		@test sublemma.examined == 1
 		@test sublemma.positive == 1
 		@test sublemma.stale == 0
@@ -356,7 +367,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		findings = adjudication_findings(resolved)
 		@test length(findings) == 1
 		@test first(findings).category == "stale"
-		@test length(resolved.entries) == 25
+		@test length(resolved.entries) == 26
 
 		angoisse = entry_named(resolved, "ANGOISSE")
 		@test find_node(angoisse.nodes, node -> node.node_type isa SubLemma) === nothing

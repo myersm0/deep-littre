@@ -1,7 +1,7 @@
 using DeepLittre.Source: read_corpus, slice, covers, crosses
 using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, population_hash,
 	kind_name, Indent, Variante, ResumeIndent, ResumeVariante, RubriqueIndent, RubriqueVariante,
-	RubriqueDirect, EnteteNature
+	RubriqueDirect, EnteteIndent, EnteteNature
 
 @testset "source block census" begin
 	documents = read_corpus(corpus_source)
@@ -11,16 +11,17 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 	tally = counts(corpus)
 
 	@testset "development corpus shape" begin
-		@test length(entries) == 25
+		@test length(entries) == 26
 		@test isempty(anomalies(corpus))
 		@test tally["indent"] == 181
-		@test tally["variante"] == 170
+		@test tally["variante"] == 172
 		@test tally["resume_indent"] == 0
 		@test tally["resume_variante"] == 69
 		@test tally["rubrique_indent"] == 105
 		@test tally["rubrique_variante"] == 3
 		@test tally["rubrique_direct"] == 5
-		@test tally["entete_nature"] == 25
+		@test tally["entete_indent"] == 1
+		@test tally["entete_nature"] == 26
 		@test length(blocks) == sum(values(tally))
 	end
 
@@ -33,11 +34,19 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 
 	@testset "inline nature is markup, not a block" begin
 		natures = count(block -> block.kind isa EnteteNature, blocks)
-		@test natures == 25
+		@test natures == 26
 		for block in blocks
 			block.kind isa EnteteNature || continue
 			@test occursin("<nature>", slice(source_of(documents, block).raw_text, block.raw_span))
 		end
+	end
+
+	@testset "an entete indent is not a sense" begin
+		entry = only(filter(entry -> entry.headword == "ANCRURE", entries))
+		header = only(filter(block -> block.kind isa EnteteIndent, entry.blocks))
+		text = slice(source_of(documents, header).raw_text, header.raw_span)
+		@test occursin("<semantique type=\"domaine\">Technologie.</semantique>", text)
+		@test !any(block -> block.kind isa Indent, entry.blocks)
 	end
 
 	@testset "résumé variantes are counted but distinguished" begin

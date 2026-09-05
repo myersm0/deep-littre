@@ -37,6 +37,13 @@ using DeepLittre.Render: render_tei, render_sqlite
 		@test occursin("type=\"mainEntry\"", text)
 	end
 
+	@testset "entete material renders as a positional note" begin
+		text = read(tei_path, String)
+		@test occursin("<note type=\"header\">Technologie.</note>", text)
+		@test occursin("<note type=\"header\">d'imager</note>", text)
+		@test !occursin("<def>Technologie.</def>", text)
+	end
+
 	@testset "form-bearing nodes serialize entry-like" begin
 		text = read(tei_path, String)
 		@test occursin("type=\"relatedEntry\"", text)
@@ -94,9 +101,9 @@ using DeepLittre.Render: render_tei, render_sqlite
 		end
 	end
 
-	# lbl/@type and cit/@subtype are unconstrained by the schema, so their values are ours alone and
-	# nothing outside this test would notice them drifting. Whitelisting them here catches that at
-	# the output, which is where a downstream query would break.
+	# lbl/@type, cit/@subtype and note/@type are unconstrained by the schema, so their values are
+	# ours alone and nothing outside this test would notice them drifting. Whitelisting them here
+	# catches that at the output, which is where a downstream query would break.
 	@testset "project conventions keep their committed vocabulary" begin
 		text = read(tei_path, String)
 		committed = DeepLittre.Resolve.rubrique_conventions
@@ -105,7 +112,8 @@ using DeepLittre.Render: render_tei, render_sqlite
 		labels = Set(match.captures[1] for match in eachmatch(r"<lbl type=\"([^\"]+)\"", text))
 		@test labels ⊆ Set([DeepLittre.Resolve.date_range_label, DeepLittre.Resolve.supplement_label])
 		notes = Set(match.captures[1] for match in eachmatch(r"<note type=\"([^\"]+)\"", text))
-		@test notes ⊆ Set(value.note for value in values(committed)) ∪ Set(["other"])
+		@test notes ⊆ Set(value.note for value in values(committed)) ∪
+			Set(["other", DeepLittre.Resolve.header_note_type])
 		@test !isempty(subtypes)
 		@test !isempty(notes)
 	end
@@ -122,7 +130,8 @@ using DeepLittre.Render: render_tei, render_sqlite
 		database = SQLite.DB(database_path)
 		count_of(query) = first(DBInterface.execute(database, query))[1]
 
-		@test count_of("select count(*) from entries") == 25
+		@test count_of("select count(*) from entries") == 26
+		@test count_of("select count(*) from header_notes") == 3
 		@test count_of("select count(*) from nodes") > 300
 		@test count_of("select count(*) from citations") == 818
 		@test count_of("select count(*) from rubriques") > 20
@@ -146,7 +155,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 		coverage = first(DBInterface.execute(database,
 			"select population_size, examined, positive from coverage where pass = 'sublemma'"))
-		@test coverage[1] == 464
+		@test coverage[1] == 466
 		@test coverage[2] == 1
 		@test coverage[3] == 1
 

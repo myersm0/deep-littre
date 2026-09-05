@@ -1,6 +1,6 @@
 # Development corpus
 
-25 XMLittré entries and the adjudication records made against them. Most of the test suite reads this committed corpus; it does not depend on `data/source`.
+26 XMLittré entries and the adjudication records made against them. Most of the test suite reads this committed corpus; it does not depend on `data/source`.
 
 ## Contents
 

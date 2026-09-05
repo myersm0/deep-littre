@@ -86,4 +86,18 @@
 </indent>
 </rubrique>
 </entree>
+<entree terme="ANCRURE">
+<entete>
+	<prononciation>an-kru-r'</prononciation>
+	<nature>s. f.</nature>
+<indent><semantique type="domaine">Technologie.</semantique>
+</indent>
+</entete>
+<corps>
+<variante num="1">Pli qui se fait au drap que l'on tond, quand il a été mal tendu.
+</variante>
+<variante num="2">Barreau de fer que l'on passe dans l'œil ou l'anneau d'un tirant, pour s'opposer à la poussée des voûtes, etc.
+</variante>
+</corps>
+</entree>
 </xmlittre>
