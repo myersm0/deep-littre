@@ -2,6 +2,8 @@
 # Tokens are matched case-insensitively after whitespace collapse; a trailing
 # period is tolerated in either direction ("passé" matches "passé.").
 # Coverage against the 77,391 entry-level POS strings in the v0.2.0 build: 99.84%.
+# The W3 rows below were measured by bin/nature_report.jl over every <nature> in
+# the corpus: 124 atoms reached the hint fallback, 121 of them in an entete.
 
 [heads]
 "s." = ["pos", "noun"]
@@ -24,6 +26,17 @@
 "préfixes" = ["pos", "prefix"]
 "suffixe" = ["pos", "suffix"]
 "onomatopée" = ["pos", "onomatopoeia"]
+# W3 additions (entete nature measurement, 2026-09-05). Spellings of heads the
+# table already carries; no row here introduces a norm value. "p." and "r." were
+# measured as gaps too and are deliberately absent: a single-letter token is too
+# generic to claim as a participle or a reflexive across every <nature>.
+"adject." = ["pos", "adjective"]
+"adjectif" = ["pos", "adjective"]
+"article" = ["pos", "article"]
+"interjection" = ["pos", "interjection"]
+"participe" = ["pos", "participle"]
+"pronom" = ["pos", "pronoun"]
+"préposition" = ["pos", "preposition"]
 
 [modifiers]
 "m." = ["gender", "masculine"]
@@ -60,6 +73,12 @@
 "prépos." = ["pos", "preposition"]
 "prépositive" = ["pos", "preposition"]
 "conjonct." = ["pos", "conjunction"]
+# W3 additions (entete nature measurement, 2026-09-05).
+"démonstr." = ["subtype", "demonstrative"]
+"impersonnel" = ["valency", "impersonal"]
+"indéclinable" = ["subtype", "invariable"]
+"ord." = ["subtype", "ordinal"]
+"ordin." = ["subtype", "ordinal"]
 
 # "n." and "a." resolve against the head token already seen. Key is
 # "token|head"; the empty head is the no-head-yet case. "a." with no verb head

@@ -65,6 +65,11 @@
 "terme de mépris" = ["attitude", "derogatory"]
 "terme grossier" = ["socioCultural", "vulgar"]
 "très familièrement" = ["socioCultural", "familiar"]
+# W3 additions (entete nature measurement, 2026-09-05). Both were found in an
+# entry-level <nature>, where they reached the hint fallback because the POS
+# tables do not carry them and the feminine spelling was absent here.
+"familière" = ["socioCultural", "familiar"]
+"très familière" = ["socioCultural", "familiar"]
 
 # W2 additions, placed ahead of the pass-1 prefixes because several are
 # longer forms sharing their leading token ("par une autre extension").
