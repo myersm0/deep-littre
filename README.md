@@ -104,12 +104,14 @@ That classification work is next. It is intended to enrich the structure without
 
 Deep-Littré should not yet be treated as a lossless transcription of either XMLittré or Littré's print. In particular:
 
-- Some entry-header text is currently lost. In 3,357 entries, XMLittré has additional conjugational or grammatical text immediately after `<prononciation>` inside `<entete>`. For example, `TRONQUER` continues after "tron-ké" with "je tronquais, nous tronquions [...]." The current pipeline retains the pronunciation itself but discards this trailing material.
-- Some cross-references cannot yet be linked. Reference resolution handles ordinary headwords and comma-separated gender variants, but not every complex headword shape. An entry such as `ADMONÉTER ou ADMONESTER`, for example, is indexed under the full expression rather than under each alternative, so a reference to one alternative may be emitted without a target. Consumers should not assume that a missing target means the referenced entry is absent.
+- Some entry-header material is simplified. The text Littré prints between the pronunciation and the first sense (including conjugation tables, editorial notes, a second spelling of the headword) is kept and printed in place. What is not kept is the finer markup that sometimes occurs inside it: in 99 entries out of 78,599, XMLittré labels part of that text as a subject-area or usage note, and the label's *text* survives but it is not marked up as such.
+- The grammatical category of 117 entries is left unclassified. Deep-Littré normalizes grammatical labels like *s. f.* and *v. a.* into structured parts of speech. A small number of entries state their grammar as a sentence instead (`pluriel de AIL.`, `3e pers. sing. ind. prés. du verbe AVOIR.`) and those are published as the text Littré wrote, marked as unclassified instead of forcing them into a category.
+- Some cross-references (`xref`) have no link. Littré's *voy.* references are matched against the dictionary's own headwords, and 2,008 of them cannot be matched with confidence. Most are references that are ambiguous in the source itself: a word that is the headword of several entries, with nothing to say which was meant. A missing link does not mean the referenced entry is absent.
+- A reference to one section of an entry links only in the database. Littré occasionally points at a specific part of an entry such as its etymology or its supplement. Those are resolved and recorded in SQLite, but the TEI has no single element to point at, so the reference appears there without a link.
 - Contextual structure is still coarse. Unmarked locutions, qualification boundaries, examples embedded in prose, and similar distinctions remain unresolved until the classification pass is run.
-- The immediate source is XMLittré, not the print. XMLittré contains editorial choices and normalization of its own. Deep-Littré preserves provenance back to that edition; print-level fidelity has been checked selectively rather than exhaustively.
+- The immediate source is XMLittré, not the print. XMLittré contains editorial choices and normalization of its own. Deep-Littré preserves provenance back to that edition; print-level fidelity has not been exhaustively checked.
 
-Known issues and design decisions are documented in `docs/`.
+Known issues and design decisions are documented in `docs/`; each limitation above is stated precisely with measurement in [docs/known-limitations.md](docs/known-limitations.md).
 
 ## Using it
 
