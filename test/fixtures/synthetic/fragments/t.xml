@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlittre>
+<entree terme="TACHE">
+<entete>
+	<prononciation>ta-ch'</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Marque qui salit.</variante>
+<rubrique nom="ÉTYMOLOGIE">
+<indent>Wallon, tetche.</indent>
+</rubrique>
+<rubrique nom="SUPPLÉMENT AU DICTIONNAIRE">
+<indent>Ajoutez : emploi technique.</indent>
+</rubrique>
+</corps>
+</entree>
+<entree terme="BATTANT, ANTE">
+<entete>
+	<prononciation>ba-tan, tan-t'</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui bat.
+<rubrique nom="PROVERBE">
+<indent>Tout battant neuf.</indent>
+</rubrique>
+</variante>
+</corps>
+</entree>
+<entree terme="INDICE">
+<entete>
+	<prononciation>in-di-s'</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Signe apparent.
+<rubrique nom="PROVERBE">
+<indent>Premier proverbe.</indent>
+</rubrique>
+</variante>
+<variante num="2">Indication.
+<rubrique nom="PROVERBES">
+<indent>Second proverbe.</indent>
+</rubrique>
+</variante>
+</corps>
+</entree>
+<entree terme="GARDE" sens="1">
+<entete>
+	<prononciation>gar-d'</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Action de garder.</variante>
+</corps>
+</entree>
+<entree terme="GARDE" sens="2">
+<entete>
+	<prononciation>gar-d'</prononciation>
+	<nature>s. m.</nature>
+</entete>
+<corps>
+<variante num="1">Celui qui garde.</variante>
+</corps>
+</entree>
+<entree terme="GARDE, ÉE" sens="4">
+<entete>
+	<prononciation>gar-dé, dée</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui a été gardé.</variante>
+</corps>
+</entree>
+<entree terme="PRIME" sens="1">
+<entete>
+	<prononciation>pri-m'</prononciation>
+	<nature>s. f.</nature>
+</entete>
+<corps>
+<variante num="1">Récompense.</variante>
+</corps>
+</entree>
+<entree terme="PRIME, ÉE" sens="1">
+<entete>
+	<prononciation>pri-mé, mée</prononciation>
+	<nature>adj.</nature>
+</entete>
+<corps>
+<variante num="1">Qui a reçu une prime.</variante>
+</corps>
+</entree>
+</xmlittre>
