@@ -16,6 +16,7 @@ i	IMAGÉ, ÉE	300	0	0	tiny	nature
 i	INSOLVABILITÉ	665	2	1	tiny	supplement wrapped_etymon nature
 l	LIBERTÉ	31916	35	113	huge	exemple proverbes historique nature domaine
 m	MESSAGER, ÈRE	5587	11	22	medium	exemple proverbes historique nature cross_reference
+m	MÉLISSOT	250	0	0	tiny	nature second_form
 n	NI	16724	18	86	large	supplement historique nature cross_reference
 p	PATROUILLER	1900	5	6	small	historique nature
 p	PENCHANT, ANTE	2032	2	10	small	nature domaine
@@ -25,3 +26,4 @@ r	RÈGNE	7354	11	35	medium	historique nature domaine cross_reference
 s	SERRET	1263	3	1	small	supplement nature cross_reference
 s	SUR	51065	65	245	huge	historique nature domaine cross_reference
 t	TABLIER	4053	8	13	medium	historique wrapped_etymon nature domaine
+t	TARGUER	2639	5	13	medium	historique nature second_label

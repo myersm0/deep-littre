@@ -59,12 +59,12 @@ using DeepLittre.Adjudication: present, commit, check, materialize_record, Decis
 	@testset "eligible populations are version 2" begin
 		structural_pool = eligible(sublemma_pass, corpus)
 		@test sublemma_pass.population_version == 2
-		@test length(structural_pool) == 466
+		@test length(structural_pool) == 473
 
 		qualification_pool = eligible(qualification_scope_pass, corpus)
 		@test qualification_scope_pass.population_version == 2
 		@test bare_qualification_pass.population_version == 2
-		@test length(qualification_pool) == 466
+		@test length(qualification_pool) == 473
 		@test Set(block.source_id for block in qualification_pool) ==
 			Set(block.source_id for block in structural_pool)
 

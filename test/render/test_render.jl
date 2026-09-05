@@ -42,6 +42,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 		@test occursin("<note type=\"header\">Technologie.</note>", text)
 		@test occursin("<note type=\"header\">d'imager</note>", text)
 		@test !occursin("<def>Technologie.</def>", text)
+		@test occursin("MÉLISSIÈRE", text)
 	end
 
 	@testset "form-bearing nodes serialize entry-like" begin
@@ -130,10 +131,10 @@ using DeepLittre.Render: render_tei, render_sqlite
 		database = SQLite.DB(database_path)
 		count_of(query) = first(DBInterface.execute(database, query))[1]
 
-		@test count_of("select count(*) from entries") == 26
-		@test count_of("select count(*) from header_notes") == 3
+		@test count_of("select count(*) from entries") == 28
+		@test count_of("select count(*) from header_notes") == 5
 		@test count_of("select count(*) from nodes") > 300
-		@test count_of("select count(*) from citations") == 818
+		@test count_of("select count(*) from citations") == 831
 		@test count_of("select count(*) from rubriques") > 20
 		@test count_of("select count(*) from etymology where kind = 'cit'") >= 30
 		@test count_of("select count(*) from etymology where cit_type = 'etymon'") >= 1
@@ -155,7 +156,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 		coverage = first(DBInterface.execute(database,
 			"select population_size, examined, positive from coverage where pass = 'sublemma'"))
-		@test coverage[1] == 466
+		@test coverage[1] == 473
 		@test coverage[2] == 1
 		@test coverage[3] == 1
 

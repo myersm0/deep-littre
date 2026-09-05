@@ -371,6 +371,14 @@ Encoding:
 - rubriques render in **source order**. Entry content is unordered, and Littré puts `HISTORIQUE`
   before `ÉTYMOLOGIE` in some entries and after in others.
 
+A `<gramGrp>` at entry level carries only the labels that qualify the headword. Where the source
+announces a second headword form before a second label — printed in capitals in 79 entries,
+`ACCORDÉ … ACCORDÉE (a-kordée) s. f.`, or given its own `<prononciation>` in 4 — the label belongs
+to that form, and attaching it to the entry made the entry both masculine and feminine. Those
+labels go to the header note with the form they qualify, until a pass can lift the pair into a
+`<form>` of its own. Prose between two labels does not demote the second: TARGUER prints its
+conjugation between `v. a.` and `v. réfl.` and both stay in the `<gramGrp>`.
+
 `note/@type="header"` carries the entete material that is neither the pronunciation nor a
 part-of-speech label — 3,034 entries have some, and it is heterogeneous enough that any type naming
 the content would be a classification the source does not state. The type names its position

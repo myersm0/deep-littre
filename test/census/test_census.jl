@@ -11,17 +11,17 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 	tally = counts(corpus)
 
 	@testset "development corpus shape" begin
-		@test length(entries) == 26
+		@test length(entries) == 28
 		@test isempty(anomalies(corpus))
 		@test tally["indent"] == 181
-		@test tally["variante"] == 172
+		@test tally["variante"] == 174
 		@test tally["resume_indent"] == 0
 		@test tally["resume_variante"] == 69
-		@test tally["rubrique_indent"] == 105
+		@test tally["rubrique_indent"] == 110
 		@test tally["rubrique_variante"] == 3
 		@test tally["rubrique_direct"] == 5
 		@test tally["entete_indent"] == 1
-		@test tally["entete_nature"] == 26
+		@test tally["entete_nature"] == 30
 		@test length(blocks) == sum(values(tally))
 	end
 
@@ -34,7 +34,9 @@ using DeepLittre.Census: census, all_blocks, all_entries, counts, anomalies, pop
 
 	@testset "inline nature is markup, not a block" begin
 		natures = count(block -> block.kind isa EnteteNature, blocks)
-		@test natures == 26
+		@test natures == 30
+		mélissot = only(filter(entry -> entry.headword == "MÉLISSOT", entries))
+		@test count(block -> block.kind isa EnteteNature, mélissot.blocks) == 2
 		for block in blocks
 			block.kind isa EnteteNature || continue
 			@test occursin("<nature>", slice(source_of(documents, block).raw_text, block.raw_span))

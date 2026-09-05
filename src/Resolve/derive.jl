@@ -991,40 +991,79 @@ function segment_paragraph(
 	anchored
 end
 
+carries_text(text::AbstractString)::Bool =
+	any(character -> isletter(character) || isdigit(character), text)
+
+const printed_form = r"[A-ZÀ-ÞŒÆ]{2,}"
+
+"""
+	qualifying_natures(document, header)
+
+How many of the entete's `<nature>` elements qualify the headword itself. The first always does. A
+later one does only if nothing since the one before announces a second headword form, which the
+source announces in one of two ways: the form printed in capitals, as in
+`ACCORDÉ … ACCORDÉE (a-kordée) <nature>s. f.</nature>`, or a further `<prononciation>`, as in
+`COBÆA ou COBÉE`. Intervening prose alone does not demote a label — TARGUER prints its conjugation
+between `v. a.` and `v. réfl.` and both describe the headword.
+"""
+function qualifying_natures(document::Source.SourceDocument, header::XML.FlatNode)::Int
+	qualifying = 0
+	second_form = false
+	for child in XML.children(header)
+		kind = XML.nodetype(child)
+		if kind == XML.Text
+			occursin(printed_form, Source.slice(
+				document.parser_view, Source.node_view_span(document, child),
+			)) && (second_form = true)
+		elseif kind == XML.Element
+			name = XML.tag(child)
+			if name == "nature"
+				qualifying > 0 && second_form && return qualifying
+				qualifying += 1
+				second_form = false
+			elseif name == "prononciation" || occursin(printed_form, collapse_inline(document, child))
+				second_form = true
+			end
+		end
+	end
+	qualifying
+end
+
 function entry_grammar(document::Source.SourceDocument, node::XML.FlatNode)::Vector{Qualification}
 	header = Source.element_children(node, "entete")
 	isempty(header) && return Qualification[]
 	qualifications = Qualification[]
-	for nature in Source.element_children(first(header), "nature")
+	natures = Source.element_children(first(header), "nature")
+	for nature in natures[1:qualifying_natures(document, first(header))]
 		span = Source.to_raw(document.transform, Source.node_view_span(document, nature))[1]
 		append!(qualifications, route_qualifications(collapse_inline(document, nature), span))
 	end
 	qualifications
 end
 
-const header_boundaries = ("prononciation", "nature")
-
 """
 	entry_header(document, node, references)
 
-The entete material that is neither the pronunciation nor a part-of-speech label, as one note per
-contiguous run. `<prononciation>` and `<nature>` are the boundaries; everything between them — loose
-text, an `<indent>`, a cross-reference — belongs to the run it sits in. A run that prints no letter
-or digit is separator punctuation and carries nothing.
+The entete material that is neither the entry's pronunciation nor a label qualifying it, as one note
+per contiguous run. The first `<prononciation>` and the qualifying `<nature>` elements are the
+boundaries; everything between them — loose text, an `<indent>`, a cross-reference, and the
+pronunciation and label of any further headword form — belongs to the run it sits in. A run that
+prints no letter or digit is separator punctuation and carries nothing.
 """
 function entry_header(
 	document::Source.SourceDocument, node::XML.FlatNode, references::CrossReferenceIndex,
 )::Vector{HeaderNote}
 	header = Source.element_children(node, "entete")
 	isempty(header) && return HeaderNote[]
+	remaining = qualifying_natures(document, first(header))
+	spoken = true
 	notes = HeaderNote[]
 	pending = XML.FlatNode[]
 	function flush!()
 		isempty(pending) && return nothing
 		content = inline_from(document, pending, references)
 		empty!(pending)
-		(isempty(content) || !any(character -> isletter(character) || isdigit(character),
-			plain_text(content))) && return nothing
+		(isempty(content) || !carries_text(plain_text(content))) && return nothing
 		push!(notes, HeaderNote(content, RawSpan(
 			first(content).span.file,
 			first(content).span.start_byte,
@@ -1033,7 +1072,12 @@ function entry_header(
 		nothing
 	end
 	for child in XML.children(first(header))
-		if XML.nodetype(child) == XML.Element && XML.tag(child) in header_boundaries
+		name = XML.nodetype(child) == XML.Element ? XML.tag(child) : ""
+		if name == "prononciation" && spoken
+			spoken = false
+			flush!()
+		elseif name == "nature" && remaining > 0
+			remaining -= 1
 			flush!()
 		else
 			push!(pending, child)

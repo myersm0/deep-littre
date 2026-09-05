@@ -47,7 +47,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 
 	@testset "an empty store still yields every explicit fact" begin
 		resolved = resolve(fresh_harness())
-		@test length(resolved.entries) == 26
+		@test length(resolved.entries) == 28
 
 		ancrure = entry_named(resolved, "ANCRURE")
 		@test [plain_text(note.content) for note in ancrure.header] == ["Technologie."]
@@ -58,6 +58,17 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 
 		ni = entry_named(resolved, "NI")
 		@test startswith(only(ni.header).content |> plain_text, "négative qui ne se dit jamais")
+
+		mélissot = entry_named(resolved, "MÉLISSOT")
+		@test any(qualification -> qualification.norm == "masculine", mélissot.grammar)
+		@test !any(qualification -> qualification.norm == "feminine", mélissot.grammar)
+		@test occursin("MÉLISSIÈRE", plain_text(only(mélissot.header).content))
+		@test occursin("s. f.", plain_text(only(mélissot.header).content))
+
+		targuer = entry_named(resolved, "TARGUER")
+		@test any(qualification -> qualification.norm == "active", targuer.grammar)
+		@test any(qualification -> qualification.norm == "reflexive", targuer.grammar)
+		@test startswith(plain_text(only(targuer.header).content), "Je me targuais")
 
 		angoisse = entry_named(resolved, "ANGOISSE")
 		@test isempty(angoisse.header)
@@ -261,7 +272,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		write_pass!(harness.store, "sublemma", [angoisse_record(harness)])
 		resolved = resolve(harness)
 		sublemma = first(filter(record -> record.pass == "sublemma", resolved.coverage))
-		@test sublemma.population_size == 466
+		@test sublemma.population_size == 473
 		@test sublemma.examined == 1
 		@test sublemma.positive == 1
 		@test sublemma.stale == 0
@@ -367,7 +378,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		findings = adjudication_findings(resolved)
 		@test length(findings) == 1
 		@test first(findings).category == "stale"
-		@test length(resolved.entries) == 26
+		@test length(resolved.entries) == 28
 
 		angoisse = entry_named(resolved, "ANGOISSE")
 		@test find_node(angoisse.nodes, node -> node.node_type isa SubLemma) === nothing

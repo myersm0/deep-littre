@@ -26,9 +26,9 @@ using DeepLittre.Render: render_tei, render_sqlite
 			count(item -> item isa RubriqueCitation, rubrique.items)
 			for entry in resolved.entries for rubrique in entry.rubriques
 		)
-		@test source_citations == 818
+		@test source_citations == 831
 		@test in_senses + in_rubriques == source_citations
-		@test in_rubriques == 261
+		@test in_rubriques == 269
 	end
 
 	@testset "nested rubrique blocks are recursed into" begin
@@ -331,8 +331,8 @@ using DeepLittre.Render: render_tei, render_sqlite
 		database_path = render_sqlite(resolved, joinpath(directory, "littre.db"))
 		database = SQLite.DB(database_path)
 		count_of(query) = first(DBInterface.execute(database, query))[1]
-		@test count_of("select count(*) from citations") == 818
-		@test count_of("select count(*) from citations where origin = 'rubrique'") == 261
+		@test count_of("select count(*) from citations") == 831
+		@test count_of("select count(*) from citations where origin = 'rubrique'") == 269
 		@test count_of("select count(*) from citations where origin = 'rubrique' and rubrique is null") == 0
 
 		row = first(DBInterface.execute(database,
