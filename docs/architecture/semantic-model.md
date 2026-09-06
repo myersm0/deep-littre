@@ -249,6 +249,7 @@ Initial `SourceBlock` kinds include:
 - `<résumé>`-internal `<indent>` and `<variante>`;
 - rubrique-internal `<indent>` and `<variante>`;
 - direct rubrique content with no intervening block element;
+- `<entete>/<indent>`;
 - `<entete>/<nature>`.
 
 Containment is decided by ancestry, not element name, and résumé ancestry is consulted for both `<indent>` and `<variante>`. Résumé material summarizes senses represented elsewhere in the entry and is excluded from the structural population.
@@ -257,7 +258,7 @@ Containment is decided by ancestry, not element name, and résumé ancestry is c
 
 The `SourceBlock` census is universal over the defined adjudication-relevant block population, not over all XMLittré content. It answers “which source blocks exist for adjudication?”. Each adjudication pass declares a versioned eligible population drawn from that census.
 
-The current structural and qualification populations use population version 2 and contain the same 341,125 full-corpus blocks: ordinary indents/variantes plus all three rubrique block kinds. Résumé blocks and `<entete>/<nature>` remain outside those populations. This equality is deliberate: structural judgments and qualification judgments must be able to reach the same rubrique material, including bare labels embedded there.
+The current structural and qualification populations use population version 2 and admit the same 341,125 full-corpus blocks: ordinary indents/variantes plus all three rubrique block kinds. Rubrique material is admitted to both because bare labels embedded there must be reachable by structural and qualification judgments alike. Résumé blocks and both entete kinds are excluded from both, for reasons given per kind in `src/Census/README.md`. The two sets are equal as a consequence of those independent per-kind decisions, not as a property being maintained: nothing compares them, and a kind admitted to one population and not the other would be an ordinary outcome rather than a defect.
 
 ## Deriving ordinary `Sense`
 

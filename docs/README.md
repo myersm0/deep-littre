@@ -16,12 +16,7 @@ For an overview, start with the top-level [`README.md`](../README.md). Each `src
 - [`tei-lex0-compliance.md`](tei-lex0-compliance.md) — serialization rules against the pinned TEI Lex-0 v0.9.5 RNG.
 - [`tei-lex0-examples.md`](tei-lex0-examples.md) — worked source-to-TEI examples illustrating those rules.
 
-## Authority order
+## Limitations
 
-When documents disagree:
+- [`known-limitations.md`](known-limitations.md) — the limitations listed in the top-level README, stated in the pipeline's own terms with the measurement behind each.
 
-1. the pinned TEI Lex-0 RNG and the committed probe verdicts, for any question of schema conformance;
-2. the architecture documents, for Deep-Littré's semantic and provenance model;
-3. the TEI compliance and examples documents, for serialization policy.
-
-Where a document and the code disagree, the code is the defect report: one of the two is wrong and the discrepancy is worth resolving rather than tolerating.

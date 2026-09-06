@@ -386,6 +386,8 @@ instead: one note per contiguous run, in source order, after `<gramGrp>`, mirror
 prints it. `<note>` is available at entry level via `model.global`. A later pass can lift a header
 note into `<form type="inflected">`, an extended `<gram>`, or a typed note without a schema change.
 
+Markup Gannaz placed inside a header note does not survive it. In 99 entries the material carries a `<semantique>` with an explicit type, 92 of them `type="domaine"`; the printed label is kept and the stated type is not. Recording it would mean a `<seg type="…">` inside the note, since `<note>` takes `macro.lexSpecialPara`, which admits `model.segLike` and not `<usg>`. See [`known-limitations.md`](known-limitations.md).
+
 `lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
 convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the
 committed `dateRange` and `supplement`. Proverb material uses the singular token `proverb` both as
