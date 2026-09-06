@@ -24,6 +24,8 @@ flush(stdout)
 const repository_root = normpath(joinpath(@__DIR__, ".."))
 
 seconds(elapsed) = round(elapsed; digits = 2)
+
+rate(quantity, elapsed) = elapsed > 0 ? round(quantity / elapsed; digits = 1) : 0.0
 megabytes(bytes) = round(bytes / 1024^2; digits = 2)
 
 function settings()
@@ -118,7 +120,8 @@ function main()::Int
 		patches_path = patches,
 		progress = (file, bytes, patched, elapsed) -> @info(
 			"  read $(rpad(file, 8)) $(lpad(megabytes(bytes), 7)) MB  \
-			$(lpad(patched, 3)) patches  $(lpad(seconds(elapsed), 7))s"
+			$(lpad(patched, 3)) patches  $(lpad(seconds(elapsed), 7))s  \
+			$(lpad(rate(megabytes(bytes), elapsed), 7)) MB/s"
 		),
 	)
 	@info "source complete: $(length(documents)) files in $(seconds(source_elapsed))s"
@@ -128,7 +131,8 @@ function main()::Int
 		documents;
 		progress = (file, entries, blocks, elapsed) -> @info(
 			"  census $(rpad(file, 8)) $(lpad(entries, 6)) entries  \
-			$(lpad(blocks, 7)) blocks  $(lpad(seconds(elapsed), 7))s"
+			$(lpad(blocks, 7)) blocks  $(lpad(seconds(elapsed), 7))s  \
+			$(lpad(rate(blocks, elapsed), 8)) blocks/s"
 		),
 	)
 	blocks = Census.all_blocks(corpus)
@@ -147,7 +151,8 @@ function main()::Int
 		harness;
 		strict = arguments["strict-adjudications"],
 		progress = (file, entries, elapsed) -> @info(
-			"  resolve $(rpad(file, 8)) $(lpad(entries, 6)) entries  $(lpad(seconds(elapsed), 7))s"
+			"  resolve $(rpad(file, 8)) $(lpad(entries, 6)) entries  \
+			$(lpad(seconds(elapsed), 7))s  $(lpad(rate(entries, elapsed), 7)) entries/s"
 		),
 	)
 	@info "resolve complete: $(length(resolved.entries)) entries in $(seconds(resolve_elapsed))s"
@@ -168,9 +173,13 @@ function main()::Int
 		resolved,
 		database_path;
 		progress = function (done, total, file, elapsed)
-			rate = elapsed > 0 ? done / elapsed : 0.0
-			remaining = rate > 0 ? (total - done) / rate : 0.0
-			@info "  SQLite $(lpad(done, 6)) / $(total) entries  $(rpad(file, 8))  $(lpad(seconds(elapsed), 7))s elapsed  ~$(lpad(seconds(remaining), 7))s remaining"
+			entries_per_second = rate(done, elapsed)
+			remaining = entries_per_second > 0 ?
+				(total - done) / entries_per_second : 0.0
+			@info "  SQLite $(lpad(done, 6)) / $(total) entries  $(rpad(file, 8))  \
+				$(lpad(entries_per_second, 7)) entries/s  \
+				$(lpad(seconds(elapsed), 7))s elapsed  \
+				~$(lpad(seconds(remaining), 7))s remaining"
 		end,
 	)
 	@info "SQLite complete in $(seconds(database_elapsed))s"

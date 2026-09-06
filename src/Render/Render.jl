@@ -5,6 +5,7 @@ Two serializers of one resolved representation. Neither infers anything. See
 module Render
 
 using DBInterface
+using Match
 using SQLite
 using Unicode
 
