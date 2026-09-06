@@ -1,7 +1,7 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
 using DeepLittre.Adjudication: Harness, Store, validate_store, read_pass, current_passes,
-	applicable, check, write_pass!
+	applicable, check!, write_pass!
 using DeepLittre.Resolve: resolve
 
 @testset "committed development store" begin
@@ -25,7 +25,7 @@ using DeepLittre.Resolve: resolve
 
 	@testset "every committed record applies" begin
 		for (pass, found) in records, record in found
-			@test applicable(check(harness, record))
+			@test applicable(check!(harness, record))
 		end
 		@test sum(length, values(records)) == 6
 	end

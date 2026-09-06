@@ -1,6 +1,6 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: present, commit, Decision, FormSelection, FormReading,
+using DeepLittre.Adjudication: present, commit!, Decision, FormSelection, FormReading,
 	ScopeSelection, ReviewItem, ExaminationRecord, StoreIntegrityError, Store, write_pass!,
 	read_pass, projected_text, sublemma_pass, voice_variant_pass, qualification_scope_pass,
 	bare_qualification_pass, eligible
@@ -25,12 +25,12 @@ using DeepLittre.Resolve: resolve
 	angoisse_item = present(harness, sublemma_pass, angoisse)
 	sublemma_text = "Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs."
 
-	accepts(pass, item, decision) = commit(
+	accepts(pass, item, decision) = commit!(
 		harness, pass, item, decision; decision_procedure = "expressiveness",
 	) isa ExaminationRecord
 
 	rejection(pass, item, decision)::String = try
-		commit(harness, pass, item, decision; decision_procedure = "expressiveness")
+		commit!(harness, pass, item, decision; decision_procedure = "expressiveness")
 		""
 	catch failure
 		failure isa ReviewItem || rethrow()
@@ -195,7 +195,7 @@ using DeepLittre.Resolve: resolve
 
 		# A partial marker selection snaps outward to the whole explicit marker, so a verdict
 		# cannot address part of one `<nature>` or `<semantique>`.
-		partial = commit(harness, qualification_scope_pass, item, Decision(
+		partial = commit!(harness, qualification_scope_pass, item, Decision(
 			:positive; scopes = [ScopeSelection("loc.", "À bien")],
 		); decision_procedure = "expressiveness")
 		@test projected_text(item.projection, only(partial.scopes).marker) == "loc. adv."
@@ -269,12 +269,12 @@ using DeepLittre.Resolve: resolve
 			residuals = ["Familièrement."],
 		)
 		staged = DeepLittre.Adjudication.Harness(documents, corpus, Store(mktempdir()))
-		record = commit(staged, sublemma_pass, present(staged, sublemma_pass, angoisse), decision;
+		record = commit!(staged, sublemma_pass, present(staged, sublemma_pass, angoisse), decision;
 			decision_procedure = "expressiveness")
 		write_pass!(staged.store, sublemma_pass.pass, [record])
 
 		conflict = try
-			commit(staged, voice_variant_pass,
+			commit!(staged, voice_variant_pass,
 				present(staged, voice_variant_pass, angoisse), decision;
 				decision_procedure = "expressiveness")
 			""
@@ -295,9 +295,9 @@ using DeepLittre.Resolve: resolve
 			)],
 			residuals = ["Familièrement."],
 		)
-		first_record = commit(harness, sublemma_pass, angoisse_item, decision;
+		first_record = commit!(harness, sublemma_pass, angoisse_item, decision;
 			decision_procedure = "expressiveness")
-		second_record = commit(harness, sublemma_pass, angoisse_item, decision;
+		second_record = commit!(harness, sublemma_pass, angoisse_item, decision;
 			decision_procedure = "expressiveness")
 		store = Store(mktempdir())
 		write_pass!(store, sublemma_pass.pass, [first_record, second_record])
@@ -317,14 +317,14 @@ using DeepLittre.Resolve: resolve
 			)],
 			residuals = ["Familièrement."],
 		)
-		sublemma_record = commit(harness, sublemma_pass, angoisse_item, decision;
+		sublemma_record = commit!(harness, sublemma_pass, angoisse_item, decision;
 			decision_procedure = "expressiveness")
 
 		function node_type_for(voice_decision)
 			store = Store(mktempdir())
 			write_pass!(store, sublemma_pass.pass, [sublemma_record])
 			if voice_decision !== nothing
-				write_pass!(store, voice_variant_pass.pass, [commit(
+				write_pass!(store, voice_variant_pass.pass, [commit!(
 					harness, voice_variant_pass, present(harness, voice_variant_pass, angoisse),
 					voice_decision; decision_procedure = "expressiveness",
 				)])
@@ -345,7 +345,7 @@ using DeepLittre.Resolve: resolve
 			store = Store(mktempdir())
 			write_pass!(store, sublemma_pass.pass, [sublemma_record])
 			if voice_decision !== nothing
-				write_pass!(store, voice_variant_pass.pass, [commit(
+				write_pass!(store, voice_variant_pass.pass, [commit!(
 					harness, voice_variant_pass, present(harness, voice_variant_pass, angoisse),
 					voice_decision; decision_procedure = "expressiveness",
 				)])

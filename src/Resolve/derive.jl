@@ -36,7 +36,7 @@ function adjudication_state(
 				"duplicate record id $(record.record_id) across adjudication passes",
 			))
 			push!(seen_record_ids, record.record_id)
-			applied = Adjudication.materialize_record(harness, record)
+			applied = Adjudication.materialize_record!(harness, record)
 			if applied === nothing
 				strict && error("strict build: record $(record.record_id) is stale")
 				push!(stale, record)

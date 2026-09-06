@@ -1,7 +1,7 @@
 using SQLite, DBInterface
 using DeepLittre.Source: read_corpus, read_document, Patch, slice, covers, anchor_id
 using DeepLittre.Census: census, all_blocks, RubriqueDirect
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection, sublemma_pass, write_pass!
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection, sublemma_pass, write_pass!
 using DeepLittre.Resolve: resolve, plain_text, RubriqueLabel, RubriqueCitation, RubriqueProse,
 	RubriqueNode, conventions_for, rubrique_heading, century_pattern, supplement_label
 using DeepLittre.Render: render_tei, render_sqlite
@@ -393,7 +393,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 		local_corpus = census(local_documents)
 		harness = build_harness(local_documents, local_corpus)
 		direct = only(filter(block -> block.kind isa RubriqueDirect, all_blocks(local_corpus)))
-		record = commit(
+		record = commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, direct),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Qui dort dîne, signifie que le sommeil trompe la faim.",

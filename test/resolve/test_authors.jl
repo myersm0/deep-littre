@@ -1,6 +1,6 @@
 using DeepLittre.Source: read_corpus, slice
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection,
 	sublemma_pass, write_pass!
 using DeepLittre.Resolve: resolve, entry_citations, all_entry_citations
 
@@ -47,7 +47,7 @@ using DeepLittre.Resolve: resolve, entry_citations, all_entry_citations
 		# unaffected by that reparenting.
 		harness = build_harness(documents, corpus)
 		block = angoisse_block(harness, corpus)
-		write_pass!(harness.store, "sublemma", [commit(
+		write_pass!(harness.store, "sublemma", [commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.",

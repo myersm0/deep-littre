@@ -1,6 +1,6 @@
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemma_pass,
+using DeepLittre.Adjudication: present, commit!, Decision, FormSelection, sublemma_pass,
 	canonical_json, write_pass!, read_pass, Store, sort_key, write_json_string, ExaminationRecord
 
 @testset "canonical store" begin
@@ -12,7 +12,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 
 	fresh_store() = Store(mktempdir())
 
-	record = commit(
+	record = commit!(
 		harness, sublemma_pass, item,
 		Decision(:positive;
 			exhaustive = true,
@@ -77,7 +77,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 			candidate -> candidate.raw_span.start_byte < block.raw_span.start_byte,
 			DeepLittre.Adjudication.eligible(sublemma_pass, corpus),
 		)))
-		earlier = commit(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
+		earlier = commit!(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
 
 		store = fresh_store()
 		write_pass!(store, "sublemma", [record, earlier])
@@ -97,7 +97,7 @@ using DeepLittre.Adjudication: present, commit, Decision, FormSelection, sublemm
 			candidate -> candidate.raw_span.file != record.source.file,
 			DeepLittre.Adjudication.eligible(sublemma_pass, corpus),
 		)))
-		other_record = commit(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
+		other_record = commit!(harness, sublemma_pass, other, Decision(:negative); decision_procedure = "test")
 		write_pass!(store, "sublemma", [record, other_record])
 		stale_path = joinpath(store.root, "sublemma", first(splitext(other_record.source.file)) * ".jsonl")
 		@test isfile(stale_path)
