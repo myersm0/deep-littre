@@ -34,14 +34,17 @@ const voice_variant_pass = PassDefinition(
 	"Does this material introduce a separately form-bearing pronominal or reflexive variant of the current lemma, rather than merely state a grammatical construction or usage?",
 )
 
-const current_passes = (sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass)
+const current_passes = (
+	sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass
+)
 
 const structural_passes = filter(pass -> pass.node_type !== nothing, current_passes)
 const scope_passes = filter(pass -> pass.node_type === nothing, current_passes)
 
 function pass_definition(name::AbstractString)::Union{Nothing, PassDefinition}
 	index = findfirst(pass -> pass.pass == name, current_passes)
-	index === nothing ? nothing : current_passes[index]
+	isnothing(index) && return nothing
+	return current_passes[index]
 end
 
 in_structural_population(::Census.Indent) = true
@@ -70,12 +73,12 @@ const qualification_blocks_population = "qualification_blocks"
 function population_predicate(name::AbstractString)
 	name == structural_blocks_population && return in_structural_population
 	name == qualification_blocks_population && return in_qualification_population
-	error("unknown population $(name)")
+	return error("unknown population $(name)")
 end
 
 function eligible(pass::PassDefinition, corpus::Census.CorpusCensus)::Vector{Census.SourceBlock}
 	admits = population_predicate(pass.population)
-	filter(block -> admits(block.kind), Census.all_blocks(corpus))
+	return filter(block -> admits(block.kind), Census.all_blocks(corpus))
 end
 
 struct ContextItem
@@ -111,16 +114,47 @@ struct FormSelection
 	gloss::Union{Nothing, String}
 end
 
-FormSelection(node::AbstractString, form::AbstractString) =
-	FormSelection(String(node), FormReading[FormReading(form)], nothing)
-FormSelection(node::AbstractString, form::AbstractString, gloss::Union{Nothing, AbstractString}) =
-	FormSelection(String(node), FormReading[FormReading(form)], gloss === nothing ? nothing : String(gloss))
-FormSelection(node::AbstractString, forms::Vector{<:AbstractString}) =
-	FormSelection(String(node), FormReading[FormReading(form) for form in forms], nothing)
-FormSelection(node::AbstractString, forms::Vector{<:AbstractString}, gloss::Union{Nothing, AbstractString}) =
-	FormSelection(String(node), FormReading[FormReading(form) for form in forms], gloss === nothing ? nothing : String(gloss))
-FormSelection(node::AbstractString, forms::Vector{FormReading}) =
-	FormSelection(String(node), forms, nothing)
+function FormSelection(node::AbstractString, form::AbstractString)
+	return FormSelection(String(node), FormReading[FormReading(form)], nothing)
+end
+
+function FormSelection(node::AbstractString, form::AbstractString, gloss::AbstractString)
+	return FormSelection(String(node), FormReading[FormReading(form)], String(gloss))
+end
+
+# TODO: an inner FormSelection constructor should handle the gloss type union
+function FormSelection(node::AbstractString, form::AbstractString, gloss::Nothing)
+	return FormSelection(String(node), FormReading[FormReading(form)], nothing)
+end
+
+function FormSelection(node::AbstractString, forms::Vector{<:AbstractString})
+	return FormSelection(
+		String(node),
+		FormReading[FormReading(form) for form in forms],
+		nothing
+	)
+end
+
+function FormSelection(
+		node::AbstractString, forms::Vector{<:AbstractString}, gloss::AbstractString
+	)
+	return FormSelection(
+		String(node),  FormReading[FormReading(form) for form in forms], String(gloss)
+	)
+end
+
+# TODO: an inner FormSelection constructor should handle the gloss type union
+function FormSelection(
+		node::AbstractString, forms::Vector{<:AbstractString}, gloss::Nothing
+	)
+	return FormSelection(
+		String(node),  FormReading[FormReading(form) for form in forms], nothing
+	)
+end
+
+function FormSelection(node::AbstractString, forms::Vector{FormReading})
+	return FormSelection(String(node), forms, nothing)
+end
 
 struct ScopeSelection
 	marker::String
@@ -136,9 +170,16 @@ struct Decision
 	notes::String
 end
 
-Decision(outcome::Symbol; exhaustive = false, selections = FormSelection[],
-	scopes = ScopeSelection[], residuals = String[], notes = "") =
-	Decision(outcome, exhaustive, selections, scopes, residuals, notes)
+function Decision(
+		outcome::Symbol;
+		exhaustive = false,
+		selections = FormSelection[],
+		scopes = ScopeSelection[],
+		residuals = String[],
+		notes = ""
+	)
+	return Decision(outcome, exhaustive, selections, scopes, residuals, notes)
+end
 
 const rejection_categories = (
 	"schema_violation",
@@ -160,13 +201,15 @@ struct ReviewItem <: Exception
 	detail::String
 	function ReviewItem(item_id, pass, category, detail)
 		category in rejection_categories || error("unknown rejection category $(repr(category))")
-		new(item_id, pass, category, detail)
+		return new(item_id, pass, category, detail)
 	end
 end
 
-Base.showerror(io::IO, item::ReviewItem) = print(
-	io, "review item ", item.item_id, " (", item.pass, "/", item.category, "): ", item.detail,
-)
+function Base.showerror(io::IO, item::ReviewItem)
+	return print(
+		io, "review item $(item.item_id) ($(item.pass)/$(item.category)): $(item.detail)"
+	)
+end
 
 struct PassIndex
 	fingerprint::Vector{Tuple{String, Float64, Int}}
@@ -186,7 +229,7 @@ end
 anchor_key(span::RawSpan) = (span.file, span.start_byte, span.end_byte)
 
 function Harness(documents::Vector{Source.SourceDocument}, corpus::Census.CorpusCensus, store::Store)
-	Harness(
+	return Harness(
 		Dict(document.file => document for document in documents),
 		corpus,
 		Dict(anchor_key(block.raw_span) => block for block in Census.all_blocks(corpus)),
@@ -201,10 +244,14 @@ function validate_store(harness::Harness)::Symbol
 	isempty(directories) && return :empty
 	known = Set(pass.pass for pass in current_passes)
 	unknown = filter(directory -> !(directory in known), directories)
-	isempty(unknown) || throw(StoreIntegrityError(
-		"store contains records for undeclared pass $(join(unknown, ", "))",
-	))
-	:valid
+	if !isempty(unknown)
+		throw(
+			StoreIntegrityError(
+				"store contains records for undeclared pass $(join(unknown, ", "))",
+			)
+		)
+	end
+	return :valid
 end
 
 document_for(harness::Harness, block::Census.SourceBlock)::Source.SourceDocument =
@@ -215,10 +262,11 @@ const element_at = Source.element_at
 function citation_context(document::Source.SourceDocument, node::XML.FlatNode)::Vector{ContextItem}
 	items = ContextItem[]
 	for child in XML.children(node)
-		XML.nodetype(child) == XML.Element && XML.tag(child) == "cit" || continue
+		XML.nodetype(child) == XML.Element || continue
+		XML.tag(child) == "cit" || continue
 		push!(items, ContextItem("citation", project(document, child).text))
 	end
-	items
+	return items
 end
 
 function surface_markers(
@@ -231,11 +279,11 @@ function surface_markers(
 		kind in ("semantique", "nature") || continue
 		view = Source.node_view_span(document, child)
 		span = to_projected(projection, view)
-		span === nothing && continue
+		isnothing(span) && continue
 		(raw, _) = Source.node_raw_span(document, child)
 		push!(markers, SurfaceMarker(kind, span, raw, projected_text(projection, span)))
 	end
-	markers
+	return markers
 end
 
 function adjudication_item(
@@ -244,8 +292,11 @@ function adjudication_item(
 	document = document_for(harness, block)
 	node = element_at(document, block.view_span)
 	projection = project(document, node)
-	AdjudicationItem(
-		String(item_id), block, projection, citation_context(document, node),
+	return AdjudicationItem(
+		String(item_id),
+		block,
+		projection,
+		citation_context(document, node),
 		surface_markers(document, node, projection),
 	)
 end
@@ -254,14 +305,15 @@ function present(harness::Harness, pass::PassDefinition, block::Census.SourceBlo
 	population_predicate(pass.population)(block.kind) || throw(ReviewItem(
 		"", pass.pass, "ineligible_target", string(block.raw_span),
 	))
-	adjudication_item(harness, block, string(uuid4()))
+	return adjudication_item(harness, block, string(uuid4()))
 end
 
+# TODO: mutating fn
 function write_surface_part(io::IO, label::AbstractString, text::AbstractString)
 	print(io, ncodeunits(label), ':', label, ':', ncodeunits(text), ':')
 	write(io, text)
 	write(io, '\n')
-	nothing
+	return nothing
 end
 
 function surface_text(item::AdjudicationItem)::String
@@ -278,7 +330,7 @@ function surface_text(item::AdjudicationItem)::String
 	for context in item.context
 		write_surface_part(buffer, "context:$(context.role)", context.text)
 	end
-	String(take!(buffer))
+	return String(take!(buffer))
 end
 
 surface_sha256(item::AdjudicationItem)::String = Source.text_sha256(surface_text(item))
@@ -298,6 +350,7 @@ is interpreted on the way back in; the producer answers in text and `commit` loc
 surface_json(pass::PassDefinition, item::AdjudicationItem)::String =
 	canonical_json(SurfaceExport(pass, item))
 
+# TODO: this should have an exclamatation point in fn name; same for the several below
 write_json(io::IO, marker::SurfaceMarker) = object(io) do writer
 	field!(writer, "kind", marker.kind)
 	field!(writer, "span", marker.span)
@@ -336,22 +389,43 @@ function resolve_selection(
 	end
 end
 
-function validate_geometry(item::AdjudicationItem, pass::PassDefinition, assertions::Vector{NodeAssertion})
+function validate_geometry(
+		item::AdjudicationItem, pass::PassDefinition, assertions::Vector{NodeAssertion}
+	)
 	for outer in eachindex(assertions), inner in (outer + 1):lastindex(assertions)
-		left = assertions[outer]
-		right = assertions[inner]
-		projected_covers(left.span, right.span) && projected_covers(right.span, left.span) && throw(ReviewItem(
-			item.item_id, pass.pass, "structural_conflict", "coincident node spans $(left.span)",
-		))
-		projected_laminar(left.span, right.span) || throw(ReviewItem(
-			item.item_id, pass.pass, "structural_conflict", "node spans cross: $(left.span) and $(right.span)",
-		))
+		left = assertions[outer].span
+		right = assertions[inner].span
+		if projected_covers(left, right) && projected_covers(right, left)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"structural_conflict", "coincident node spans $(left)",
+				)
+			)
+		end
+		if !projected_laminar(left, right) 
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"structural_conflict",
+					"node spans cross: $(left) and $(right)",
+				)
+			)
+		end
 	end
 	for assertion in assertions, constituent in assertion.constituents
-		projected_covers(assertion.span, constituent.span) || throw(ReviewItem(
-			item.item_id, pass.pass, "constituent_escapes_node",
-			"$(constituent.name) lies outside its node",
-		))
+		if !projected_covers(assertion.span, constituent.span)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"constituent_escapes_node",
+					"$(constituent.name) lies outside its node",
+				)
+			)
+		end
 	end
 	for outer in assertions, inner in assertions
 		outer === inner && continue
@@ -362,7 +436,7 @@ function validate_geometry(item::AdjudicationItem, pass::PassDefinition, asserti
 			))
 		end
 	end
-	nothing
+	return nothing
 end
 
 function target_block(
@@ -371,10 +445,11 @@ function target_block(
 	record.pass_version == pass.pass_version || return nothing
 	admits = population_predicate(pass.population)
 	exact = get(harness.blocks, anchor_key(record.source), nothing)
-	if exact !== nothing
+	if !isnothing(exact)
 		admits(exact.kind) || return nothing
 		item = adjudication_item(harness, exact, "")
-		return surface_sha256(item) == record.surface_sha256 ? exact : nothing
+		surface_sha256(item) == record.surface_sha256 && return exact
+		return nothing
 	end
 	index = get!(harness.surface_indices, pass.pass) do
 		built = Dict{Tuple{String, String}, Vector{Census.SourceBlock}}()
@@ -385,19 +460,25 @@ function target_block(
 		end
 		built
 	end
-	candidates = get(index, (record.source.file, record.surface_sha256), Census.SourceBlock[])
-	length(candidates) == 1 ? only(candidates) : nothing
+	candidates = get(
+		index, (record.source.file, record.surface_sha256), Census.SourceBlock[]
+	)
+	length(candidates) == 1 && return only(candidates)
+	return nothing
 end
 
 function pass_fingerprint(store::Store, pass::AbstractString)::Vector{Tuple{String, Float64, Int}}
 	directory = pass_directory(store, pass)
-	isdir(directory) && return [
-		(basename(path), mtime(path), filesize(path))
-		for path in sort(filter(name -> endswith(name, ".jsonl"), readdir(directory; join = true)))
-	]
-	Tuple{String, Float64, Int}[]
+	if isdir(directory)
+		return [
+			(basename(path), mtime(path), filesize(path))
+			for path in sort(filter(name -> endswith(name, ".jsonl"), readdir(directory; join = true)))
+		]
+	end
+	return Tuple{String, Float64, Int}[]
 end
 
+# TODO: this is a mutating fn, should have exclamation pt
 function pass_index(harness::Harness, pass::PassDefinition)::PassIndex
 	fingerprint = pass_fingerprint(harness.store, pass.pass)
 	cached = get(harness.record_indices, pass.pass, nothing)
@@ -408,7 +489,9 @@ function pass_index(harness::Harness, pass::PassDefinition)::PassIndex
 		key = anchor_key(record.source)
 		haskey(harness.blocks, key) ? (by_anchor[key] = record) : push!(unanchored, record)
 	end
-	harness.record_indices[pass.pass] = PassIndex(fingerprint, by_anchor, unanchored)
+	ret = PassIndex(fingerprint, by_anchor, unanchored)
+	harness.record_indices[pass.pass] = ret
+	return ret
 end
 
 function applicable_record(
@@ -416,73 +499,109 @@ function applicable_record(
 )::Union{Nothing, ExaminationRecord}
 	index = pass_index(harness, pass)
 	candidate = get(index.by_anchor, anchor_key(block.raw_span), nothing)
-	if candidate !== nothing
-		target_block(harness, candidate, pass) == block &&
-			check(harness, candidate) == :valid && return candidate
+	if !isnothing(candidate)
+		if target_block(harness, candidate, pass) == block && check(harness, candidate) == :valid
+			return candidate
+		end
 	end
 	for record in index.unanchored
 		target_block(harness, record, pass) == block || continue
 		check(harness, record) == :valid || continue
 		return record
 	end
-	nothing
+	return nothing
 end
 
 function validate_against_store(
-	harness::Harness, item::AdjudicationItem, pass::PassDefinition, assertions::Vector{NodeAssertion},
-)
+		harness::Harness,
+		item::AdjudicationItem,
+		pass::PassDefinition,
+		assertions::Vector{NodeAssertion},
+	)
 	isempty(assertions) && return nothing
 	for other_pass in current_passes
-		other_pass.node_type === nothing && continue
+		isnothing(other_pass.node_type) && continue
 		other_pass.pass == pass.pass && continue
 		record = applicable_record(harness, item.block, other_pass)
-		(record === nothing || record.outcome != :positive) && continue
+		!isnothing(record) || continue 
+		record.outcome == :positive || continue
 		for assertion in assertions, existing in record.assertions
-			projected_covers(assertion.span, existing.span) &&
-			projected_covers(existing.span, assertion.span) && throw(ReviewItem(
-				item.item_id, pass.pass, "structural_conflict",
-				"coincident node span $(assertion.span) with $(other_pass.pass)",
-			))
-			projected_laminar(assertion.span, existing.span) || throw(ReviewItem(
-				item.item_id, pass.pass, "structural_conflict",
-				"node span $(assertion.span) crosses $(other_pass.pass) span $(existing.span)",
-			))
+			if projected_covers(assertion.span, existing.span)
+				if	projected_covers(existing.span, assertion.span)
+					throw(
+						ReviewItem(
+							item.item_id,
+							pass.pass,
+							"structural_conflict",
+							"coincident node span $(assertion.span) with $(other_pass.pass)"
+						)
+					)
+				end
+			end
+			if !projected_laminar(assertion.span, existing.span)
+				throw(
+					ReviewItem(
+						item.item_id,
+						pass.pass,
+						"structural_conflict",
+						"node span $(assertion.span) crosses $(other_pass.pass) span $(existing.span)",
+					)
+				)
+			end
 		end
 	end
-	nothing
+	return nothing
 end
 
 function validate_residuals(
-	item::AdjudicationItem, pass::PassDefinition,
-	residuals::Vector{ProjectedSpan}, assertions::Vector{NodeAssertion},
-)
+		item::AdjudicationItem, pass::PassDefinition,
+		residuals::Vector{ProjectedSpan}, assertions::Vector{NodeAssertion},
+	)
 	for residual in residuals
 		for assertion in assertions
-			projected_disjoint(residual, assertion.span) || throw(ReviewItem(
-				item.item_id, pass.pass, "residual_overlaps_node", string(residual),
-			))
+			if !projected_disjoint(residual, assertion.span)
+				throw(
+					ReviewItem(
+						item.item_id,
+						pass.pass,
+						"residual_overlaps_node", 
+						string(residual),
+					)
+				)
+			end
 		end
 	end
 	for outer in eachindex(residuals), inner in (outer + 1):lastindex(residuals)
-		projected_disjoint(residuals[outer], residuals[inner]) || throw(ReviewItem(
-			item.item_id, pass.pass, "residuals_overlap", "$(residuals[outer]) and $(residuals[inner])",
-		))
+		if !projected_disjoint(residuals[outer], residuals[inner])
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"residuals_overlap",
+					"$(residuals[outer]) and $(residuals[inner])",
+				)
+			)
+		end
 	end
-	nothing
+	return nothing
 end
 
 
 function constituent_shape_error(constituents)::Union{Nothing, String}
-	all(item -> item.name in ("form", "gloss"), constituents) ||
+	if any(item -> item.name ∉ ("form", "gloss"), constituents)
 		return "unknown constituent name"
+	end
 	glosses = filter(item -> item.name == "gloss", constituents)
-	length(glosses) <= 1 || return "a form-bearing node may carry at most one gloss"
-	all(item -> item.name == "form" || item.value === nothing, constituents) ||
+	if length(glosses) > 1
+		return "a form-bearing node may carry at most one gloss"
+	end
+	if any(item -> item.name != "form" && !isnothing(item.value), constituents)
 		return "only form constituents may carry an editorial value"
+	end
 	forms = filter(item -> item.name == "form", constituents)
 	isempty(forms) && return "a form-bearing node needs at least one form"
 	for form in forms
-		if form.value !== nothing && isempty(strip(form.value))
+		if !isnothing(form.value) && isempty(strip(form.value))
 			return "a form value may not be empty"
 		end
 	end
@@ -492,16 +611,16 @@ function constituent_shape_error(constituents)::Union{Nothing, String}
 		same = projected_covers(first_form.span, second_form.span) &&
 			projected_covers(second_form.span, first_form.span)
 		if same
-			(first_form.value !== nothing && second_form.value !== nothing &&
-				first_form.value != second_form.value) ||
+			if isnothing(first_form.value) || isnothing(second_form.value) || first_form.value == second_form.value
 				return "coincident form spans require distinct editorial values"
+			end
 		elseif !projected_disjoint(first_form.span, second_form.span)
 			return "form spans must be disjoint or coincident readings of one surface span"
 		elseif first_form.span.start_byte > second_form.span.start_byte
 			return "disjoint form spans must be supplied in source order"
 		end
 	end
-	nothing
+	return nothing
 end
 
 function build_assertions(
@@ -510,9 +629,16 @@ function build_assertions(
 	assertions = NodeAssertion[]
 	for selection in decision.selections
 		span = resolve_selection(item, pass, selection.node, "node")
-		isempty(selection.forms) && throw(ReviewItem(
-			item.item_id, pass.pass, "schema_violation", "a form-bearing node needs at least one form",
-		))
+		if isempty(selection.forms)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"schema_violation",
+					"a form-bearing node needs at least one form",
+				)
+			)
+		end
 		constituents = Constituent[
 			Constituent(
 				"form",
@@ -521,31 +647,45 @@ function build_assertions(
 			)
 			for form in selection.forms
 		]
-		selection.gloss === nothing || push!(
-			constituents,
-			Constituent("gloss", resolve_selection(item, pass, selection.gloss, "gloss")),
-		)
+		if !isnothing(selection.gloss)
+			push!(
+				constituents,
+				Constituent("gloss", resolve_selection(item, pass, selection.gloss, "gloss"))
+			)
+		end
 		geometry_error = constituent_shape_error(constituents)
-		geometry_error === nothing || throw(ReviewItem(
-			item.item_id, pass.pass, "schema_violation", geometry_error,
-		))
-		form_bearing(pass.node_type) || throw(ReviewItem(
-			item.item_id, pass.pass, "schema_violation",
-			"$(node_type_name(pass.node_type)) is not form-bearing",
-		))
+		if !isnothing(geometry_error)
+			throw(
+				ReviewItem(
+					item.item_id, pass.pass, "schema_violation", geometry_error,
+				)
+			)
+		end
+		if !form_bearing(pass.node_type)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"schema_violation",
+					"$(node_type_name(pass.node_type)) is not form-bearing",
+				)
+			)
+		end
 		push!(assertions, NodeAssertion(string(uuid4()), pass.node_type, span, constituents))
 	end
-	assertions
+	return assertions
 end
 
 function marker_for_selection(
 	item::AdjudicationItem, selected::ProjectedSpan,
 )::Union{Nothing, SurfaceMarker}
 	matches = filter(marker -> projected_covers(marker.span, selected), item.markers)
-	length(matches) == 1 ? only(matches) : nothing
+	length(matches) == 1 && return only(matches)
+	return nothing
 end
 
-is_bare_marker_pass(pass::PassDefinition)::Bool = pass.pass == bare_qualification_pass.pass
+is_bare_marker_pass(pass::PassDefinition)::Bool =
+	pass.pass == bare_qualification_pass.pass
 
 function selected_marker_span(
 	item::AdjudicationItem, pass::PassDefinition, selected::ProjectedSpan,
@@ -555,7 +695,8 @@ function selected_marker_span(
 		return selected
 	end
 	marker = marker_for_selection(item, selected)
-	marker === nothing ? nothing : marker.span
+	!isnothing(marker) && return marker.span
+	return nothing
 end
 
 function valid_scope_marker(
@@ -574,33 +715,52 @@ function build_scopes(
 	for selection in decision.scopes
 		selected = resolve_selection(item, pass, selection.marker, "marker")
 		marker_span = selected_marker_span(item, pass, selected)
-		marker_span === nothing && throw(ReviewItem(
-			item.item_id, pass.pass, "not_a_marker",
-			is_bare_marker_pass(pass) ?
+		if isnothing(marker_span)
+			msg = is_bare_marker_pass(pass) ?
 				"$(repr(selection.marker)) overlaps an explicit qualification marker" :
-				"$(repr(selection.marker)) is not an unambiguous qualification marker in this block",
-		))
+				"$(repr(selection.marker)) is not an unambiguous qualification marker in this block"
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"not_a_marker",
+					msg,
+				)
+			)
+		end
 		# Resolution applies the first scope it finds for a marker, so a second target would be
 		# accepted here and then silently dropped.
-		any(scope -> scope.marker == marker_span, scopes) && throw(ReviewItem(
-			item.item_id, pass.pass, "schema_violation",
-			"$(repr(selection.marker)) already governs material in this block",
-		))
+		if any(scope -> scope.marker == marker_span, scopes)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"schema_violation",
+					"$(repr(selection.marker)) already governs material in this block",
+				)
+			)
+		end
 		target = resolve_selection(item, pass, selection.target, "scope target")
-		projected_disjoint(marker_span, target) || throw(ReviewItem(
-			item.item_id, pass.pass, "scope_contains_marker",
-			"a marker may not be inside the material it governs",
-		))
+		if !projected_disjoint(marker_span, target)
+			throw(
+				ReviewItem(
+					item.item_id,
+					pass.pass,
+					"scope_contains_marker",
+					"a marker may not be inside the material it governs",
+				)
+			)
+		end
 		push!(scopes, ScopeAssertion(marker_span, target))
 	end
-	scopes
+	return scopes
 end
 
 function mark_claimed!(claimed::BitVector, span::ProjectedSpan)
 	for position in span.start_byte:(span.end_byte - 1)
 		1 <= position <= length(claimed) && (claimed[position] = true)
 	end
-	nothing
+	return nothing
 end
 
 function partition_gap(
@@ -617,14 +777,18 @@ function partition_gap(
 			character = projection.text[thisind(projection.text, position)]
 			isspace(character) && continue
 			stop = min(segment.projected_end, position + 40)
-			return String(strip(SubString(
-				projection.text,
-				thisind(projection.text, position),
-				prevind(projection.text, stop),
-			)))
+			return String(
+				strip(
+					SubString(
+						projection.text,
+						thisind(projection.text, position),
+						prevind(projection.text, stop),
+					)
+				)
+			)
 		end
 	end
-	nothing
+	return nothing
 end
 
 function verify_partition(
@@ -636,24 +800,47 @@ function verify_partition(
 		item.projection,
 		vcat(ProjectedSpan[assertion.span for assertion in assertions], residuals),
 	)
-	unaccounted === nothing || throw(ReviewItem(
-		item.item_id, pass.pass, "incomplete_partition",
-		"exhaustive claim leaves $(repr(unaccounted)) unaccounted for",
-	))
-	nothing
+	if !isnothing(unaccounted)
+		throw(
+			ReviewItem(
+				item.item_id,
+				pass.pass,
+				"incomplete_partition",
+				"exhaustive claim leaves $(repr(unaccounted)) unaccounted for",
+			)
+		)
+	end
+	return nothing
 end
 
 function commit(
-	harness::Harness, pass::PassDefinition, item::AdjudicationItem, decision::Decision;
-	decision_procedure::AbstractString, decision_reference = nothing,
-	now::AbstractString = timestamp(),
-)::ExaminationRecord
-	isempty(strip(decision_procedure)) && throw(ReviewItem(
-		item.item_id, pass.pass, "schema_violation", "record names no decision procedure",
-	))
-	decision.outcome in outcomes || throw(ReviewItem(
-		item.item_id, pass.pass, "schema_violation", "unknown outcome $(decision.outcome)",
-	))
+		harness::Harness, pass::PassDefinition, item::AdjudicationItem, decision::Decision;
+		decision_procedure::AbstractString,
+		decision_reference = nothing,
+		now::AbstractString = timestamp(),
+	)::ExaminationRecord
+	if isempty(strip(decision_procedure))
+		throw(
+			ReviewItem(
+				item.item_id,
+				pass.pass,
+				"schema_violation",
+				"record names no decision procedure",
+			)
+		)
+	end
+	if decision.outcome ∉ outcomes
+		throw(
+			ReviewItem(
+				item.item_id,
+				pass.pass,
+				"schema_violation",
+				"unknown outcome $(decision.outcome)",
+			)
+		)
+	end
+
+	# TODO: fix all this logic
 	decision.outcome == :positive || (isempty(decision.selections) && isempty(decision.scopes)) ||
 		throw(ReviewItem(item.item_id, pass.pass, "schema_violation", "assertions on a non-positive outcome"))
 	decision.outcome == :positive || !decision.exhaustive || throw(ReviewItem(
@@ -690,7 +877,7 @@ function commit(
 	validate_residuals(item, pass, residuals, assertions)
 	verify_partition(item, pass, decision, assertions, residuals)
 
-	ExaminationRecord(
+	return ExaminationRecord(
 		string(uuid4()),
 		pass.pass,
 		pass.pass_version,
@@ -714,7 +901,7 @@ function valid_projected_span(text::AbstractString, span::ProjectedSpan)::Bool
 	span.end_byte > span.start_byte || return false
 	span.end_byte <= ncodeunits(text) + 1 || return false
 	thisind(text, span.start_byte) == span.start_byte || return false
-	span.end_byte == ncodeunits(text) + 1 || thisind(text, span.end_byte) == span.end_byte
+	return span.end_byte == ncodeunits(text) + 1 || thisind(text, span.end_byte) == span.end_byte
 end
 
 function validate_record_shape(
