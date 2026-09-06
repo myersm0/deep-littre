@@ -1,4 +1,5 @@
-using DeepLittre.Source: EncodingViolation, check_encoding, line_starts, line_count, line_bounds, slice
+using DeepLittre.Source: EncodingViolation, check_encoding, 
+	line_starts, line_count, line_bounds, slice
 
 @testset "encoding policy" begin
 	@testset "accepts declared form" begin

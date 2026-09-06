@@ -114,11 +114,11 @@ function node_raw_span(document::SourceDocument, node::XML.FlatNode)::Tuple{RawS
 end
 
 function raw_text(document::SourceDocument, span::RawSpan)::SubString
-	slice(document.raw_text, span)
+	return slice(document.raw_text, span)
 end
 
 function view_text(document::SourceDocument, span::ViewSpan)::SubString
-	slice(document.parser_view, span)
+	return slice(document.parser_view, span)
 end
 
 function elements(node::XML.FlatNode)::Vector{XML.FlatNode}

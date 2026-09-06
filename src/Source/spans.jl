@@ -25,9 +25,11 @@ is_boundary(text::AbstractString, position::Int)::Bool =
 	position == ncodeunits(text) + 1 || isvalid(text, position)
 
 function validate_span(text::AbstractString, span::Span)::Span
-	span.start_byte <= span.end_byte || error("inverted span $(span)")
-	is_boundary(text, span.start_byte) || error("span start is not a codepoint boundary: $(span)")
-	is_boundary(text, span.end_byte) || error("span end is not a codepoint boundary: $(span)")
+	a = span.start_byte
+	b = span.end_byte
+	a <= b || error("inverted span $(span)")
+	is_boundary(text, a) || error("span start is not a codepoint boundary: $(span)")
+	is_boundary(text, b) || error("span end is not a codepoint boundary: $(span)")
 	return span
 end
 
@@ -66,4 +68,5 @@ anchor_id(span::Span)::String =
 text_sha256(text::AbstractString)::String =
 	bytes2hex(sha256(Vector{UInt8}(codeunits(text))))
 
-span_sha256(text::AbstractString, span::Span)::String = text_sha256(slice(text, span))
+span_sha256(text::AbstractString, span::Span)::String = 
+	text_sha256(slice(text, span))

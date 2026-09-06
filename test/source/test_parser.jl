@@ -2,15 +2,14 @@ using XML
 using DeepLittre.Source: read_document, read_corpus, node_view_span, node_raw_span,
 	root_element, slice, elements, EncodingViolation, patched_corpus_sha256
 
-# Assertions about the exact pinned XML.jl version. If the dependency changes these run
-# before any release is accepted.
+# Assertions about the exact pinned XML.jl version
 
 function walk(action, node)
 	action(node)
 	for child in XML.children(node)
 		walk(action, child)
 	end
-	nothing
+	return nothing
 end
 
 @testset "parser verification" begin
@@ -20,17 +19,22 @@ end
 		@test pkgversion(XML) == v"0.4.6"
 	end
 
-
 	@testset "patched corpus checksum is order-independent and content-sensitive" begin
 		digest = patched_corpus_sha256(documents)
 		@test length(digest) == 64
 		@test patched_corpus_sha256(reverse(documents)) == digest
 
 		directory = mktempdir()
-		write(joinpath(directory, "a.xml"), "<xmlittre><entree terme=\"A\"/></xmlittre>\n")
-		write(joinpath(directory, "b.xml"), "<xmlittre><entree terme=\"B\"/></xmlittre>\n")
+		write(
+			joinpath(directory, "a.xml"), "<xmlittre><entree terme=\"A\"/></xmlittre>\n"
+		)
+		write(
+			joinpath(directory, "b.xml"), "<xmlittre><entree terme=\"B\"/></xmlittre>\n"
+		)
 		first_digest = patched_corpus_sha256(read_corpus(directory))
-		write(joinpath(directory, "b.xml"), "<xmlittre><entree terme=\"C\"/></xmlittre>\n")
+		write(
+			joinpath(directory, "b.xml"), "<xmlittre><entree terme=\"C\"/></xmlittre>\n"
+		)
 		@test patched_corpus_sha256(read_corpus(directory)) != first_digest
 	end
 
@@ -40,8 +44,9 @@ end
 		for document in documents
 			walk(document.document) do node
 				nodes += 1
-				String(XML.sourcetext(node)) ==
-					String(SubString(document.parser_view, XML.sourcespan(node))) || (mismatches += 1)
+				a = String(XML.sourcetext(node))
+				b = String(SubString(document.parser_view, XML.sourcespan(node)))
+				a == b || (mismatches += 1)
 			end
 		end
 		@test nodes > 4000
@@ -78,8 +83,18 @@ end
 			lazy = XML.LazyNode[]
 			walk(node -> push!(lazy, node), XML.parse(XML.LazyNode, document.parser_view))
 			@test length(flat) == length(lazy)
-			@test [XML.sourcespan(node) for node in flat] == [XML.sourcespan(node) for node in lazy]
-			@test [XML.tag(node) for node in flat] == [XML.tag(node) for node in lazy]
+
+			@test [
+				XML.sourcespan(node) for node in flat
+			] == [
+				XML.sourcespan(node) for node in lazy
+			]
+
+			@test [
+				XML.tag(node) for node in flat
+			] == [
+				XML.tag(node) for node in lazy
+			]
 		end
 	end
 
@@ -98,8 +113,8 @@ end
 	end
 
 	@testset "corpus satisfies the encoding policy" begin
-		# The same selection the pipeline uses, so a stray editor or AppleDouble file in the source
-		# directory is neither read here nor read there.
+		# The same selection the pipeline uses, so a stray editor or AppleDouble 
+		# file in the source directory is neither read here nor read there.
 		for path in DeepLittre.Source.source_paths(corpus_source)
 			@test read(path) |> bytes -> begin
 				DeepLittre.Source.check_encoding(bytes, basename(path))
@@ -112,7 +127,9 @@ end
 		document = read_document(
 			joinpath(fixture_root, "patching", "split.xml");
 			patches = DeepLittre.Source.patches_for(
-				DeepLittre.Source.load_patches(joinpath(fixture_root, "patching", "patches.toml")),
+				DeepLittre.Source.load_patches(
+					joinpath(fixture_root, "patching", "patches.toml")
+				),
 				"split.xml",
 			),
 		)
@@ -120,7 +137,9 @@ end
 
 		indents = XML.FlatNode[]
 		walk(document.document) do node
-			XML.nodetype(node) == XML.Element && XML.tag(node) == "indent" && push!(indents, node)
+			if XML.nodetype(node) == XML.Element && XML.tag(node) == "indent"
+				push!(indents, node)
+			end
 		end
 		@test length(indents) == 3
 

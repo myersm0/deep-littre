@@ -1,5 +1,5 @@
-using DeepLittre.Source: Edit, TransformMap, RawSpan, ViewSpan, to_raw, identity_transform,
-	is_identity, apply_patches, Patch, slice
+using DeepLittre.Source: Edit, TransformMap, RawSpan, ViewSpan, to_raw, 
+	identity_transform, is_identity, apply_patches, Patch, slice
 
 @testset "transform map" begin
 	@testset "identity map" begin
@@ -47,7 +47,14 @@ using DeepLittre.Source: Edit, TransformMap, RawSpan, ViewSpan, to_raw, identity
 
 	@testset "round trip through a real split patch" begin
 		raw = "<indent>alpha</cit> Substantivement. beta\n"
-		patches = [Patch("f.xml", 1, "</cit> Substantivement.", "</cit></indent><indent>Substantivement.")]
+		patches = [
+			Patch(
+				"f.xml", 
+				1, 
+				"</cit> Substantivement.", 
+				"</cit></indent><indent>Substantivement."
+			)
+		]
 		(view, edits) = apply_patches(raw, "f.xml", patches)
 		transform = TransformMap("f.xml", edits)
 
