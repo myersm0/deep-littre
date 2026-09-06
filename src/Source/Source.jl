@@ -1,5 +1,5 @@
 """
-What XMLittré contains, before anything decides what it means. See `src/Source/README.md`.
+What XMLittré contains, before anything decides what it means.
 """
 module Source
 

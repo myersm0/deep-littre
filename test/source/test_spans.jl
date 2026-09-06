@@ -1,4 +1,4 @@
-using DeepLittre.Source: RawSpan, ViewSpan, slice, segment, covers, disjoint, crosses,
+using DeepLittre.Source: RawSpan, ViewSpan, slice, covers, disjoint, crosses,
 	laminar, is_boundary, validate_span, view_span, text_sha256, span_sha256
 
 @testset "spans" begin

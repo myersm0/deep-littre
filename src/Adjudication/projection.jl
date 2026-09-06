@@ -89,7 +89,7 @@ function absorb_literal!(builder::ProjectionBuilder, source::AbstractString, spa
 		character = source[position]
 		following = nextind(source, position)
 		if isspace(character)
-			run_start == 0 || append_run!(builder, segment(source, run_start, position), run_start, position)
+			run_start == 0 || append_run!(builder, slice(source, run_start, position), run_start, position)
 			run_start = 0
 			builder.pending_space = builder.position > 1
 		else
@@ -101,7 +101,7 @@ function absorb_literal!(builder::ProjectionBuilder, source::AbstractString, spa
 		end
 		position = following
 	end
-	run_start == 0 || append_run!(builder, segment(source, run_start, span.end_byte), run_start, span.end_byte)
+	run_start == 0 || append_run!(builder, slice(source, run_start, span.end_byte), run_start, span.end_byte)
 	nothing
 end
 
@@ -127,7 +127,7 @@ function absorb!(builder::ProjectionBuilder, source::AbstractString, span::ViewS
 			semicolon = findnext(';', source, position)
 			if semicolon !== nothing && semicolon < span.end_byte
 				reference_end = nextind(source, semicolon)
-				reference = segment(source, position, reference_end)
+				reference = slice(source, position, reference_end)
 				decoded = XML.unescape(reference)
 				if decoded != reference
 					literal_start < position && absorb_literal!(
@@ -253,4 +253,4 @@ function locate(projection::ProjectedView, selection::AbstractString)::ViewSpan
 end
 
 projected_text(projection::ProjectedView, span::ProjectedSpan)::String =
-	String(segment(projection.text, span.start_byte, span.end_byte))
+	String(slice(projection.text, span.start_byte, span.end_byte))

@@ -11,7 +11,7 @@ using UUIDs
 using XML
 
 using ..Source
-using ..Source: RawSpan, ViewSpan, slice, segment
+using ..Source: RawSpan, ViewSpan, slice
 using ..Census
 
 include("records.jl")

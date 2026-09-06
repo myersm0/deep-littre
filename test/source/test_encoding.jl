@@ -1,4 +1,4 @@
-using DeepLittre.Source: EncodingViolation, check_encoding, line_starts, line_count, line_bounds, segment
+using DeepLittre.Source: EncodingViolation, check_encoding, line_starts, line_count, line_bounds, slice
 
 @testset "encoding policy" begin
 	@testset "accepts declared form" begin
@@ -22,9 +22,9 @@ using DeepLittre.Source: EncodingViolation, check_encoding, line_starts, line_co
 		text = "alpha\nbêta\ngamma"
 		starts = line_starts(text)
 		@test line_count(text) == 3
-		@test segment(text, line_bounds(text, starts, 1)...) == "alpha"
-		@test segment(text, line_bounds(text, starts, 2)...) == "bêta"
-		@test segment(text, line_bounds(text, starts, 3)...) == "gamma"
+		@test slice(text, line_bounds(text, starts, 1)...) == "alpha"
+		@test slice(text, line_bounds(text, starts, 2)...) == "bêta"
+		@test slice(text, line_bounds(text, starts, 3)...) == "gamma"
 		@test_throws ErrorException line_bounds(text, starts, 4)
 	end
 
@@ -32,6 +32,6 @@ using DeepLittre.Source: EncodingViolation, check_encoding, line_starts, line_co
 		text = "alpha\n"
 		starts = line_starts(text)
 		@test line_count(text) == 2
-		@test segment(text, line_bounds(text, starts, 2)...) == ""
+		@test slice(text, line_bounds(text, starts, 2)...) == ""
 	end
 end

@@ -92,7 +92,7 @@ function decode_reference(source::AbstractString, position::Int, limit::Int)
 	semicolon = findnext(';', source, position)
 	(semicolon === nothing || semicolon >= limit) && return nothing
 	following = nextind(source, semicolon)
-	reference = Source.segment(source, position, following)
+	reference = Source.slice(source, position, following)
 	decoded = XML.unescape(reference)
 	decoded == reference ? nothing : (decoded, following)
 end
