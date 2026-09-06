@@ -375,7 +375,7 @@ function validate_geometry(
 	for outer in eachindex(assertions), inner in (outer + 1):lastindex(assertions)
 		left = assertions[outer].span
 		right = assertions[inner].span
-		if projected_covers(left, right) && projected_covers(right, left)
+		if left == right
 			reject(item, pass, "structural_conflict", "coincident node spans $(left)")
 		end
 		if !projected_laminar(left, right)
@@ -497,8 +497,7 @@ function validate_against_store!(
 		isnothing(record) && continue
 		record.outcome == :positive || continue
 		for assertion in assertions, existing in record.assertions
-			if projected_covers(assertion.span, existing.span) &&
-					projected_covers(existing.span, assertion.span)
+			if assertion.span == existing.span
 				reject(
 					item, pass, "structural_conflict",
 					"coincident node span $(assertion.span) with $(other_pass.pass)",
@@ -525,7 +524,7 @@ function validate_residuals(
 			reject(item, pass, "residual_overlaps_node", string(residual))
 	end
 	for outer in eachindex(residuals), inner in (outer + 1):lastindex(residuals)
-		if !projected_disjoint(residuals[outer], residuals[inner])
+		if projected_overlaps(residuals[outer], residuals[inner])
 			reject(
 				item, pass, "residuals_overlap",
 				"$(residuals[outer]) and $(residuals[inner])",
@@ -536,16 +535,14 @@ function validate_residuals(
 end
 
 function form_pair_error(first_form, second_form)::Union{Nothing, String}
-	same = projected_covers(first_form.span, second_form.span) &&
-		projected_covers(second_form.span, first_form.span)
-	if same
+	if first_form.span == second_form.span
 		msg = "coincident form spans require distinct editorial values"
 		isnothing(first_form.value) && return msg
 		isnothing(second_form.value) && return msg
 		first_form.value == second_form.value && return msg
 		return nothing
 	end
-	if !projected_disjoint(first_form.span, second_form.span)
+	if projected_overlaps(first_form.span, second_form.span)
 		return "form spans must be disjoint or coincident readings of one surface span"
 	end
 	if first_form.span.start_byte > second_form.span.start_byte
@@ -671,7 +668,7 @@ function build_scopes(
 			reject(item, pass, "schema_violation", reason)
 		end
 		target = resolve_selection(item, pass, selection.target, "scope target")
-		if !projected_disjoint(marker_span, target)
+		if projected_overlaps(marker_span, target)
 			reason = "a marker may not be inside the material it governs"
 			reject(item, pass, "scope_contains_marker", reason)
 		end
@@ -826,9 +823,6 @@ function valid_projected_span(text::AbstractString, span::ProjectedSpan)::Bool
 	return thisind(text, span.end_byte) == span.end_byte
 end
 
-integrity_error(record::ExaminationRecord, reason::AbstractString) =
-	throw(StoreIntegrityError("record $(record.record_id) $(reason)"))
-
 function validate_record_shape(
 	record::ExaminationRecord, pass::PassDefinition, item::AdjudicationItem,
 )
@@ -884,8 +878,7 @@ function validate_record_shape(
 	for outer in eachindex(assertions), inner in (outer + 1):lastindex(assertions)
 		left = assertions[outer].span
 		right = assertions[inner].span
-		projected_covers(left, right) && projected_covers(right, left) &&
-			integrity_error(record, "has coincident node spans")
+		left == right && integrity_error(record, "has coincident node spans")
 		projected_laminar(left, right) ||
 			integrity_error(record, "has crossing node spans")
 	end
