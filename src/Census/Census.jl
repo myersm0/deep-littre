@@ -1,6 +1,6 @@
 """
-Which source blocks exist for adjudication, and the fixed denominator coverage is measured
-against. See `src/Census/README.md`.
+Which source blocks exist for adjudication, and the fixed denominator coverage 
+is measured against.
 """
 module Census
 

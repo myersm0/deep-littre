@@ -1,8 +1,5 @@
-"""
-A block kind is source syntax, never semantic classification. Kinds are singleton types
-rather than an enum so that an unhandled kind fails loudly at the dispatch site instead of
-falling through a catch-all branch.
-"""
+# ===== block kinds =====
+
 abstract type BlockKind end
 
 struct Indent <: BlockKind end
@@ -26,9 +23,12 @@ kind_name(::EnteteIndent) = "entete_indent"
 kind_name(::EnteteNature) = "entete_nature"
 
 const block_kinds = (
-	Indent(), Variante(), ResumeIndent(), ResumeVariante(),
-	RubriqueIndent(), RubriqueVariante(), RubriqueDirect(), EnteteIndent(), EnteteNature(),
+	Indent(), Variante(), ResumeIndent(), ResumeVariante(), RubriqueIndent(),
+	RubriqueVariante(), RubriqueDirect(), EnteteIndent(), EnteteNature(),
 )
+
+
+# ===== census records =====
 
 struct SourceBlock
 	source_id::String
@@ -71,6 +71,38 @@ struct CorpusCensus
 	documents::Vector{DocumentCensus}
 end
 
+
+# ===== source elements =====
+
+abstract type SourceElement end
+abstract type BlockElement <: SourceElement end
+
+struct IndentElement <: BlockElement end
+struct VarianteElement <: BlockElement end
+struct RubriqueElement <: SourceElement end
+struct ResumeElement <: SourceElement end
+struct EnteteElement <: SourceElement end
+struct NatureElement <: SourceElement end
+struct PrononciationElement <: SourceElement end
+struct OtherElement <: SourceElement end
+
+const source_elements = Dict{String, SourceElement}(
+	"indent" => IndentElement(),
+	"variante" => VarianteElement(),
+	"rubrique" => RubriqueElement(),
+	"résumé" => ResumeElement(),
+	"entete" => EnteteElement(),
+	"nature" => NatureElement(),
+	"prononciation" => PrononciationElement(),
+)
+
+source_element(name::AbstractString)::SourceElement =
+	get(source_elements, name, OtherElement())
+
+
+# ===== ancestry context =====
+
+# TODO: consider using a kwdef
 struct Context
 	within_rubrique::Bool
 	within_resume::Bool
@@ -79,109 +111,140 @@ struct Context
 	parent_id::Union{Nothing, String}
 end
 
-descend(context::Context, parent_id::String) =
-	Context(context.within_rubrique, context.within_resume, false, context.entry_id, parent_id)
+Context(entry_id::AbstractString) = Context(false, false, false, entry_id, nothing)
 
-function block_kind(name::AbstractString, context::Context)::BlockKind
-	if name == "indent"
-		context.within_entete ? EnteteIndent() :
-			context.within_resume ? ResumeIndent() :
-			context.within_rubrique ? RubriqueIndent() : Indent()
-	elseif name == "variante"
-		context.within_resume ? ResumeVariante() :
-			context.within_rubrique ? RubriqueVariante() : Variante()
-	else
-		error("no block kind for element <$(name)>")
-	end
+descend(context::Context, parent_id::AbstractString) = Context(
+	context.within_rubrique, context.within_resume, false, context.entry_id, parent_id,
+)
+
+enter_rubrique(context::Context, source_id::AbstractString) =
+	Context(true, false, false, context.entry_id, source_id)
+
+enter_resume(context::Context) = Context(
+	context.within_rubrique, true, context.within_entete,
+	context.entry_id, context.parent_id,
+)
+
+enter_entete(context::Context) = Context(
+	context.within_rubrique, context.within_resume, true,
+	context.entry_id, context.parent_id,
+)
+
+function block_kind(::IndentElement, context::Context)::BlockKind
+	context.within_entete && return EnteteIndent()
+	context.within_resume && return ResumeIndent()
+	context.within_rubrique && return RubriqueIndent()
+	return Indent()
 end
 
-function homograph_index(node::XML.FlatNode)::Union{Nothing, Int}
-	value = Source.attribute(node, "sens")
-	value === nothing && return nothing
-	tryparse(Int, value)
+function block_kind(::VarianteElement, context::Context)::BlockKind
+	context.within_resume && return ResumeVariante()
+	context.within_rubrique && return RubriqueVariante()
+	return Variante()
+end
+
+
+# ===== scanning =====
+
+struct CensusBuilder
+	document::Source.SourceDocument
+	rubriques::Vector{SourceRubrique}
+	anomalies::Vector{String}
 end
 
 function scan!(
-	document::Source.SourceDocument,
-	rubriques::Vector{SourceRubrique},
-	anomalies::Vector{String},
-	node::XML.FlatNode,
-	context::Context,
+	builder::CensusBuilder, node::XML.FlatNode, context::Context,
 )::Vector{SourceBlock}
 	blocks = SourceBlock[]
 	for child in Source.elements(node)
-		name = XML.tag(child)
-		if name == "rubrique"
-			push!(rubriques, build_rubrique(document, rubriques, anomalies, child, context))
-		elseif name == "indent" || name == "variante"
-			push!(blocks, build_block(document, rubriques, anomalies, child, context, name))
-		elseif name == "résumé"
-			inner = Context(
-				context.within_rubrique, true, context.within_entete,
-				context.entry_id, context.parent_id,
-			)
-			append!(blocks, scan!(document, rubriques, anomalies, child, inner))
-		elseif name == "entete"
-			inner = Context(
-				context.within_rubrique, context.within_resume, true,
-				context.entry_id, context.parent_id,
-			)
-			append!(blocks, scan!(document, rubriques, anomalies, child, inner))
-		elseif name == "nature"
-			context.within_entete &&
-				push!(blocks, leaf_block(document, child, EnteteNature(), context))
-		elseif name == "prononciation"
-			continue
-		else
-			append!(blocks, scan!(document, rubriques, anomalies, child, context))
-		end
+		element = source_element(XML.tag(child))
+		scan_child!(element, builder, blocks, child, context)
 	end
-	blocks
+	return blocks
 end
 
+scan_child!(element::BlockElement, builder, blocks, node, context) =
+	push!(blocks, build_block(element, builder, node, context))
+
+scan_child!(::RubriqueElement, builder, blocks, node, context) =
+	push!(builder.rubriques, build_rubrique(builder, node, context))
+
+scan_child!(::ResumeElement, builder, blocks, node, context) =
+	append!(blocks, scan!(builder, node, enter_resume(context)))
+
+scan_child!(::EnteteElement, builder, blocks, node, context) =
+	append!(blocks, scan!(builder, node, enter_entete(context)))
+
+function scan_child!(::NatureElement, builder, blocks, node, context)
+	context.within_entete || return blocks
+	return push!(blocks, leaf_block(builder, node, EnteteNature(), context))
+end
+
+scan_child!(::PrononciationElement, builder, blocks, node, context) = blocks
+
+scan_child!(::OtherElement, builder, blocks, node, context) =
+	append!(blocks, scan!(builder, node, context))
+
+
+# ===== building blocks =====
+
 function leaf_block(
-	document::Source.SourceDocument, node::XML.FlatNode, kind::BlockKind, context::Context,
+	builder::CensusBuilder, node::XML.FlatNode, kind::BlockKind, context::Context,
 )::SourceBlock
-	view = Source.node_view_span(document, node)
-	(raw, synthetic) = Source.node_raw_span(document, node)
-	SourceBlock(
-		anchor_id(raw), kind, raw, view, synthetic,
-		context.entry_id, context.parent_id, SourceBlock[],
+	document = builder.document
+	view_span = Source.node_view_span(document, node)
+	(raw_span, synthetic) = Source.node_raw_span(document, node)
+	return SourceBlock(
+		anchor_id(raw_span), 
+		kind, 
+		raw_span, 
+		view_span, 
+		synthetic,
+		context.entry_id, 
+		context.parent_id, 
+		SourceBlock[],
 	)
 end
 
 function build_block(
-	document::Source.SourceDocument,
-	rubriques::Vector{SourceRubrique},
-	anomalies::Vector{String},
-	node::XML.FlatNode,
-	context::Context,
-	name::AbstractString,
+	element::BlockElement, builder::CensusBuilder, node::XML.FlatNode, context::Context,
 )::SourceBlock
-	kind = block_kind(name, context)
-	check_resume_marking(document, node, kind, context, anomalies)
-	view = Source.node_view_span(document, node)
-	(raw, synthetic) = Source.node_raw_span(document, node)
-	source_id = anchor_id(raw)
-	children = scan!(document, rubriques, anomalies, node, descend(context, source_id))
-	SourceBlock(source_id, kind, raw, view, synthetic, context.entry_id, context.parent_id, children)
+	document = builder.document
+	kind = block_kind(element, context)
+	check_resume_marking(builder, node, kind, context)
+	view_span = Source.node_view_span(document, node)
+	(raw_span, synthetic) = Source.node_raw_span(document, node)
+	source_id = anchor_id(raw_span)
+	children = scan!(builder, node, descend(context, source_id))
+	return SourceBlock(
+		source_id, 
+		kind, 
+		raw_span, 
+		view_span, 
+		synthetic,
+		context.entry_id, 
+		context.parent_id, 
+		children,
+	)
 end
 
 function check_resume_marking(
-	document::Source.SourceDocument,
-	node::XML.FlatNode,
-	kind::BlockKind,
-	context::Context,
-	anomalies::Vector{String},
+	builder::CensusBuilder, node::XML.FlatNode, kind::BlockKind, context::Context,
 )
 	XML.tag(node) == "variante" || return nothing
 	marked = Source.attribute(node, "option") == "résumé"
 	if marked && !(kind isa ResumeVariante)
-		push!(anomalies, "$(context.entry_id): variante marked option=résumé outside <résumé>")
+		push!(
+			builder.anomalies,
+			"$(context.entry_id): variante marked option=résumé outside <résumé>",
+		)
 	elseif !marked && kind isa ResumeVariante
-		push!(anomalies, "$(context.entry_id): variante inside <résumé> without option=résumé")
+		push!(
+			builder.anomalies,
+			"$(context.entry_id): variante inside <résumé> without option=résumé",
+		)
 	end
-	nothing
+	return nothing
 end
 
 const rubrique_direct_exclusions = ("indent", "variante", "rubrique", "résumé", "cit")
@@ -190,67 +253,88 @@ function has_rubrique_direct_content(
 	document::Source.SourceDocument, node::XML.FlatNode,
 )::Bool
 	for child in XML.children(node)
-		kind = XML.nodetype(child)
-		if kind == XML.Text
-			text = Source.slice(document.parser_view, Source.node_view_span(document, child))
+		nodetype = XML.nodetype(child)
+		if nodetype == XML.Text
+			view_span = Source.node_view_span(document, child)
+			text = Source.slice(document.parser_view, view_span)
 			isempty(strip(XML.unescape(text))) || return true
-		elseif kind == XML.Element
+		elseif nodetype == XML.Element
 			XML.tag(child) in rubrique_direct_exclusions && continue
 			has_rubrique_direct_content(document, child) && return true
 		end
 	end
-	false
+	return false
 end
 
 function rubrique_direct_block(
-	document::Source.SourceDocument, node::XML.FlatNode, context::Context, rubrique_id::String,
+	builder::CensusBuilder, node::XML.FlatNode, context::Context, rubrique_id::String,
 )::SourceBlock
-	view = Source.node_view_span(document, node)
-	(raw, synthetic) = Source.node_raw_span(document, node)
-	SourceBlock(
-		string(anchor_id(raw), ":direct"), RubriqueDirect(), raw, view, synthetic,
-		context.entry_id, rubrique_id, SourceBlock[],
+	document = builder.document
+	view_span = Source.node_view_span(document, node)
+	(raw_span, synthetic) = Source.node_raw_span(document, node)
+	return SourceBlock(
+		string(anchor_id(raw_span), ":direct"), 
+		RubriqueDirect(), 
+		raw_span, 
+		view_span,
+		synthetic, 
+		context.entry_id, 
+		rubrique_id, 
+		SourceBlock[],
 	)
 end
 
 function build_rubrique(
-	document::Source.SourceDocument,
-	rubriques::Vector{SourceRubrique},
-	anomalies::Vector{String},
-	node::XML.FlatNode,
-	context::Context,
+	builder::CensusBuilder, node::XML.FlatNode, context::Context,
 )::SourceRubrique
-	view = Source.node_view_span(document, node)
-	(raw, _) = Source.node_raw_span(document, node)
-	source_id = anchor_id(raw)
+	document = builder.document
+	view_span = Source.node_view_span(document, node)
+	(raw_span, _) = Source.node_raw_span(document, node)
+	source_id = anchor_id(raw_span)
 	name = something(Source.attribute(node, "nom"), "")
-	inner = Context(true, false, false, context.entry_id, source_id)
-	blocks = scan!(document, rubriques, anomalies, node, inner)
+	inner = enter_rubrique(context, source_id)
+	blocks = scan!(builder, node, inner)
 	if has_rubrique_direct_content(document, node)
-		pushfirst!(blocks, rubrique_direct_block(document, node, inner, source_id))
+		pushfirst!(blocks, rubrique_direct_block(builder, node, inner, source_id))
 	end
-	SourceRubrique(source_id, name, raw, view, context.entry_id, context.parent_id, blocks)
+	return SourceRubrique(
+		source_id, 
+		name, 
+		raw_span, 
+		view_span,
+		context.entry_id, 
+		context.parent_id, 
+		blocks,
+	)
+end
+
+function homograph_index(node::XML.FlatNode)::Union{Nothing, Int}
+	value = Source.attribute(node, "sens")
+	isnothing(value) && return nothing
+	return tryparse(Int, value)
 end
 
 function build_entry(
 	document::Source.SourceDocument, node::XML.FlatNode, anomalies::Vector{String},
 )::SourceEntry
-	view = Source.node_view_span(document, node)
-	(raw, _) = Source.node_raw_span(document, node)
-	source_id = anchor_id(raw)
-	rubriques = SourceRubrique[]
-	context = Context(false, false, false, source_id, nothing)
-	blocks = scan!(document, rubriques, anomalies, node, context)
-	SourceEntry(
+	view_span = Source.node_view_span(document, node)
+	(raw_span, _) = Source.node_raw_span(document, node)
+	source_id = anchor_id(raw_span)
+	builder = CensusBuilder(document, SourceRubrique[], anomalies)
+	blocks = scan!(builder, node, Context(source_id))
+	return SourceEntry(
 		source_id,
 		something(Source.attribute(node, "terme"), ""),
 		homograph_index(node),
-		raw,
-		view,
+		raw_span,
+		view_span,
 		blocks,
-		rubriques,
+		builder.rubriques,
 	)
 end
+
+
+# ===== census =====
 
 function census(document::Source.SourceDocument)::DocumentCensus
 	anomalies = String[]
@@ -258,26 +342,32 @@ function census(document::Source.SourceDocument)::DocumentCensus
 	for node in Source.element_children(Source.root_element(document), "entree")
 		push!(entries, build_entry(document, node, anomalies))
 	end
-	DocumentCensus(document.file, entries, anomalies)
+	return DocumentCensus(document.file, entries, anomalies)
 end
 
-function census(documents::Vector{Source.SourceDocument}; progress = nothing)::CorpusCensus
+function census(
+	documents::Vector{Source.SourceDocument}; progress = nothing,
+)::CorpusCensus
 	results = DocumentCensus[]
 	for document in documents
 		elapsed = @elapsed result = census(document)
 		push!(results, result)
-		progress === nothing ||
-			progress(document.file, length(result.entries), length(all_blocks(result)), elapsed)
+		isnothing(progress) || progress(
+			document.file, length(result.entries), length(all_blocks(result)), elapsed,
+		)
 	end
-	CorpusCensus(results)
+	return CorpusCensus(results)
 end
+
+
+# ===== aggregation =====
 
 function walk_blocks!(collected::Vector{SourceBlock}, blocks::Vector{SourceBlock})
 	for block in blocks
 		push!(collected, block)
 		walk_blocks!(collected, block.children)
 	end
-	collected
+	return collected
 end
 
 function all_blocks(entry::SourceEntry)::Vector{SourceBlock}
@@ -286,41 +376,40 @@ function all_blocks(entry::SourceEntry)::Vector{SourceBlock}
 	for rubrique in entry.rubriques
 		walk_blocks!(collected, rubrique.blocks)
 	end
-	collected
+	return collected
 end
 
-all_blocks(document::DocumentCensus)::Vector{SourceBlock} =
-	reduce(vcat, (all_blocks(entry) for entry in document.entries); init = SourceBlock[])
+all_blocks(document::DocumentCensus)::Vector{SourceBlock} = reduce(
+	vcat, (all_blocks(entry) for entry in document.entries); init = SourceBlock[],
+)
 
-all_blocks(corpus::CorpusCensus)::Vector{SourceBlock} =
-	reduce(vcat, (all_blocks(document) for document in corpus.documents); init = SourceBlock[])
+all_blocks(corpus::CorpusCensus)::Vector{SourceBlock} = reduce(
+	vcat, (all_blocks(document) for document in corpus.documents); init = SourceBlock[],
+)
 
-all_entries(corpus::CorpusCensus)::Vector{SourceEntry} =
-	reduce(vcat, (document.entries for document in corpus.documents); init = SourceEntry[])
+all_entries(corpus::CorpusCensus)::Vector{SourceEntry} = reduce(
+	vcat, (document.entries for document in corpus.documents); init = SourceEntry[],
+)
 
-anomalies(corpus::CorpusCensus)::Vector{String} =
-	reduce(vcat, (document.anomalies for document in corpus.documents); init = String[])
+anomalies(corpus::CorpusCensus)::Vector{String} = reduce(
+	vcat, (document.anomalies for document in corpus.documents); init = String[],
+)
 
 function counts(blocks::Vector{SourceBlock})::Dict{String, Int}
 	tally = Dict(kind_name(kind) => 0 for kind in block_kinds)
 	for block in blocks
 		tally[kind_name(block.kind)] += 1
 	end
-	tally
+	return tally
 end
 
 counts(corpus::CorpusCensus)::Dict{String, Int} = counts(all_blocks(corpus))
 
-"""
-	population_hash(blocks)
-
-Computed over the ordered durable anchors, so a changed denominator cannot present itself
-as the same population under an unchanged count.
-"""
 function population_hash(blocks::Vector{SourceBlock})::String
-	context = SHA.SHA256_CTX()
+	digest = SHA.SHA256_CTX()
 	for block in blocks
-		SHA.update!(context, codeunits(string(anchor_id(block.raw_span), ':', kind_name(block.kind), '\n')))
+		anchored_kind = "$(anchor_id(block.raw_span)):$(kind_name(block.kind))\n"
+		SHA.update!(digest, codeunits(anchored_kind))
 	end
-	bytes2hex(SHA.digest!(context))
+	return bytes2hex(SHA.digest!(digest))
 end
