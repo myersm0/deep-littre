@@ -17,8 +17,10 @@ end
 InlineBuilder(document::Source.SourceDocument, references = nothing) =
 	InlineBuilder(document, references, Inline[], IOBuffer(), 0, 0, nothing)
 
-to_raw(builder::InlineBuilder, span::ViewSpan)::RawSpan =
-	first(Source.to_raw(builder.document.transform, span))
+to_raw(document::Source.SourceDocument, span::ViewSpan)::RawSpan =
+	first(Source.to_raw(document.transform, span))
+
+to_raw(builder::InlineBuilder, span::ViewSpan)::RawSpan = to_raw(builder.document, span)
 
 function flush_run!(builder::InlineBuilder)
 	text = String(take!(builder.buffer))

@@ -139,6 +139,13 @@ struct ResolvedNode
 	children::Vector{ResolvedNode}
 end
 
+with(node::ResolvedNode; overrides...) = ResolvedNode(
+	(
+		get(NamedTuple(overrides), name, getfield(node, name))
+		for name in fieldnames(ResolvedNode)
+	)...,
+)
+
 struct AnchoredEtymSegment
 	segment::EtymSegment
 	span::RawSpan
