@@ -1,6 +1,5 @@
 """
-Deterministic routing of printed Littré labels to normalized qualification targets. Nothing here is
-an adjudication: it reconstructs, every build, what XMLittré already states.
+Deterministic routing of printed Littré labels to normalized qualification targets.
 """
 struct GramElement
 	kind::String
@@ -14,6 +13,7 @@ struct UsgTarget
 end
 
 const AtomTarget = Union{Vector{GramElement}, UsgTarget}
+const PairTable = Dict{String, Tuple{String, String}}
 
 struct NormRule
 	pattern::Regex
@@ -26,16 +26,16 @@ struct NormTables
 	lemma::Vector{NormRule}
 	domain_prefix::Vector{NormRule}
 	construction::Dict{String, String}
-	agreement::Dict{String, Tuple{String, String}}
-	pos_heads::Dict{String, Tuple{String, String}}
-	pos_modifiers::Dict{String, Tuple{String, String}}
-	pos_head_sensitive::Dict{String, Tuple{String, String}}
+	agreement::PairTable
+	pos_heads::PairTable
+	pos_modifiers::PairTable
+	pos_head_sensitive::PairTable
 	pos_head_sensitive_tokens::Set{String}
 	connectors::Set{String}
 end
 
-pair_table(section)::Dict{String, Tuple{String, String}} =
-	Dict{String, Tuple{String, String}}(key => (value[1], value[2]) for (key, value) in section)
+pair_table(section)::PairTable =
+	PairTable(key => (value[1], value[2]) for (key, value) in section)
 
 ordered_rules(rows, anchored::Bool)::Vector{NormRule} = NormRule[
 	NormRule(
@@ -54,7 +54,7 @@ function load_norm_tables(directory::AbstractString = data_directory)::NormTable
 
 	head_sensitive = pair_table(pos["head_sensitive"])
 
-	NormTables(
+	return NormTables(
 		Dict{String, UsgTarget}(
 			key => UsgTarget(value[1], value[2]) for (key, value) in register["exact"]
 		),
@@ -71,8 +71,7 @@ function load_norm_tables(directory::AbstractString = data_directory)::NormTable
 	)
 end
 
-# Without these declarations an edit to a committed table would not invalidate the precompile
-# cache and the package would silently serve stale routing.
+# an edit to a committed table must invalidate the precompile cache
 for name in ("usg_register_norms.toml", "usg_gram_norms.toml", "pos_abbreviations.toml")
 	include_dependency(joinpath(data_directory, name))
 end
@@ -94,9 +93,10 @@ function split_atom_spans(text::AbstractString)::Vector{Tuple{String, String}}
 	spans = Tuple{String, String}[]
 	for (index, piece) in enumerate(collapsed)
 		normalized = normalize_atom(piece)
-		isempty(normalized) || push!(spans, (normalized, String(strip(printed_pieces[index]))))
+		isempty(normalized) && continue
+		push!(spans, (normalized, String(strip(printed_pieces[index]))))
 	end
-	spans
+	return spans
 end
 
 function resolve_token(tables::NormTables, token::AbstractString)::String
@@ -109,7 +109,7 @@ function resolve_token(tables::NormTables, token::AbstractString)::String
 	for candidate in (bare, bare * ".")
 		known(candidate) && return String(candidate)
 	end
-	String(token)
+	return String(token)
 end
 
 function parse_pos(
@@ -130,9 +130,12 @@ function parse_pos(
 			head = token
 			push!(elements, GramElement(kind, norm, String(printed)))
 		elseif token in tables.pos_head_sensitive_tokens
-			mapped = get(tables.pos_head_sensitive, "$(token)|$(head)", nothing)
-			mapped === nothing && (mapped = get(tables.pos_head_sensitive, "$(token)|", nothing))
-			mapped === nothing && return nothing
+			mapped = something(
+				get(tables.pos_head_sensitive, "$(token)|$(head)", nothing),
+				get(tables.pos_head_sensitive, "$(token)|", nothing),
+				Some(nothing),
+			)
+			isnothing(mapped) && return nothing
 			push!(elements, GramElement(mapped[1], mapped[2], String(printed)))
 		elseif haskey(tables.pos_modifiers, token)
 			(kind, norm) = tables.pos_modifiers[token]
@@ -141,30 +144,28 @@ function parse_pos(
 			return nothing
 		end
 	end
-	isempty(elements) ? nothing : elements
+	isempty(elements) && return nothing
+	return elements
 end
 
-# Trailing discourse adverbials are deixis rather than label content. Stripped only as a retry
-# after every tier has missed, so no previously routed atom can change target.
+# deixis, not label content; stripped only as a retry after every tier has missed
 const discourse_tail =
 	r"(?:\s+(?:encore|aussi|aujourd['’]hui|en ce sens|en cet emploi|dans le même sens))+$"
 
 strip_discourse_tail(atom::AbstractString)::String =
 	String(replace(atom, discourse_tail => ""))
 
-function route_usg_atom(atom::AbstractString, tables::NormTables = norm_tables)::UsgTarget
+function route_usg_atom(
+	atom::AbstractString, tables::NormTables = norm_tables,
+)::UsgTarget
 	haskey(tables.exact, atom) && return tables.exact[atom]
-	for rule in tables.prefix
-		occursin(rule.pattern, atom) && return rule.target
-	end
-	for rule in tables.lemma
-		occursin(rule.pattern, atom) && return rule.target
-	end
-	for rule in tables.domain_prefix
+	tiers = (tables.prefix, tables.lemma, tables.domain_prefix)
+	for tier in tiers, rule in tier
 		occursin(rule.pattern, atom) && return rule.target
 	end
 	stripped = strip_discourse_tail(atom)
-	stripped == atom ? UsgTarget("hint", "") : route_usg_atom(stripped, tables)
+	stripped == atom && return UsgTarget("hint", "")
+	return route_usg_atom(stripped, tables)
 end
 
 function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::AtomTarget
@@ -172,29 +173,32 @@ function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::Ato
 		(kind, norm) = tables.agreement[atom]
 		return GramElement[GramElement(kind, norm, atom)]
 	end
-	haskey(tables.construction, atom) &&
+	if haskey(tables.construction, atom)
 		return GramElement[GramElement("construction", tables.construction[atom], atom)]
+	end
 	elements = parse_pos(atom, tables)
-	elements === nothing || return elements
+	isnothing(elements) || return elements
 	target = route_usg_atom(atom, tables)
 	target.kind == "hint" || return target
 	stripped = strip_discourse_tail(atom)
-	stripped == atom ? target : route_atom(stripped, tables)
+	stripped == atom && return target
+	return route_atom(stripped, tables)
 end
 
 """
 	route_spans(content)
 
-Whole-string POS parse first, so `s. m. et f.` stays one reading instead of splitting on the
-connector. Each target travels with the printed span it was routed from.
+Whole-string POS parse first, so `s. m. et f.` stays one reading instead of splitting on
+the connector. Each target travels with the printed span it was routed from.
 """
 function route_spans(
 	content::AbstractString, tables::NormTables = norm_tables,
 )::Vector{Tuple{AtomTarget, String}}
 	elements = parse_pos(content, tables)
-	elements === nothing ||
+	isnothing(elements) ||
 		return Tuple{AtomTarget, String}[(elements, String(strip(content)))]
-	Tuple{AtomTarget, String}[
-		(route_atom(normalized, tables), printed) for (normalized, printed) in split_atom_spans(content)
+	return Tuple{AtomTarget, String}[
+		(route_atom(normalized, tables), printed)
+		for (normalized, printed) in split_atom_spans(content)
 	]
 end

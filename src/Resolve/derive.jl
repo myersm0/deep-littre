@@ -187,7 +187,8 @@ function route_qualifications(content::AbstractString, span::RawSpan)::Vector{Qu
 			for element in target
 				element_printed = length(target) == 1 ? printed : element.printed
 				push!(qualifications, Qualification(
-					:gram, element.kind, element.norm, element_printed, printed, span,
+					:gram, element.kind, element.norm, element_printed, span;
+					marker_printed = printed,
 				))
 			end
 		end

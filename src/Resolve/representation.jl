@@ -31,11 +31,11 @@ inline_text(item::Emphasis) = item.text
 plain_text(items::Vector{Inline})::String = join(inline_text(item) for item in items)
 
 """
-A qualification is never merely "on the block": its scope is an explicit target reference.
-`ContainedScope` is the deterministic default — an explicit marker governs the innermost node
-containing it — and needs no adjudication. `AssertedScope` carries the raw span established by an
-adjudication when explicit-marker scope departs from containment or when a bare marker is first
-identified and scoped.
+A qualification is never merely "on the block": its scope is an explicit target
+reference. `ContainedScope` is the deterministic default — an explicit marker governs
+the innermost node containing it — and needs no adjudication. `AssertedScope` carries
+the raw span established by an adjudication when explicit-marker scope departs from
+containment or when a bare marker is first identified and scoped.
 """
 abstract type ScopeTarget end
 
@@ -49,11 +49,12 @@ scope_name(::ContainedScope) = "containment"
 scope_name(::AssertedScope) = "adjudicated"
 
 """
-A qualification whose printed marker has been identified either by explicit source markup or by
-a bare-marker adjudication. Once the span is known, its semantic routing is deterministic.
-`printed` is the token assigned to this normalized fact, while `marker_printed` retains the complete
-source marker so separators between grammatical facts remain reconstructable. `usg` and `gram`
-are distinguished because they occupy different TEI positions.
+A qualification whose printed marker has been identified either by explicit source
+markup or by a bare-marker adjudication. Once the span is known, its semantic routing is
+deterministic. `printed` is the token assigned to this normalized fact, while
+`marker_printed` retains the complete source marker so separators between grammatical
+facts remain reconstructable. `usg` and `gram` are distinguished because they occupy
+different TEI positions.
 """
 struct Qualification
 	channel::Symbol
@@ -65,21 +66,20 @@ struct Qualification
 	scope::ScopeTarget
 end
 
-Qualification(channel, type, norm, printed, span) =
-	Qualification(channel, type, norm, printed, printed, span, ContainedScope())
-
-Qualification(channel, type, norm, printed, marker_printed, span) =
-	Qualification(channel, type, norm, printed, marker_printed, span, ContainedScope())
+Qualification(
+	channel, type, norm, printed, span;
+	marker_printed = printed, scope = ContainedScope(),
+) = Qualification(channel, type, norm, printed, marker_printed, span, scope)
 
 rescope(qualification::Qualification, scope::ScopeTarget) = Qualification(
-	qualification.channel, qualification.type, qualification.norm, qualification.printed,
-	qualification.marker_printed, qualification.span, scope,
+	qualification.channel, qualification.type, qualification.norm,
+	qualification.printed, qualification.marker_printed, qualification.span, scope,
 )
 
 """
-A named constituent of a node, retained with its anchor so downstream readers can recover the
-material *between* constituents — most often the punctuation separating a form from its gloss,
-which no element boundary can express.
+A named constituent of a node, retained with its anchor so downstream readers can
+recover the material *between* constituents — most often the punctuation separating a
+form from its gloss, which no element boundary can express.
 """
 struct NodeConstituent
 	name::String
@@ -99,9 +99,10 @@ end
 form_value(form::NodeForm)::String = something(form.value, form.printed)
 
 """
-`author` and `reference` are what Littré prints. Anaphoric `ID.` and `ib.` retain those surfaces.
-`resolved_author` carries the recovered author value where available; the antecedent spans record the
-source-order citation links without reconstructing an unprinted bibliographic reference.
+`author` and `reference` are what Littré prints. Anaphoric `ID.` and `ib.` retain those
+surfaces. `resolved_author` carries the recovered author value where available; the
+antecedent spans record the source-order citation links without reconstructing an
+unprinted bibliographic reference.
 """
 struct Citation
 	span::RawSpan
@@ -118,10 +119,10 @@ end
 """
 One node of the resolved semantic representation.
 
-`node_type` is `nothing` where the semantic type remains underdetermined: the container has not
-been examined under every structural alternative, so no ordinary `Sense` can be derived. Such a
-node is serialized coarsely and truthfully, carrying no claim that an adjudicator established
-anything about it.
+`node_type` is `nothing` where the semantic type remains underdetermined: the container
+has not been examined under every structural alternative, so no ordinary `Sense` can be
+derived. Such a node is serialized coarsely and truthfully, carrying no claim that an
+adjudicator established anything about it.
 """
 struct ResolvedNode
 	node_id::String
@@ -139,7 +140,7 @@ struct ResolvedNode
 end
 
 struct AnchoredEtymSegment
-	segment::Any
+	segment::EtymSegment
 	span::RawSpan
 	container_span::RawSpan
 end
@@ -147,10 +148,10 @@ end
 AnchoredEtymSegment(segment, span) = AnchoredEtymSegment(segment, span, span)
 
 """
-Rubrique content in source order. `<note>` cannot hold `<cit>` under Lex-0, so a rubrique's
-citations must be lifted to entry level while its prose stays in a note; keeping the items in one
-ordered sequence is what lets the renderer interleave them faithfully rather than sorting prose
-away from the citations it introduces.
+Rubrique content in source order. `<note>` cannot hold `<cit>` under Lex-0, so a
+rubrique's citations must be lifted to entry level while its prose stays in a note;
+keeping the items in one ordered sequence is what lets the renderer interleave them
+faithfully rather than sorting prose away from the citations it introduces.
 """
 abstract type RubriqueItem end
 
@@ -163,10 +164,10 @@ struct RubriqueLabel <: RubriqueItem
 end
 
 """
-A citation carries the range of the century header that introduces it. Littré prints the century
-once over a group of attestations, so without carrying it the range survives only as prose and
-nothing in either output is queryable by date. The carry happens here rather than in each renderer:
-both must agree, and neither is permitted to infer.
+A citation carries the range of the century header that introduces it. Littré prints the
+century once over a group of attestations, so without carrying it the range survives
+only as prose and nothing in either output is queryable by date. The carry happens here
+rather than in each renderer: both must agree, and neither is permitted to infer.
 """
 struct RubriqueCitation <: RubriqueItem
 	citation::Citation
@@ -176,7 +177,8 @@ struct RubriqueCitation <: RubriqueItem
 	not_after::Union{Nothing, Int}
 end
 
-RubriqueCitation(citation, subtype) = RubriqueCitation(citation, subtype, "", nothing, nothing)
+RubriqueCitation(citation, subtype) =
+	RubriqueCitation(citation, subtype, "", nothing, nothing)
 
 struct RubriqueProse <: RubriqueItem
 	content::Vector{Inline}
@@ -196,10 +198,11 @@ struct ResolvedRubrique
 end
 
 """
-Material Littré prints in the entry header beside the pronunciation and the part of speech, kept
-under a type that names its position rather than its kind. The 3,034 entries carrying it are
-heterogeneous — inflected forms, a derivational pointer, a domain label, an editorial remark — so
-any type naming the content would be a classification the source does not state.
+Material Littré prints in the entry header beside the pronunciation and the part of
+speech, kept under a type that names its position rather than its kind. The 3,034
+entries carrying it are heterogeneous — inflected forms, a derivational pointer, a
+domain label, an editorial remark — so any type naming the content would be a
+classification the source does not state.
 """
 struct HeaderNote
 	content::Vector{Inline}
@@ -235,7 +238,7 @@ struct ReviewFinding
 	span::RawSpan
 	function ReviewFinding(category, detail, span)
 		category in finding_categories || error("unknown finding category $(repr(category))")
-		new(category, detail, span)
+		return new(category, detail, span)
 	end
 end
 
