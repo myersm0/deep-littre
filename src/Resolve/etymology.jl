@@ -1,17 +1,18 @@
 """
-Etymology segmentation. Ported from the v0.2 `etym.jl`, which remains the calibrated reference:
-the tokenizer, cluster grammar, gloss extraction, rescue path, and suspect heuristic are
-unchanged, because they were tuned against the full corpus and re-deriving them would silently
-change verdicts.
+Etymology segmentation. Ported from the v0.2 `etym.jl`, which remains the calibrated
+reference: the tokenizer, cluster grammar, gloss extraction, rescue path, and suspect
+heuristic are unchanged, because they were tuned against the full corpus and re-deriving
+them would silently change verdicts.
 
-Two things differ. Segments no longer build markup strings — that is the renderer's business now.
-And segments whose position is known carry a raw anchor, threaded from the event range: the
-content string is a slice of the parser view at a known offset, so form and anchor events convert
-exactly. Connectors and prose carry no anchor of their own and are located by their block.
+Two things differ. Segments no longer build markup strings — that is the renderer's
+business now. And segments whose position is known carry a raw anchor, threaded from the
+event range: the content string is a slice of the parser view at a known offset, so form
+and anchor events convert exactly. Connectors and prose carry no anchor of their own and
+are located by their block.
 
-This is deterministic enrichment, not adjudication. It is reconstructed every build from source
-plus the committed language table, and its suspect residue is a generated review finding rather
-than a stored judgment.
+This is deterministic enrichment, not adjudication. It is reconstructed every build from
+source plus the committed language table, and its suspect residue is a generated review
+finding rather than a stored judgment.
 """
 struct EtymLanguageTable
 	languages::Dict{String, Tuple{String, String}}
@@ -22,7 +23,7 @@ function load_etym_language_table(
 	path::AbstractString = joinpath(data_directory, "etym_language_table.toml"),
 )::EtymLanguageTable
 	parsed = TOML.parsefile(path)
-	EtymLanguageTable(
+	return EtymLanguageTable(
 		Dict{String, Tuple{String, String}}(
 			key => (value["code"], get(value, "expand", ""))
 			for (key, value) in parsed["language"]
@@ -35,6 +36,7 @@ include_dependency(joinpath(data_directory, "etym_language_table.toml"))
 
 const etym_language_table = load_etym_language_table()
 
+# TODO: explain this
 const no_range = 0:-1
 
 struct EtymCue
@@ -100,13 +102,20 @@ struct EtymSuspect
 end
 
 const EtymSegment = Union{
-	EtymCit, EtymComponent, EtymLiteral, EtymConnector, EtymCrossReference, EtymProse,
-	EtymSuspect,
+	EtymCit, EtymComponent, EtymLiteral, EtymConnector,
+	EtymCrossReference, EtymProse, EtymSuspect,
 }
 
 with_gloss(cit::EtymCit, gloss::AbstractString)::EtymCit = EtymCit(
-	cit.cit_type, cit.language, cit.cue, cit.fictif, cit.forms, String(gloss),
-	cit.defaulted, cit.italic, cit.range,
+	cit.cit_type, 
+	cit.language, 
+	cit.cue, 
+	cit.fictif, 
+	cit.forms, 
+	String(gloss),
+	cit.defaulted, 
+	cit.italic, 
+	cit.range,
 )
 
 const etym_connector_words =
@@ -122,15 +131,18 @@ strip_tags(markup::AbstractString)::String = strip(replace(markup, r"<[^>]+>" =>
 
 function normalize_etym_token(token::AbstractString)::String
 	normalized = lowercase(strip(token, [',', ';', '(', ')', ':', ' ']))
-	startswith(normalized, "l'") ? String(normalized[nextind(normalized, 2):end]) : normalized
+	startswith(normalized, "l'") || return normalized
+	return String(normalized[nextind(normalized, 2):end])
 end
 
 function etym_language_key(
 	table::EtymLanguageTable, candidate::AbstractString,
 )::Union{Nothing, String}
 	haskey(table.languages, candidate) && return String(candidate)
-	alternate = endswith(candidate, '.') ? String(chop(candidate)) : String(candidate) * "."
-	haskey(table.languages, alternate) ? alternate : nothing
+	alternate = endswith(candidate, '.') ?
+		String(chop(candidate)) : String(candidate) * "."
+	haskey(table.languages, alternate) || return nothing
+	return alternate
 end
 
 is_punctuation_token(token::AbstractString)::Bool =
@@ -154,7 +166,7 @@ function etym_events(content::AbstractString)::Vector{EtymEvent}
 	spans = UnitRange{Int}[]
 	for matched in eachmatch(r"<i\b([^>]*)>(.*?)</i>"s, content)
 		language_match = match(r"lang=\"([^\"]+)\"", matched.captures[1])
-		language = language_match === nothing ? "" : String(language_match.captures[1])
+		language = isnothing(language_match) ? "" : String(language_match.captures[1])
 		forms = String[strip(form) for form in split(matched.captures[2], ',')]
 		filter!(!isempty, forms)
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
@@ -165,15 +177,19 @@ function etym_events(content::AbstractString)::Vector{EtymEvent}
 	for matched in eachmatch(r"<a ref=\"([^\"]*)\">(.*?)</a>"s, content)
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
 		push!(spans, range)
-		push!(events, EtymEvent(:anchor, range, String[], "",
-			String(matched.captures[1]), strip_tags(String(matched.captures[2])), false))
+		push!(events, EtymEvent(
+			:anchor, range, String[], "", String(matched.captures[1]),
+			strip_tags(String(matched.captures[2])), false,
+		))
 	end
 	for matched in eachmatch(etym_greek_pattern, content)
 		any(matched.offset in span for span in spans) && continue
 		range = matched.offset:(matched.offset + ncodeunits(matched.match) - 1)
-		push!(events, EtymEvent(:form, range, String[String(matched.match)], "grc", "", "", false))
+		push!(events, EtymEvent(
+			:form, range, String[String(matched.match)], "grc", "", "", false,
+		))
 	end
-	sort!(events; by = event -> first(event.range))
+	return sort!(events; by = event -> first(event.range))
 end
 
 mutable struct EtymPending
@@ -196,6 +212,7 @@ function reset_pending!(pending::EtymPending)
 	pending.prose_seen = false
 	pending.language_hint = ""
 	pending.xr_label = ""
+	return nothing
 end
 
 cit_type_of(pending::EtymPending)::Symbol = pending.derivational ? :etymon : :cognate
@@ -207,21 +224,23 @@ function match_cue_at(
 )::Tuple{Union{Nothing, EtymCue}, Int, String}
 	total = length(tokens)
 	key_start = start
-	while key_start <= total && normalize_etym_token(tokens[key_start]) in etym_label_modifiers
+	while key_start <= total &&
+			normalize_etym_token(tokens[key_start]) in etym_label_modifiers
 		key_start += 1
 	end
 	for key_length in reverse(1:min(3, total - key_start + 1))
-		candidate = normalize_etym_token(join(tokens[key_start:(key_start + key_length - 1)], ' '))
-		key = etym_language_key(table, candidate)
-		key === nothing && continue
+		phrase = join(tokens[key_start:(key_start + key_length - 1)], ' ')
+		key = etym_language_key(table, normalize_etym_token(phrase))
+		isnothing(key) && continue
 		raw_printed = strip(join(tokens[start:(key_start + key_length - 1)], ' '))
 		matched_printed = match(r"^(.*?)([,;:()]*)$", raw_printed)
 		printed = String(strip(matched_printed.captures[1]))
 		trailing = String(matched_printed.captures[2])
 		(code, expand) = table.languages[key]
-		return (EtymCue(printed, expand, code, trailing), key_start + key_length - start, key)
+		consumed = key_start + key_length - start
+		return (EtymCue(printed, expand, code, trailing), consumed, key)
 	end
-	(nothing, 0, "")
+	return (nothing, 0, "")
 end
 
 function full_name_language_hint(
@@ -229,12 +248,13 @@ function full_name_language_hint(
 )::String
 	total = length(tokens)
 	for key_length in reverse(1:min(3, total))
-		candidate = normalize_etym_token(join(tokens[(total - key_length + 1):total], ' '))
+		phrase = join(tokens[(total - key_length + 1):total], ' ')
+		candidate = normalize_etym_token(phrase)
 		occursin('.', candidate) && continue
 		key = etym_language_key(table, candidate)
-		key === nothing || return table.languages[key][1]
+		isnothing(key) || return table.languages[key][1]
 	end
-	""
+	return ""
 end
 
 struct EtymCluster
@@ -254,7 +274,7 @@ function parse_cue_cluster(
 	total = length(tokens)
 	while true
 		(cue, consumed, _) = match_cue_at(tokens, position, table)
-		if cue === nothing
+		if isnothing(cue)
 			isempty(cues) && return nothing
 			break
 		end
@@ -264,12 +284,14 @@ function parse_cue_cluster(
 		connector = normalize_etym_token(tokens[position])
 		connector in ("et", "ou") || break
 		(following, _, _) = match_cue_at(tokens, position + 1, table)
-		following === nothing && break
+		isnothing(following) && break
 		push!(connectors, String(strip(tokens[position], [',', ' '])))
 		position += 1
 	end
 	fictif = position <= total && normalize_etym_token(tokens[position]) == "fictif"
-	fictif && (position += 1)
+	if fictif
+		position += 1
+	end
 	forms = String[]
 	while position <= total
 		token = tokens[position]
@@ -278,13 +300,14 @@ function parse_cue_cluster(
 		position += 1
 		endswith(stripped, ',') && break
 	end
-	EtymCluster(cues, connectors, fictif, forms, String[tokens[position:total]...])
+	trailing = String[tokens[position:total]...]
+	return EtymCluster(cues, connectors, fictif, forms, trailing)
 end
 
 function push_prose!(segments::Vector{EtymSegment}, text::AbstractString)
 	cleaned = clean_prose_span(text)
 	isempty(cleaned) || push!(segments, EtymProse(cleaned))
-	nothing
+	return nothing
 end
 
 function gloss_qualifies(text::AbstractString, table::EtymLanguageTable)::Bool
@@ -294,10 +317,10 @@ function gloss_qualifies(text::AbstractString, table::EtymLanguageTable)::Bool
 	for word in words
 		normalized = normalize_etym_token(word)
 		normalized in etym_connector_words && return false
-		etym_language_key(table, normalized) === nothing || return false
+		isnothing(etym_language_key(table, normalized)) || return false
 		normalized in table.skip && return false
 	end
-	true
+	return true
 end
 
 function extract_gloss(
@@ -306,7 +329,7 @@ function extract_gloss(
 	stripped = lstrip(gap)
 	startswith(stripped, ',') || return ("", String(gap))
 	boundary = findfirst(character -> character in (';', '('), stripped)
-	if boundary === nothing
+	if isnothing(boundary)
 		boundary_required && return ("", String(gap))
 		candidate = stripped[nextind(stripped, 1):end]
 		remainder = ""
@@ -315,8 +338,9 @@ function extract_gloss(
 		remainder = stripped[boundary:end]
 	end
 	gloss = strip(rstrip(strip(candidate), '.'))
-	(isempty(gloss) || !gloss_qualifies(gloss, table)) && return ("", String(gap))
-	(String(gloss), String(remainder))
+	isempty(gloss) && return ("", String(gap))
+	gloss_qualifies(gloss, table) || return ("", String(gap))
+	return (String(gloss), String(remainder))
 end
 
 function emit_cluster!(
@@ -326,20 +350,38 @@ function emit_cluster!(
 	cit_type = cit_type_of(pending)
 	defaulted = is_defaulted(pending)
 	for (index, cue) in enumerate(cluster.cues)
-		index > 1 && push!(segments,
-			EtymConnector(cluster.connectors[min(index - 1, length(cluster.connectors))]))
-		push!(segments, EtymCit(cit_type, cue.code, cue, cluster.fictif,
-			copy(cluster.forms), "", defaulted))
+		if index > 1
+			connector = cluster.connectors[min(index - 1, length(cluster.connectors))]
+			push!(segments, EtymConnector(connector))
+		end
+		push!(segments, EtymCit(
+			cit_type, cue.code, cue, cluster.fictif, copy(cluster.forms), "", defaulted,
+		))
 	end
 	if !isempty(cluster.trailing)
 		trailing_text = join(cluster.trailing, ' ')
-		if chunk_end && gloss_qualifies(strip(rstrip(strip(trailing_text), '.')), table)
-			segments[end] = with_gloss(segments[end], strip(rstrip(strip(trailing_text), '.')))
+		gloss = strip(rstrip(strip(trailing_text), '.'))
+		if chunk_end && gloss_qualifies(gloss, table)
+			segments[end] = with_gloss(segments[end], gloss)
 		else
 			push_prose!(segments, trailing_text)
 		end
 	end
-	reset_pending!(pending)
+	return reset_pending!(pending)
+end
+
+function is_suspect_tail(
+	last_token::AbstractString,
+	rest::Vector{<:AbstractString},
+	adjacent_event::Symbol,
+	table::EtymLanguageTable,
+)::Bool
+	adjacent_event == :form || return false
+	normalized = normalize_etym_token(last_token)
+	isnothing(etym_language_key(table, normalized)) || return false
+	normalized in table.skip && return false
+	endswith(strip(last_token, [',', ' ']), '.') && return true
+	return length(rest) == 1 && length(normalized) <= 4
 end
 
 function process_chunk!(
@@ -358,7 +400,7 @@ function process_chunk!(
 	end
 	if adjacent_event == :anchor
 		label_match = match(etym_reference_label_tail, text)
-		if label_match !== nothing
+		if !isnothing(label_match)
 			pending.xr_label = String(label_match.captures[1])
 			text = strip(text[1:prevind(text, label_match.offset)])
 			isempty(text) && return nothing
@@ -368,7 +410,8 @@ function process_chunk!(
 	isempty(tokens) && return nothing
 
 	lead = 1
-	while lead <= length(tokens) && normalize_etym_token(tokens[lead]) in etym_connector_words
+	while lead <= length(tokens) &&
+			normalize_etym_token(tokens[lead]) in etym_connector_words
 		lead += 1
 	end
 	connectors = tokens[1:(lead - 1)]
@@ -386,38 +429,38 @@ function process_chunk!(
 	end
 
 	cluster = parse_cue_cluster(rest, table)
-	if cluster === nothing
+	if isnothing(cluster)
 		rescue_start = 0
 		for position in reverse(2:length(rest))
 			(cue, consumed, key) = match_cue_at(rest, position, table)
-			(cue === nothing || !occursin('.', key)) && continue
+			isnothing(cue) && continue
+			occursin('.', key) || continue
 			position + consumed - 1 <= length(rest) || continue
 			candidate = parse_cue_cluster(rest[position:end], table)
-			candidate === nothing && continue
+			isnothing(candidate) && continue
 			rescue_start = position
 			cluster = candidate
 			break
 		end
 		if rescue_start > 0
-			push_prose!(segments, join(vcat(connectors, rest[1:(rescue_start - 1)]), ' '))
+			rescued = vcat(connectors, rest[1:(rescue_start - 1)])
+			push_prose!(segments, join(rescued, ' '))
 			if adjacent_event == :form
 				pending.prose_seen = true
 				pending.derivational |= derivational
 			end
-			finish_cluster!(segments, pending, cluster, table;
-				adjacent_event, chunk_end = true, derivational)
+			finish_cluster!(
+				segments, pending, cluster, table;
+				adjacent_event, chunk_end = true, derivational,
+			)
 			return nothing
 		end
 		last_token = rest[end]
-		last_normalized = normalize_etym_token(last_token)
-		suspect = adjacent_event == :form &&
-			etym_language_key(table, last_normalized) === nothing &&
-			!(last_normalized in table.skip) &&
-			(endswith(strip(last_token, [',', ' ']), '.') ||
-				(length(rest) == 1 && length(last_normalized) <= 4))
-		if suspect
+		if is_suspect_tail(last_token, rest, adjacent_event, table)
 			length(tokens) > 1 && push_prose!(segments, join(tokens[1:(end - 1)], ' '))
-			push!(segments, EtymSuspect(String(strip(last_token, [',', ' '])), String(first(text, 120))))
+			push!(segments, EtymSuspect(
+				String(strip(last_token, [',', ' '])), String(first(text, 120)),
+			))
 			pending.derivational |= adjacent_event == :form && derivational
 		else
 			push_prose!(segments, text)
@@ -431,14 +474,16 @@ function process_chunk!(
 	end
 
 	isempty(connectors) || push!(segments, EtymConnector(join(connectors, ' ')))
-	finish_cluster!(segments, pending, cluster, table;
-		adjacent_event, chunk_end = true, derivational)
-	nothing
+	return finish_cluster!(
+		segments, pending, cluster, table;
+		adjacent_event, chunk_end = true, derivational,
+	)
 end
 
 function finish_cluster!(
 	segments::Vector{EtymSegment}, pending::EtymPending, cluster::EtymCluster,
-	table::EtymLanguageTable; adjacent_event::Symbol, chunk_end::Bool, derivational::Bool,
+	table::EtymLanguageTable;
+	adjacent_event::Symbol, chunk_end::Bool, derivational::Bool,
 )
 	pending.derivational |= derivational
 	if isempty(cluster.forms)
@@ -453,7 +498,7 @@ function finish_cluster!(
 	else
 		emit_cluster!(segments, cluster, pending, table, chunk_end)
 	end
-	nothing
+	return nothing
 end
 
 function process_gap!(
@@ -463,7 +508,9 @@ function process_gap!(
 	remaining = gap
 	if previous_form && !isempty(segments) && segments[end] isa EtymCit
 		(gloss, remaining) = extract_gloss(gap, next_event != :none, table)
-		isempty(gloss) || (segments[end] = with_gloss(segments[end], gloss))
+		if !isempty(gloss)
+			segments[end] = with_gloss(segments[end], gloss)
+		end
 	end
 	cursor = firstindex(remaining)
 	for matched in eachmatch(r"[;()]", remaining)
@@ -475,15 +522,17 @@ function process_gap!(
 		cursor = matched.offset + ncodeunits(matched.match)
 	end
 	if cursor <= ncodeunits(remaining)
-		process_chunk!(segments, pending, remaining[cursor:end], table; adjacent_event = next_event)
+		process_chunk!(
+			segments, pending, remaining[cursor:end], table;
+			adjacent_event = next_event,
+		)
 	end
-	nothing
+	return nothing
 end
-
 
 function component_key(text::AbstractString)::String
 	folded = Unicode.normalize(lowercase(text); stripmark = true)
-	replace(folded, r"[^\p{L}\p{N}]" => "")
+	return replace(folded, r"[^\p{L}\p{N}]" => "")
 end
 
 function leading_component_ranges(
@@ -493,24 +542,29 @@ function leading_component_ranges(
 	isempty(events) && return Set{UnitRange{Int}}()
 	first_event = first(events)
 	first_event.kind == :form || return Set{UnitRange{Int}}()
-	prefix = first(first_event.range) > 1 ? content[1:prevind(content, first(first_event.range))] : ""
+	prefix = first(first_event.range) > 1 ?
+		content[1:prevind(content, first(first_event.range))] : ""
 	isempty(strip(prefix)) || return Set{UnitRange{Int}}()
 
 	candidates = EtymEvent[first_event]
 	previous = first_event
 	for event in Iterators.drop(events, 1)
 		event.kind == :form || break
-		gap = last(previous.range) + 1 <= first(event.range) - 1 ?
-			content[(last(previous.range) + 1):prevind(content, first(event.range))] : ""
+		following = last(previous.range) + 1
+		gap = following <= first(event.range) - 1 ?
+			content[following:prevind(content, first(event.range))] : ""
 		gap_text = strip(gap)
 		isempty(gap_text) && break
-		(all(character -> character == ',', gap_text) ||
-			normalize_etym_token(gap_text) == "et") || break
+		separates =
+			all(character -> character == ',', gap_text) ||
+			normalize_etym_token(gap_text) == "et"
+		separates || break
 		push!(candidates, event)
 		previous = event
 	end
 	length(candidates) >= 2 || return Set{UnitRange{Int}}()
-	all(event -> event.italic && length(event.forms) == 1, candidates) || return Set{UnitRange{Int}}()
+	single_italic(event) = event.italic && length(event.forms) == 1
+	all(single_italic, candidates) || return Set{UnitRange{Int}}()
 
 	headword_key = component_key(headword)
 	cursor = firstindex(headword_key)
@@ -518,49 +572,52 @@ function leading_component_ranges(
 		needle = component_key(only(event.forms))
 		isempty(needle) && return Set{UnitRange{Int}}()
 		found = findnext(needle, headword_key, cursor)
-		found === nothing && return Set{UnitRange{Int}}()
+		isnothing(found) && return Set{UnitRange{Int}}()
 		cursor = nextind(headword_key, last(found))
 	end
-	Set(event.range for event in candidates)
+	return Set(event.range for event in candidates)
 end
 
 function emit_component_event!(
 	segments::Vector{EtymSegment}, pending::EtymPending, event::EtymEvent,
 )
-	push!(segments, EtymComponent(event.language, copy(event.forms), event.italic, event.range))
-	reset_pending!(pending)
-	nothing
+	push!(segments, EtymComponent(
+		event.language, copy(event.forms), event.italic, event.range,
+	))
+	return reset_pending!(pending)
 end
 
 function emit_form_event!(
 	segments::Vector{EtymSegment}, pending::EtymPending, event::EtymEvent,
 )
-	if !isempty(pending.cues)
-		for (index, cue) in enumerate(pending.cues)
-			index > 1 && push!(segments,
-				EtymConnector(pending.connectors[min(index - 1, length(pending.connectors))]))
-			push!(segments, EtymCit(cit_type_of(pending), cue.code, cue,
-				pending.fictif, copy(event.forms), "", is_defaulted(pending), event.italic,
-				event.range))
-		end
-	else
+	if isempty(pending.cues)
 		language = isempty(event.language) ? pending.language_hint : event.language
-		push!(segments, EtymCit(cit_type_of(pending), language, nothing,
-			pending.fictif, copy(event.forms), "", is_defaulted(pending), event.italic,
-			event.range))
+		push!(segments, EtymCit(
+			cit_type_of(pending), language, nothing, pending.fictif, copy(event.forms),
+			"", is_defaulted(pending), event.italic, event.range,
+		))
+		return reset_pending!(pending)
 	end
-	reset_pending!(pending)
+	for (index, cue) in enumerate(pending.cues)
+		if index > 1
+			connector = pending.connectors[min(index - 1, length(pending.connectors))]
+			push!(segments, EtymConnector(connector))
+		end
+		push!(segments, EtymCit(
+			cit_type_of(pending), cue.code, cue, pending.fictif, copy(event.forms),
+			"", is_defaulted(pending), event.italic, event.range,
+		))
+	end
+	return reset_pending!(pending)
 end
 
 function emit_anchor_event!(
 	segments::Vector{EtymSegment}, pending::EtymPending, event::EtymEvent,
 )
-	if isempty(pending.xr_label)
-		push!(segments, EtymCrossReference("", event.target, event.printed, event.range))
-	else
-		push!(segments, EtymCrossReference(pending.xr_label, event.target, event.printed, event.range))
-	end
-	reset_pending!(pending)
+	push!(segments, EtymCrossReference(
+		pending.xr_label, event.target, event.printed, event.range,
+	))
+	return reset_pending!(pending)
 end
 
 function etym_residual(content::AbstractString, events::Vector{EtymEvent})::String
@@ -568,23 +625,25 @@ function etym_residual(content::AbstractString, events::Vector{EtymEvent})::Stri
 	for event in events
 		bytes[event.range] .= UInt8(' ')
 	end
-	String(bytes)
+	return String(bytes)
 end
 
 function segmentable(content::AbstractString, events::Vector{EtymEvent})::Bool
 	occursin('<', etym_residual(content, events)) && return false
-	all(event -> !any(form -> occursin('<', form), event.forms), events)
+	plain(event) = !any(form -> occursin('<', form), event.forms)
+	return all(plain, events)
 end
 
 """
-	segment_etymology(content, table)
+    segment_etymology(content, table)
 
-Markup outside the recognized event inventory could be severed across segments, so such content
-falls back to a single prose segment rather than being emitted half-formed. The fallback carries
-its reason so that an etymology which was never analyzed is distinguishable from one that was: the
-segmentation keys on Gannaz's italic and anchor markup, and an etymology carrying neither is the
-same string a marked one would be. That distinction is the denominator classification reports
-against, so it is recorded rather than left to validate clean.
+Markup outside the recognized event inventory could be severed across segments, so such
+content falls back to a single prose segment rather than being emitted half-formed. The
+fallback carries its reason so that an etymology which was never analyzed is
+distinguishable from one that was: the segmentation keys on Gannaz's italic and anchor
+markup, and an etymology carrying neither is the same string a marked one would be. That
+distinction is the denominator classification reports against, so it is recorded rather
+than left to validate clean.
 """
 function segment_etymology(
 	content::AbstractString, table::EtymLanguageTable = etym_language_table;
@@ -605,7 +664,9 @@ function segment_etymology(
 	for event in events
 		gap = cursor <= first(event.range) - 1 ?
 			content[cursor:prevind(content, first(event.range))] : ""
-		process_gap!(segments, pending, gap, table; previous_form, next_event = event.kind)
+		process_gap!(
+			segments, pending, gap, table; previous_form, next_event = event.kind,
+		)
 		if event.kind == :form
 			if event.range in component_ranges
 				emit_component_event!(segments, pending, event)
@@ -621,7 +682,7 @@ function segment_etymology(
 	end
 	tail = cursor <= ncodeunits(content) ? content[cursor:end] : ""
 	process_gap!(segments, pending, tail, table; previous_form, next_event = :none)
-	segments
+	return segments
 end
 
 segment_range(segment::EtymCit) = segment.range

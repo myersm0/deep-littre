@@ -1,7 +1,7 @@
 using SQLite, DBInterface
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection,
 	sublemma_pass, write_pass!
 using DeepLittre.Resolve: resolve
 using DeepLittre.Render: render_tei, render_sqlite
@@ -13,7 +13,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 	block = angoisse_block(harness, corpus)
 	item = present(harness, sublemma_pass, block)
-	write_pass!(harness.store, "sublemma", [commit(harness, sublemma_pass, item, Decision(
+	write_pass!(harness.store, "sublemma", [commit!(harness, sublemma_pass, item, Decision(
 		:positive;
 		exhaustive = true,
 		selections = [FormSelection(

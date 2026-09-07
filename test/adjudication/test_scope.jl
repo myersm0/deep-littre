@@ -1,8 +1,8 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Indent, Variante
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection,
 	ScopeSelection, sublemma_pass, voice_variant_pass, qualification_scope_pass, bare_qualification_pass,
-	write_pass!, ReviewItem, SubLemma, materialize_record
+	write_pass!, ReviewItem, SubLemma, materialize_record!
 using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, scope_name
 
 @testset "qualification scope pass" begin
@@ -30,7 +30,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	sublemma_text = "Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs."
 
 	function with_sublemma(harness, block)
-		write_pass!(harness.store, "sublemma", [commit(
+		write_pass!(harness.store, "sublemma", [commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				sublemma_text, "Avaler des poires d'angoisse",
@@ -65,7 +65,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 		harness = fresh()
 		block = block_containing(harness, "Avaler des poires", Indent)
 		with_sublemma(harness, block)
-		write_pass!(harness.store, "qualification_scope", [commit(
+		write_pass!(harness.store, "qualification_scope", [commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:positive; scopes = [ScopeSelection("Familièrement.", sublemma_text)]);
 			decision_procedure = "test")])
@@ -87,7 +87,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 		block = block_containing(harness, "Avaler des poires", Indent)
 		with_sublemma(harness, block)
 		before = resolve(harness)
-		write_pass!(harness.store, "qualification_scope", [commit(
+		write_pass!(harness.store, "qualification_scope", [commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:positive; scopes = [ScopeSelection("Familièrement.", sublemma_text)]);
 			decision_procedure = "test")])
@@ -103,7 +103,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	@testset "a marker selection must land on a printed marker" begin
 		harness = fresh()
 		block = block_containing(harness, "Avaler des poires", Indent)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:positive; scopes = [ScopeSelection(
 				"Avaler des poires d'angoisse", "subir des mortifications, de vifs déplaisirs.",
@@ -116,12 +116,12 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 		block = block_containing(harness, "Adverbialement. Parler français", Indent)
 		item = present(harness, bare_qualification_pass, block)
 		target = "Parler français, s'exprimer en langage français. Cet étranger parle français."
-		record = commit(
+		record = commit!(
 			harness, bare_qualification_pass, item,
 			Decision(:positive; scopes = [ScopeSelection("Adverbialement.", target)]);
 			decision_procedure = "test",
 		)
-		applied = materialize_record(harness, record)
+		applied = materialize_record!(harness, record)
 		@test applied !== nothing
 		document = harness.documents[block.raw_span.file]
 		scope = only(applied.scopes)
@@ -146,7 +146,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	@testset "bare qualification pass cannot duplicate explicit markup" begin
 		harness = fresh()
 		block = block_containing(harness, "Avaler des poires", Indent)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, bare_qualification_pass, present(harness, bare_qualification_pass, block),
 			Decision(:positive; scopes = [ScopeSelection("Familièrement.", sublemma_text)]);
 			decision_procedure = "test",
@@ -156,7 +156,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	@testset "a marker may not sit inside what it governs" begin
 		harness = fresh()
 		block = block_containing(harness, "Avaler des poires", Indent)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:positive; scopes = [ScopeSelection(
 				"Familièrement.", "Familièrement. Avaler des poires d'angoisse",
@@ -166,11 +166,11 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	@testset "passes may not cross their assertion kinds" begin
 		harness = fresh()
 		block = block_containing(harness, "Avaler des poires", Indent)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, block),
 			Decision(:positive; scopes = [ScopeSelection("Familièrement.", sublemma_text)]);
 			decision_procedure = "test")
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:positive; selections = [FormSelection(sublemma_text, "Avaler des poires d'angoisse")]);
 			decision_procedure = "test")
@@ -179,7 +179,7 @@ using DeepLittre.Resolve: resolve, plain_text, ContainedScope, AssertedScope, sc
 	@testset "a negative outcome is a confirmation, not an absence" begin
 		harness = fresh()
 		block = block_containing(harness, "Se dispenser,", Variante)
-		record = commit(
+		record = commit!(
 			harness, qualification_scope_pass, present(harness, qualification_scope_pass, block),
 			Decision(:negative); decision_procedure = "test")
 		@test record.outcome == :negative

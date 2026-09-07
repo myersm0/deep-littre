@@ -2,8 +2,8 @@ using SQLite
 using DBInterface
 using DeepLittre.Source: read_corpus
 using DeepLittre.Census: census
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormReading, FormSelection,
-	ReviewItem, sublemma_pass, voice_variant_pass, write_pass!, eligible, materialize_record
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormReading, FormSelection,
+	ReviewItem, sublemma_pass, voice_variant_pass, write_pass!, eligible, materialize_record!
 using DeepLittre.Resolve: resolve, plain_text
 using DeepLittre.Render: render_tei, render_sqlite
 
@@ -25,7 +25,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 		harness.documents[block.raw_span.file].raw_text, block.raw_span,
 	)), blocks))
 
-	alpha_record = commit(
+	alpha_record = commit!(
 		harness, sublemma_pass, present(harness, sublemma_pass, alpha),
 		Decision(:positive; exhaustive = true, selections = [FormSelection(
 			"Alpha, ou Beta, première définition.",
@@ -34,7 +34,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 		)]); decision_procedure = "test",
 	)
 	christ_surface = "Enfanter une âme en ou à Jésus-Christ"
-	christ_record = commit(
+	christ_record = commit!(
 		harness, sublemma_pass, present(harness, sublemma_pass, christ),
 		Decision(:positive; exhaustive = true, selections = [FormSelection(
 			"Enfanter une âme en ou à Jésus-Christ, seconde définition.",
@@ -59,7 +59,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 			"enfanter une âme en Jésus-Christ",
 			"enfanter une âme à Jésus-Christ",
 		]
-		anchored = only(materialize_record(harness, christ_record).assertions)
+		anchored = only(materialize_record!(harness, christ_record).assertions)
 		anchored_forms = filter(item -> item.name == "form", anchored.constituents)
 		@test anchored_forms[1].span == anchored_forms[2].span
 		@test [item.value for item in anchored_forms] == [item.value for item in christ_forms]
@@ -67,13 +67,13 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 	@testset "invalid form geometries fail closed" begin
 		item = present(harness, sublemma_pass, alpha)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, sublemma_pass, item,
 			Decision(:positive; selections = [FormSelection(
 				"Alpha, ou Beta, première définition.", ["Alpha", "Alpha"],
 			)]); decision_procedure = "test",
 		)
-		@test_throws ReviewItem commit(
+		@test_throws ReviewItem commit!(
 			harness, sublemma_pass, item,
 			Decision(:positive; selections = [FormSelection(
 				"Alpha, ou Beta, première définition.", ["Alpha", "Alpha, ou Beta"],
@@ -83,7 +83,7 @@ using DeepLittre.Render: render_tei, render_sqlite
 
 	write_pass!(harness.store, "sublemma", [alpha_record, christ_record])
 	write_pass!(harness.store, "voice_variant", [
-		commit(
+		commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:negative); decision_procedure = "test",
 		)

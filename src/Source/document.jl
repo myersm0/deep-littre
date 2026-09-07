@@ -17,7 +17,7 @@ function read_document(path::AbstractString; patches::Vector{Patch} = Patch[])::
 	raw = read_source_text(path)
 	(view, edits) = apply_patches(raw, file, patches)
 	parsed = XML.parse(XML.FlatNode, view)
-	SourceDocument(
+	return SourceDocument(
 		file,
 		path,
 		raw,
@@ -51,7 +51,7 @@ function element_index(
 		end
 	end
 	walk(parsed)
-	index
+	return index
 end
 
 element_at(document::SourceDocument, span::ViewSpan)::XML.FlatNode =
@@ -94,14 +94,14 @@ function read_corpus(
 		progress === nothing ||
 			progress(document.file, ncodeunits(document.raw_text), length(patches), elapsed)
 	end
-	documents
+	return documents
 end
 
 function root_element(document::SourceDocument)::XML.FlatNode
 	for child in XML.children(document.document)
 		XML.nodetype(child) == XML.Element && return child
 	end
-	error("$(document.file): no root element")
+	return error("$(document.file): no root element")
 end
 
 node_view_span(document::SourceDocument, node::XML.FlatNode)::ViewSpan =
@@ -110,30 +110,46 @@ node_view_span(document::SourceDocument, node::XML.FlatNode)::ViewSpan =
 function node_raw_span(document::SourceDocument, node::XML.FlatNode)::Tuple{RawSpan, Bool}
 	(span, synthetic) = to_raw(document.transform, node_view_span(document, node))
 	validate_span(document.raw_text, span)
-	(span, synthetic)
+	return (span, synthetic)
 end
 
-raw_text(document::SourceDocument, span::RawSpan)::SubString = slice(document.raw_text, span)
-view_text(document::SourceDocument, span::ViewSpan)::SubString = slice(document.parser_view, span)
+function raw_text(document::SourceDocument, span::RawSpan)::SubString
+	return slice(document.raw_text, span)
+end
+
+function view_text(document::SourceDocument, span::ViewSpan)::SubString
+	return slice(document.parser_view, span)
+end
 
 function elements(node::XML.FlatNode)::Vector{XML.FlatNode}
-	[child for child in XML.children(node) if XML.nodetype(child) == XML.Element]
+	return [child for child in XML.children(node) if XML.nodetype(child) == XML.Element]
 end
 
 function element_children(node::XML.FlatNode, name::AbstractString)::Vector{XML.FlatNode}
-	[child for child in elements(node) if XML.tag(child) == name]
+	return [child for child in elements(node) if XML.tag(child) == name]
 end
 
-attribute(node::XML.FlatNode, key::AbstractString)::Union{Nothing, String} =
-	get(node, key, nothing)
+function attribute(node::XML.FlatNode, key::AbstractString)::Union{Nothing, String}
+	return get(node, key, nothing)
+end
 
 function patched_corpus_sha256(documents::Vector{SourceDocument})::String
 	context = SHA.SHA256_CTX()
 	for document in sort(documents; by = document -> document.file)
-		SHA.update!(context, Vector{UInt8}(codeunits(string(ncodeunits(document.file), ':', document.file, '\n'))))
-		SHA.update!(context, Vector{UInt8}(codeunits(string(ncodeunits(document.parser_view), ':'))))
-		SHA.update!(context, Vector{UInt8}(codeunits(document.parser_view)))
+		SHA.update!(
+			context, Vector{UInt8}(
+				codeunits(string(ncodeunits(document.file), ':', document.file, '\n'))
+			)
+		)
+		SHA.update!(
+			context, Vector{UInt8}(
+				codeunits(string(ncodeunits(document.parser_view), ':'))
+			)
+		)
+		SHA.update!(context, Vector{UInt8}(
+			codeunits(document.parser_view))
+		)
 		SHA.update!(context, UInt8[0x0a])
 	end
-	bytes2hex(SHA.digest!(context))
+	return bytes2hex(SHA.digest!(context))
 end

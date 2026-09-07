@@ -1,6 +1,6 @@
 using DeepLittre.Source: read_corpus, slice, covers
 using DeepLittre.Census: census, all_blocks, Variante, Indent
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection,
 	voice_variant_pass, sublemma_pass, write_pass!, VoiceVariant, SubLemma, Sense, ReviewItem,
 	form_bearing, structural_passes, scope_passes, current_passes
 using DeepLittre.Resolve: resolve, plain_text
@@ -44,7 +44,7 @@ using DeepLittre.Resolve: resolve, plain_text
 	@testset "a pass asserts its own node type" begin
 		harness = fresh()
 		block = block_containing(harness, "Se dispenser,", Variante)
-		record = commit(harness, voice_variant_pass, present(harness, voice_variant_pass, block),
+		record = commit!(harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Se dispenser, v. réfl. Être départi. Les honneurs se dispensent quelquefois au hasard.",
 				"Se dispenser",
@@ -57,7 +57,7 @@ using DeepLittre.Resolve: resolve, plain_text
 	@testset "structure and grammatical construction are orthogonal" begin
 		harness = fresh()
 		block = block_containing(harness, "Se dispenser,", Variante)
-		write_pass!(harness.store, "voice_variant", [commit(
+		write_pass!(harness.store, "voice_variant", [commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Se dispenser, v. réfl. Être départi. Les honneurs se dispensent quelquefois au hasard.",
@@ -94,7 +94,7 @@ using DeepLittre.Resolve: resolve, plain_text
 	@testset "markup between constituents is not a separator" begin
 		harness = fresh()
 		block = block_containing(harness, "Se dispenser,", Variante)
-		write_pass!(harness.store, "voice_variant", [commit(
+		write_pass!(harness.store, "voice_variant", [commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Se dispenser, v. réfl. Être départi. Les honneurs se dispensent quelquefois au hasard.",
@@ -111,14 +111,14 @@ using DeepLittre.Resolve: resolve, plain_text
 	@testset "both alternatives close a block together" begin
 		harness = fresh()
 		angoisse = block_containing(harness, "Avaler des poires", Indent)
-		write_pass!(harness.store, "sublemma", [commit(
+		write_pass!(harness.store, "sublemma", [commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, angoisse),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.",
 				"Avaler des poires d'angoisse",
 				"subir des mortifications, de vifs déplaisirs.",
 			)], residuals = ["Familièrement."]); decision_procedure = "test")])
-		write_pass!(harness.store, "voice_variant", [commit(
+		write_pass!(harness.store, "voice_variant", [commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, angoisse),
 			Decision(:negative); decision_procedure = "test")])
 

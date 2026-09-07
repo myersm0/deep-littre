@@ -8,11 +8,13 @@ node_type_name(::Sense) = "Sense"
 node_type_name(::SubLemma) = "SubLemma"
 node_type_name(::VoiceVariant) = "VoiceVariant"
 
-node_type(name::AbstractString)::NodeType =
-	name == "Sense" ? Sense() :
-	name == "SubLemma" ? SubLemma() :
-	name == "VoiceVariant" ? VoiceVariant() :
+const node_types = Dict{String, NodeType}(
+	node_type_name(type) => type for type in (Sense(), SubLemma(), VoiceVariant())
+)
+
+node_type(name::AbstractString)::NodeType = get(node_types, name) do
 	error("unknown node type $(name)")
+end
 
 form_bearing(::Nothing) = false
 form_bearing(::Sense) = false
@@ -31,11 +33,19 @@ Base.length(span::ProjectedSpan) = span.end_byte - span.start_byte
 projected_covers(outer::ProjectedSpan, inner::ProjectedSpan)::Bool =
 	outer.start_byte <= inner.start_byte && outer.end_byte >= inner.end_byte
 
+projected_overlaps(left::ProjectedSpan, right::ProjectedSpan)::Bool =
+	left.start_byte < right.end_byte && right.start_byte < left.end_byte
+
 projected_disjoint(left::ProjectedSpan, right::ProjectedSpan)::Bool =
-	left.end_byte <= right.start_byte || right.end_byte <= left.start_byte
+	!projected_overlaps(left, right)
+
+projected_crosses(left::ProjectedSpan, right::ProjectedSpan)::Bool =
+	projected_overlaps(left, right) &&
+	!projected_covers(left, right) &&
+	!projected_covers(right, left)
 
 projected_laminar(left::ProjectedSpan, right::ProjectedSpan)::Bool =
-	projected_disjoint(left, right) || projected_covers(left, right) || projected_covers(right, left)
+	!projected_crosses(left, right)
 
 struct Constituent
 	name::String

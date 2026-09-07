@@ -1,8 +1,8 @@
 """
-SQLite is a queryable mirror of the same resolved semantic model and provenance, never an
-independent interpretation. `node_type` is null exactly where the semantic type is
-underdetermined, so the coarse/derived distinction survives into the database rather than being
-flattened into a generic sense.
+SQLite is a queryable mirror of the same resolved semantic model and provenance, never
+an independent interpretation. `node_type` is null exactly where the semantic type is
+underdetermined, so the coarse/derived distinction survives into the database rather
+than being flattened into a generic sense.
 """
 const schema = """
 create table entries (
@@ -172,23 +172,33 @@ create index content_segments_by_owner on content_segments(owner_kind, owner_id)
 create index content_segments_by_target on content_segments(target);
 """
 
-scope_columns(qualification::Resolve.Qualification) =
-	qualification.scope isa Resolve.AssertedScope ?
-		(
-			Resolve.scope_name(qualification.scope),
-			qualification.scope.target.file,
-			qualification.scope.target.start_byte,
-			qualification.scope.target.end_byte,
-		) :
-		(Resolve.scope_name(qualification.scope), missing, missing, missing)
+column(::Nothing) = missing
+column(value) = value
+
+text_column(::Nothing) = missing
+text_column(text::AbstractString) = isempty(text) ? missing : text
+
+anchor_column(::Nothing) = missing
+anchor_column(span::RawSpan) = anchor_id(span)
+
+scope_columns(qualification::Resolve.Qualification) = scope_columns(qualification.scope)
+
+scope_columns(scope::Resolve.ContainedScope) =
+	(Resolve.scope_name(scope), missing, missing, missing)
+
+scope_columns(scope::Resolve.AssertedScope) = (
+	Resolve.scope_name(scope),
+	scope.target.file,
+	scope.target.start_byte,
+	scope.target.end_byte,
+)
 
 node_type_column(::Nothing) = missing
 node_type_column(value::Adjudication.NodeType) = Adjudication.node_type_name(value)
 
-# A cross-reference keeps what the source printed and, where the resolver could establish it, the
-# anchor it names. Unresolved stays null rather than guessing, which is the same contract the TEI
-# renderer applies when it declines to emit @target.
+# unresolved stays null rather than guessing, as when the TEI renderer declines @target
 resolved_columns(::Nothing) = (missing, missing, missing, missing)
+
 resolved_columns(span::RawSpan) =
 	(anchor_id(span), span.file, span.start_byte, span.end_byte)
 
@@ -197,137 +207,206 @@ struct SqliteWriter
 	prepared::Dict{String, SQLite.Stmt}
 end
 
-insert_row!(writer::SqliteWriter, statement::AbstractString, values::Tuple) = DBInterface.execute(
-	get!(() -> DBInterface.prepare(writer.database, statement), writer.prepared, statement), values,
+function insert_row!(
+	writer::SqliteWriter, statement::AbstractString, values::Tuple,
+)
+	prepare() = DBInterface.prepare(writer.database, statement)
+	return DBInterface.execute(get!(prepare, writer.prepared, statement), values)
+end
+
+
+# ===== inline content =====
+
+segment_kind(::Resolve.CrossReference) = "cross_reference"
+segment_kind(::Resolve.Emphasis) = "emphasis"
+segment_kind(::Resolve.TextRun) = "text"
+
+segment_columns(item::Resolve.CrossReference) = (
+	item.target, resolved_columns(item.resolved)..., missing, missing, missing,
+)
+
+segment_columns(item::Resolve.Emphasis) = (
+	missing,
+	resolved_columns(nothing)...,
+	item.source_element,
+	item.source_element == "exemple" ? "gannaz" : missing,
+	column(item.language),
+)
+
+segment_columns(::Resolve.TextRun) = (
+	missing, resolved_columns(nothing)..., missing, missing, missing,
 )
 
 """
-	insert_segments!(writer, owner_kind, owner_id, items)
+    insert_segments!(writer, owner_kind, owner_id, items)
 
-The ordered inline pieces of a definition, a rubrique's prose, or a citation's quotation, each with
-its own anchor. The flattened text column beside it stays for reading and search; this is where the
-structure the resolver recovered remains queryable — a cross-reference keeps its target, a source
-wrapper keeps which element it was and what language it declared.
+The ordered inline pieces of a definition, a rubrique's prose, or a citation's
+quotation, each with its own anchor. The flattened text column beside it stays for
+reading and search; this is where the structure the resolver recovered remains queryable
+— a cross-reference keeps its target, a source wrapper keeps which element it was and
+what language it declared.
 """
 function insert_segments!(
-	writer, owner_kind::AbstractString, owner_id::AbstractString,
-	items::Vector{Resolve.Inline}, offset::Int = 0,
+	writer,
+	owner_kind::AbstractString,
+	owner_id::AbstractString,
+	items::Vector{Resolve.Inline},
+	offset::Int = 0,
 )::Int
 	for (index, item) in enumerate(items)
-		(kind, target, source_element, editorial_origin, language) = if item isa Resolve.CrossReference
-			("cross_reference", item.target, missing, missing, missing)
-		elseif item isa Resolve.Emphasis
-			("emphasis", missing, item.source_element,
-				item.source_element == "exemple" ? "gannaz" : missing,
-				item.language === nothing ? missing : item.language)
-		else
-			("text", missing, missing, missing, missing)
-		end
-		resolved = item isa Resolve.CrossReference ? item.resolved : nothing
 		insert_row!(
 			writer,
 			"insert into content_segments values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 			(
-				owner_kind, owner_id, offset + index, kind, Resolve.inline_text(item),
-				target, resolved_columns(resolved)..., source_element, editorial_origin, language,
+				owner_kind, owner_id, offset + index,
+				segment_kind(item), Resolve.inline_text(item),
+				segment_columns(item)...,
 				item.span.file, item.span.start_byte, item.span.end_byte,
 			),
 		)
 	end
-	offset + length(items)
+	return offset + length(items)
+end
+
+
+# ===== qualifications and citations =====
+
+function insert_qualification!(
+	writer, qualification::Resolve.Qualification, entry_id::AbstractString, node_id,
+)
+	insert_row!(
+		writer,
+		"insert into qualifications values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+		(
+			node_id, entry_id, String(qualification.channel), qualification.type,
+			text_column(qualification.norm), qualification.printed,
+			scope_columns(qualification)...,
+			qualification.span.file,
+			qualification.span.start_byte,
+			qualification.span.end_byte,
+		),
+	)
+	return nothing
+end
+
+function insert_citation!(
+	writer,
+	citation::Resolve.Citation,
+	entry::Resolve.ResolvedEntry,
+	position::Int;
+	node_id = missing,
+	origin::AbstractString,
+	rubrique = missing,
+	subtype = missing,
+	not_before = missing,
+	not_after = missing,
+)
+	citation_id = anchor_id(citation.span)
+	insert_row!(
+		writer,
+		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+		(
+			citation_id, node_id, entry.entry_id, origin,
+			rubrique, subtype, position, not_before, not_after,
+			Resolve.plain_text(citation.quotation),
+			text_column(citation.author),
+			text_column(citation.resolved_author),
+			String(citation.resolution),
+			anchor_column(citation.author_antecedent),
+			text_column(citation.reference),
+			anchor_column(citation.reference_antecedent),
+			String(citation.reference_resolution),
+			citation.span.file, citation.span.start_byte, citation.span.end_byte,
+		),
+	)
+	insert_segments!(writer, "citation", citation_id, citation.quotation)
+	return nothing
+end
+
+
+# ===== nodes =====
+
+function insert_constituent!(writer, node_id::AbstractString, constituent)
+	insert_row!(
+		writer,
+		"insert into constituents values (?,?,?,?,?,?,?)",
+		(
+			node_id, constituent.name, constituent.text, column(constituent.value),
+			constituent.span.file,
+			constituent.span.start_byte,
+			constituent.span.end_byte,
+		),
+	)
+	return nothing
 end
 
 function insert_node!(
-	writer, entry::Resolve.ResolvedEntry, node::Resolve.ResolvedNode,
-	parent::Union{Nothing, String}, position::Int; origin::AbstractString = "entry",
-	rubrique_id = nothing, rubrique = nothing, citation_subtype = nothing,
+	writer,
+	entry::Resolve.ResolvedEntry,
+	node::Resolve.ResolvedNode,
+	parent::Union{Nothing, String},
+	position::Int;
+	origin::AbstractString = "entry",
+	rubrique_id = nothing,
+	rubrique = nothing,
+	citation_subtype = nothing,
 )
 	insert_row!(
 		writer,
 		"insert into nodes values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
 		(
-			node.node_id, entry.entry_id, parent === nothing ? missing : parent, origin,
-			rubrique_id === nothing ? missing : rubrique_id,
-			rubrique === nothing ? missing : rubrique,
+			node.node_id, entry.entry_id, column(parent), origin,
+			column(rubrique_id), column(rubrique),
 			node_type_column(node.node_type), position,
-			node.number === nothing ? missing : node.number,
-			node.form === nothing ? missing : node.form,
-			node.separator === nothing ? missing : node.separator,
+			column(node.number), column(node.form), column(node.separator),
 			Resolve.plain_text(node.definition),
 			node.span.file, node.span.start_byte, node.span.end_byte,
 		),
 	)
 	insert_segments!(writer, "node", node.node_id, node.definition)
 	for constituent in node.constituents
-		insert_row!(
-			writer,
-			"insert into constituents values (?,?,?,?,?,?,?)",
-			(
-				node.node_id, constituent.name, constituent.text,
-				constituent.value === nothing ? missing : constituent.value,
-				constituent.span.file, constituent.span.start_byte, constituent.span.end_byte,
-			),
-		)
+		insert_constituent!(writer, node.node_id, constituent)
 	end
 	for qualification in node.qualifications
-		insert_row!(
-			writer,
-			"insert into qualifications values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-			(
-				node.node_id, entry.entry_id, String(qualification.channel), qualification.type,
-				isempty(qualification.norm) ? missing : qualification.norm, qualification.printed,
-				scope_columns(qualification)...,
-				qualification.span.file, qualification.span.start_byte, qualification.span.end_byte,
-			),
-		)
+		insert_qualification!(writer, qualification, entry.entry_id, node.node_id)
 	end
+	from_rubrique = origin == "rubrique"
 	for (index, citation) in enumerate(node.citations)
-		citation_origin = origin == "rubrique" ? "rubrique" : "sense"
-		citation_rubrique = origin == "rubrique" ? rubrique : missing
-		citation_subtype_value = citation_subtype === nothing ? missing : citation_subtype
-		insert_row!(
-			writer,
-			"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-			(
-				anchor_id(citation.span), node.node_id, entry.entry_id, citation_origin,
-				citation_rubrique, citation_subtype_value, index, missing, missing,
-				Resolve.plain_text(citation.quotation),
-				isempty(citation.author) ? missing : citation.author,
-				isempty(citation.resolved_author) ? missing : citation.resolved_author,
-				String(citation.resolution),
-				citation.author_antecedent === nothing ? missing : anchor_id(citation.author_antecedent),
-				isempty(citation.reference) ? missing : citation.reference,
-				citation.reference_antecedent === nothing ? missing :
-					anchor_id(citation.reference_antecedent),
-				String(citation.reference_resolution),
-				citation.span.file, citation.span.start_byte, citation.span.end_byte,
-			),
+		insert_citation!(
+			writer, citation, entry, index;
+			node_id = node.node_id,
+			origin = from_rubrique ? "rubrique" : "sense",
+			rubrique = from_rubrique ? column(rubrique) : missing,
+			subtype = column(citation_subtype),
 		)
-		insert_segments!(writer, "citation", anchor_id(citation.span), citation.quotation)
 	end
 	for (index, child) in enumerate(node.children)
 		insert_node!(
-			writer, entry, child, node.node_id, index; origin, rubrique_id, rubrique, citation_subtype,
+			writer, entry, child, node.node_id, index;
+			origin, rubrique_id, rubrique, citation_subtype,
 		)
 	end
-	nothing
+	return nothing
 end
+
+
+# ===== etymology =====
 
 etymology_row(segment::Resolve.EtymCit) = (
 	"cit", String(segment.cit_type),
-	isempty(segment.language) ? missing : segment.language,
-	segment.cue === nothing ? missing : string(segment.cue.printed, segment.cue.trailing),
-	segment.cue === nothing || isempty(segment.cue.expand) ? missing : segment.cue.expand,
+	text_column(segment.language),
+	isnothing(segment.cue) ?
+		missing : string(segment.cue.printed, segment.cue.trailing),
+	isnothing(segment.cue) ? missing : text_column(segment.cue.expand),
 	segment.fictif ? 1 : 0, join(segment.forms, "|"),
-	isempty(segment.gloss) ? missing : segment.gloss,
+	text_column(segment.gloss),
 	segment.defaulted ? 1 : 0, missing, missing,
 )
 
-
 etymology_row(segment::Resolve.EtymComponent) = (
-	"component", missing,
-	isempty(segment.language) ? missing : segment.language,
-	missing, missing, missing, join(segment.forms, "|"), missing, missing, missing, missing,
+	"component", missing, text_column(segment.language),
+	missing, missing, missing, join(segment.forms, "|"),
+	missing, missing, missing, missing,
 )
 
 etymology_row(segment::Resolve.EtymLiteral) = (
@@ -352,7 +431,7 @@ etymology_row(segment::Resolve.EtymProse) = (
 
 etymology_row(segment::Resolve.EtymCrossReference) = (
 	"cross_reference", missing, missing,
-	isempty(segment.label) ? missing : segment.label,
+	text_column(segment.label),
 	missing, missing, missing, missing, missing, segment.printed, segment.target,
 )
 
@@ -360,11 +439,16 @@ function insert_etymology!(writer, entry, anchored, position::Int)
 	insert_row!(
 		writer,
 		"insert into etymology values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		(entry.entry_id, position, etymology_row(anchored.segment)...,
-			anchored.span.file, anchored.span.start_byte, anchored.span.end_byte),
+		(
+			entry.entry_id, position, etymology_row(anchored.segment)...,
+			anchored.span.file, anchored.span.start_byte, anchored.span.end_byte,
+		),
 	)
-	nothing
+	return nothing
 end
+
+
+# ===== rubriques =====
 
 rubrique_node_text(node::Resolve.ResolvedNode)::String = join(
 	filter(!isempty, String[
@@ -375,41 +459,170 @@ rubrique_node_text(node::Resolve.ResolvedNode)::String = join(
 	" ",
 )
 
-rubrique_text(rubrique::Resolve.ResolvedRubrique)::String = join(
-	(
-		item isa Resolve.RubriqueProse ? Resolve.plain_text(item.content) :
-			item isa Resolve.RubriqueLabel ? item.text :
-			item isa Resolve.RubriqueNode ? rubrique_node_text(item.node) :
-			Resolve.plain_text(item.citation.quotation)
-		for item in rubrique.items
-	),
-	"\n",
-)
+rubrique_item_text(item::Resolve.RubriqueProse)::String =
+	Resolve.plain_text(item.content)
+rubrique_item_text(item::Resolve.RubriqueLabel)::String = item.text
+rubrique_item_text(item::Resolve.RubriqueNode)::String = rubrique_node_text(item.node)
+rubrique_item_text(item::Resolve.RubriqueCitation)::String =
+	Resolve.plain_text(item.citation.quotation)
 
-function insert_rubrique_citation!(writer, entry, rubrique, item, position::Int)
-	citation = item.citation
+rubrique_text(rubrique::Resolve.ResolvedRubrique)::String =
+	join((rubrique_item_text(item) for item in rubrique.items), "\n")
+
+function insert_rubrique!(
+	writer, entry, rubrique, position::Int, parent_rubrique_id,
+)
+	rubrique_id = anchor_id(rubrique.span)
 	insert_row!(
 		writer,
-		"insert into citations values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+		"insert into rubriques values (?,?,?,?,?,?,?,?,?)",
 		(
-			anchor_id(citation.span), missing, entry.entry_id, "rubrique", rubrique.name, item.subtype,
-			position,
-			item.not_before === nothing ? missing : item.not_before,
-			item.not_after === nothing ? missing : item.not_after,
-			Resolve.plain_text(citation.quotation),
-			isempty(citation.author) ? missing : citation.author,
-			isempty(citation.resolved_author) ? missing : citation.resolved_author,
-			String(citation.resolution),
-			citation.author_antecedent === nothing ? missing : anchor_id(citation.author_antecedent),
-			isempty(citation.reference) ? missing : citation.reference,
-			citation.reference_antecedent === nothing ? missing :
-				anchor_id(citation.reference_antecedent),
-			String(citation.reference_resolution),
-			citation.span.file, citation.span.start_byte, citation.span.end_byte,
+			rubrique_id, entry.entry_id, parent_rubrique_id,
+			rubrique.name, position, rubrique_text(rubrique),
+			rubrique.span.file, rubrique.span.start_byte, rubrique.span.end_byte,
 		),
 	)
-	insert_segments!(writer, "citation", anchor_id(citation.span), citation.quotation)
-	nothing
+	offset = 0
+	for item in rubrique.items
+		item isa Resolve.RubriqueProse || continue
+		offset = insert_segments!(writer, "rubrique", rubrique_id, item.content, offset)
+	end
+	return nothing
+end
+
+
+# ===== one entry =====
+
+function insert_header_notes!(writer, entry)
+	for (index, note) in enumerate(entry.header)
+		insert_row!(
+			writer,
+			"insert into header_notes values (?,?,?,?,?,?)",
+			(
+				entry.entry_id, index, Resolve.plain_text(note.content),
+				note.span.file, note.span.start_byte, note.span.end_byte,
+			),
+		)
+	end
+	return nothing
+end
+
+function insert_rubrique_nodes!(writer, entry)
+	for rubrique in entry.rubriques
+		subtype = Resolve.conventions_for(rubrique.name).subtype
+		for (index, item) in enumerate(rubrique.items)
+			item isa Resolve.RubriqueNode || continue
+			insert_node!(
+				writer, entry, item.node, nothing, index;
+				origin = "rubrique",
+				rubrique_id = anchor_id(rubrique.span),
+				rubrique = rubrique.name,
+				citation_subtype = subtype,
+			)
+		end
+	end
+	return nothing
+end
+
+function insert_entry_etymology!(writer, entry)
+	position = 0
+	for rubrique in entry.rubriques, anchored in rubrique.etymology
+		position += 1
+		insert_etymology!(writer, entry, anchored, position)
+	end
+	return nothing
+end
+
+function insert_rubrique_citations!(writer, entry)
+	for rubrique in entry.rubriques
+		for (index, item) in enumerate(rubrique.items)
+			item isa Resolve.RubriqueCitation || continue
+			insert_citation!(
+				writer, item.citation, entry, index;
+				origin = "rubrique",
+				rubrique = rubrique.name,
+				subtype = item.subtype,
+				not_before = column(item.not_before),
+				not_after = column(item.not_after),
+			)
+		end
+	end
+	return nothing
+end
+
+function insert_entry_rubriques!(writer, entry)
+	rubrique_ids = Set(anchor_id(rubrique.span) for rubrique in entry.rubriques)
+	ordered = sort(entry.rubriques; by = rubrique -> rubrique.span.start_byte)
+	for (index, rubrique) in enumerate(ordered)
+		nested = !isnothing(rubrique.parent_id) && rubrique.parent_id in rubrique_ids
+		insert_rubrique!(
+			writer, entry, rubrique, index, nested ? rubrique.parent_id : missing,
+		)
+	end
+	return nothing
+end
+
+function insert_entry!(writer, entry::Resolve.ResolvedEntry)
+	insert_row!(
+		writer,
+		"insert into entries values (?,?,?,?,?,?,?)",
+		(
+			entry.entry_id, entry.headword, column(entry.homograph),
+			entry.span.file, entry.span.start_byte, entry.span.end_byte,
+			column(entry.pronunciation),
+		),
+	)
+	for qualification in entry.grammar
+		insert_qualification!(writer, qualification, entry.entry_id, missing)
+	end
+	insert_header_notes!(writer, entry)
+	for (index, node) in enumerate(entry.nodes)
+		insert_node!(writer, entry, node, nothing, index)
+	end
+	insert_rubrique_nodes!(writer, entry)
+	insert_entry_etymology!(writer, entry)
+	insert_rubrique_citations!(writer, entry)
+	insert_entry_rubriques!(writer, entry)
+	return nothing
+end
+
+# ===== the database =====
+
+function insert_coverage!(writer, coverage)
+	for record in coverage
+		insert_row!(
+			writer,
+			"insert into coverage values (?,?,?,?,?,?,?,?,?,?,?)",
+			(
+				record.pass, record.pass_version, record.population,
+				record.population_version, record.population_size,
+				record.population_hash, record.examined,
+				record.positive, record.negative, record.unresolved, record.stale,
+			),
+		)
+	end
+	return nothing
+end
+
+function insert_review!(writer, review)
+	for finding in review
+		insert_row!(
+			writer,
+			"insert into review values (?,?,?,?,?)",
+			(
+				finding.category, finding.detail,
+				finding.span.file, finding.span.start_byte, finding.span.end_byte,
+			),
+		)
+	end
+	return nothing
+end
+
+function create_schema(database::SQLite.DB)
+	for statement in filter(!isempty, strip.(split(schema, ";")))
+		DBInterface.execute(database, statement)
+	end
+	return nothing
 end
 
 function render_sqlite(
@@ -417,8 +630,7 @@ function render_sqlite(
 )
 	isfile(path) && rm(path)
 	database = SQLite.DB(path)
-	foreach(statement -> DBInterface.execute(database, statement),
-		filter(!isempty, strip.(split(schema, ";"))))
+	create_schema(database)
 	writer = SqliteWriter(database, Dict{String, SQLite.Stmt}())
 
 	total_entries = length(corpus.entries)
@@ -426,117 +638,16 @@ function render_sqlite(
 	started = time_ns()
 	SQLite.transaction(database) do
 		for (entry_index, entry) in enumerate(corpus.entries)
-			insert_row!(
-				writer,
-				"insert into entries values (?,?,?,?,?,?,?)",
-				(
-					entry.entry_id, entry.headword,
-					entry.homograph === nothing ? missing : entry.homograph,
-					entry.span.file, entry.span.start_byte, entry.span.end_byte,
-					entry.pronunciation === nothing ? missing : entry.pronunciation,
-				),
-			)
-			for qualification in entry.grammar
-				insert_row!(
-					writer,
-					"insert into qualifications values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-					(
-						missing, entry.entry_id, String(qualification.channel), qualification.type,
-						isempty(qualification.norm) ? missing : qualification.norm,
-						qualification.printed, scope_columns(qualification)...,
-						qualification.span.file,
-						qualification.span.start_byte, qualification.span.end_byte,
-					),
-				)
-			end
-			for (index, note) in enumerate(entry.header)
-				insert_row!(
-					writer,
-					"insert into header_notes values (?,?,?,?,?,?)",
-					(
-						entry.entry_id, index, Resolve.plain_text(note.content),
-						note.span.file, note.span.start_byte, note.span.end_byte,
-					),
-				)
-			end
-			for (index, node) in enumerate(entry.nodes)
-				insert_node!(writer, entry, node, nothing, index)
-			end
-			for rubrique in entry.rubriques
-				rubrique_id = anchor_id(rubrique.span)
-				for (index, item) in enumerate(rubrique.items)
-					item isa Resolve.RubriqueNode || continue
-					insert_node!(
-						writer, entry, item.node, nothing, index; origin = "rubrique",
-						rubrique_id, rubrique = rubrique.name,
-						citation_subtype = Resolve.conventions_for(rubrique.name).subtype,
-					)
-				end
-			end
-			position = 0
-			for rubrique in entry.rubriques
-				for anchored in rubrique.etymology
-					position += 1
-					insert_etymology!(writer, entry, anchored, position)
-				end
-			end
-			for rubrique in entry.rubriques
-				for (index, item) in enumerate(rubrique.items)
-					item isa Resolve.RubriqueCitation || continue
-					insert_rubrique_citation!(writer, entry, rubrique, item, index)
-				end
-			end
-			rubrique_ids = Set(anchor_id(rubrique.span) for rubrique in entry.rubriques)
-			ordered_rubriques = sort(entry.rubriques; by = rubrique -> rubrique.span.start_byte)
-			for (index, rubrique) in enumerate(ordered_rubriques)
-				parent_rubrique_id = rubrique.parent_id !== nothing && rubrique.parent_id in rubrique_ids ?
-					rubrique.parent_id : missing
-				insert_row!(
-					writer,
-					"insert into rubriques values (?,?,?,?,?,?,?,?,?)",
-					(
-						anchor_id(rubrique.span), entry.entry_id, parent_rubrique_id,
-						rubrique.name, index, rubrique_text(rubrique),
-						rubrique.span.file, rubrique.span.start_byte, rubrique.span.end_byte,
-					),
-				)
-				position = 0
-				for item in rubrique.items
-					item isa Resolve.RubriqueProse || continue
-					position = insert_segments!(
-						writer, "rubrique", anchor_id(rubrique.span), item.content, position,
-					)
-				end
-			end
-			if progress !== nothing && (entry_index % report_step == 0 || entry_index == total_entries)
-				progress(
-					entry_index, total_entries, entry.span.file,
-					(time_ns() - started) / 1e9,
-				)
+			insert_entry!(writer, entry)
+			due = entry_index % report_step == 0 || entry_index == total_entries
+			if !isnothing(progress) && due
+				elapsed = (time_ns() - started) / 1e9
+				progress(entry_index, total_entries, entry.span.file, elapsed)
 			end
 		end
-		for record in corpus.coverage
-			insert_row!(
-				writer,
-				"insert into coverage values (?,?,?,?,?,?,?,?,?,?,?)",
-				(
-					record.pass, record.pass_version, record.population, record.population_version,
-					record.population_size, record.population_hash, record.examined,
-					record.positive, record.negative, record.unresolved, record.stale,
-				),
-			)
-		end
-		for finding in corpus.review
-			insert_row!(
-				writer,
-				"insert into review values (?,?,?,?,?)",
-				(
-					finding.category, finding.detail,
-					finding.span.file, finding.span.start_byte, finding.span.end_byte,
-				),
-			)
-		end
+		insert_coverage!(writer, corpus.coverage)
+		insert_review!(writer, corpus.review)
 	end
 	close(database)
-	path
+	return path
 end

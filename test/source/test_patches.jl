@@ -1,10 +1,21 @@
-using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, load_patches
+using DeepLittre.Source: Patch, PatchViolation, apply_patches, 
+	minimal_edit, load_patches
 
 @testset "patches" begin
 	@testset "minimal edit trims shared affixes" begin
-		@test minimal_edit("Substantivement.", "</indent><indent>Substantivement.") == (0, ncodeunits("Substantivement."))
-		@test minimal_edit("</cit> Substantivement.", "</cit></indent><indent>Substantivement.") ==
+
+		@test minimal_edit(
+			"Substantivement.", 
+			"</indent><indent>Substantivement."
+		) == 
+			(0, ncodeunits("Substantivement."))
+
+		@test minimal_edit(
+			"</cit> Substantivement.", 
+			"</cit></indent><indent>Substantivement."
+		) == 
 			(ncodeunits("</cit>"), ncodeunits("Substantivement."))
+
 		@test minimal_edit("abc", "abc") == (3, 0)
 		@test minimal_edit("é", "éé") == (2, 0)
 	end
@@ -21,9 +32,15 @@ using DeepLittre.Source: Patch, PatchViolation, apply_patches, minimal_edit, loa
 		@test_throws PatchViolation load_patches(path)
 
 		text = "alpha alpha\nbeta\n"
-		@test_throws PatchViolation apply_patches(text, "f.xml", [Patch("f.xml", 1, "alpha", "gamma")])
-		@test_throws PatchViolation apply_patches(text, "f.xml", [Patch("f.xml", 2, "delta", "gamma")])
-		@test_throws PatchViolation apply_patches(text, "f.xml", [Patch("other.xml", 2, "beta", "gamma")])
+		@test_throws PatchViolation apply_patches(
+			text, "f.xml", [Patch("f.xml", 1, "alpha", "gamma")]
+		)
+		@test_throws PatchViolation apply_patches(
+			text, "f.xml", [Patch("f.xml", 2, "delta", "gamma")]
+		)
+		@test_throws PatchViolation apply_patches(
+			text, "f.xml", [Patch("other.xml", 2, "beta", "gamma")]
+		)
 	end
 
 	@testset "free-form replacements may change line count" begin

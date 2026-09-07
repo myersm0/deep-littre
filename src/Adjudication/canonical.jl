@@ -1,24 +1,25 @@
+const json_escapes = Dict{Char, String}(
+	'"' => "\\\"",
+	'\\' => "\\\\",
+	'\n' => "\\n",
+	'\r' => "\\r",
+	'\t' => "\\t",
+)
+
+function write_json_character(io::IO, character::Char)
+	escape = get(json_escapes, character, nothing)
+	isnothing(escape) || return write(io, escape)
+	character < ' ' && return write(io, "\\u", string(UInt16(character); base = 16, pad = 4))
+	return write(io, character)
+end
+
 function write_json_string(io::IO, text::AbstractString)
 	write(io, '"')
 	for character in text
-		if character == '"'
-			write(io, "\\\"")
-		elseif character == '\\'
-			write(io, "\\\\")
-		elseif character == '\n'
-			write(io, "\\n")
-		elseif character == '\r'
-			write(io, "\\r")
-		elseif character == '\t'
-			write(io, "\\t")
-		elseif character < ' '
-			write(io, "\\u", string(UInt16(character); base = 16, pad = 4))
-		else
-			write(io, character)
-		end
+		write_json_character(io, character)
 	end
 	write(io, '"')
-	nothing
+	return nothing
 end
 
 write_json(io::IO, value::AbstractString) = write_json_string(io, value)
@@ -34,7 +35,7 @@ function write_json(io::IO, values::AbstractVector)
 		write_json(io, value)
 	end
 	write(io, ']')
-	nothing
+	return nothing
 end
 
 mutable struct ObjectWriter
@@ -46,7 +47,7 @@ function object(build, io::IO)
 	write(io, '{')
 	build(ObjectWriter(io, false))
 	write(io, '}')
-	nothing
+	return nothing
 end
 
 function field!(writer::ObjectWriter, key::AbstractString, value)
@@ -55,7 +56,7 @@ function field!(writer::ObjectWriter, key::AbstractString, value)
 	write(writer.io, ':')
 	write_json(writer.io, value)
 	writer.started = true
-	nothing
+	return nothing
 end
 
 write_json(io::IO, span::RawSpan) = object(io) do writer
@@ -72,7 +73,7 @@ end
 write_json(io::IO, constituent::Constituent) = object(io) do writer
 	field!(writer, "name", constituent.name)
 	field!(writer, "span", constituent.span)
-	constituent.value === nothing || field!(writer, "value", constituent.value)
+	isnothing(constituent.value) || field!(writer, "value", constituent.value)
 end
 
 write_json(io::IO, assertion::NodeAssertion) = object(io) do writer
@@ -106,5 +107,5 @@ end
 function canonical_json(value)::String
 	buffer = IOBuffer()
 	write_json(buffer, value)
-	String(take!(buffer))
+	return String(take!(buffer))
 end

@@ -1,6 +1,7 @@
 """
-Durable semantic judgments and the harness that produces them. Facts XMLittré states explicitly
-are not adjudications and do not live here. See `src/Adjudication/README.md`.
+Durable semantic judgments and the harness that produces them. 
+Facts XMLittré states explicitly are not adjudications and do not live here. 
+See `src/Adjudication/README.md`.
 """
 module Adjudication
 
@@ -10,7 +11,7 @@ using UUIDs
 using XML
 
 using ..Source
-using ..Source: RawSpan, ViewSpan, slice, segment
+using ..Source: RawSpan, ViewSpan, slice
 using ..Census
 
 include("records.jl")
@@ -19,8 +20,8 @@ include("canonical.jl")
 include("store.jl")
 include("harness.jl")
 
-export ProjectedView, ProjectedSpan, ExaminationRecord, NodeAssertion, AppliedRecord,
-	AnchoredNodeAssertion, Decision, FormReading, FormSelection, Harness, Store, PassDefinition, ReviewItem,
-	StoreIntegrityError, rejection_categories
+export ProjectedView, ProjectedSpan, ExaminationRecord, NodeAssertion, AppliedRecord
+export AnchoredNodeAssertion, Decision, FormReading, FormSelection, Harness, Store
+export PassDefinition, ReviewItem, StoreIntegrityError, rejection_categories
 
 end

@@ -1,6 +1,6 @@
 using DeepLittre.Source: read_corpus, slice, RawSpan
 using DeepLittre.Census: census, all_blocks, Indent
-using DeepLittre.Adjudication: Harness, Store, present, commit, Decision, FormSelection,
+using DeepLittre.Adjudication: Harness, Store, present, commit!, Decision, FormSelection,
 	sublemma_pass, voice_variant_pass, write_pass!, SubLemma, VoiceVariant, Sense, ExaminationRecord, ProjectedSpan
 using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 	GramElement, closure, adjudication_state
@@ -22,7 +22,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 	function angoisse_record(harness)
 		block = angoisse_block(harness, corpus)
 		item = present(harness, sublemma_pass, block)
-		commit(harness, sublemma_pass, item, Decision(
+		commit!(harness, sublemma_pass, item, Decision(
 			:positive;
 			exhaustive = true,
 			selections = [FormSelection(
@@ -137,7 +137,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		harness = fresh_harness()
 		block = angoisse_block(harness, corpus)
 		sublemma = angoisse_record(harness)
-		voice = commit(
+		voice = commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"subir des mortifications", "subir des mortifications",
@@ -160,7 +160,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		harness = fresh_harness()
 		block = angoisse_block(harness, corpus)
 		sublemma = angoisse_record(harness)
-		voice = commit(
+		voice = commit!(
 			harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Familièrement. Avaler des poires", "Avaler des poires",
@@ -231,7 +231,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 			candidate.kind isa DeepLittre.Census.Variante
 		end
 		first_block = first(blocks)
-		record = commit(
+		record = commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, first_block),
 			Decision(:positive; exhaustive = true, selections = [FormSelection(
 				"Prendre feu, devenir calidus.", "Prendre feu", "devenir calidus.",
@@ -287,7 +287,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		old = DeepLittre.Adjudication.with(
 			angoisse_record(harness); created = "2026-08-24T01:00:00Z",
 		)
-		new = commit(
+		new = commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, block), Decision(:negative);
 			decision_procedure = "test", now = "2026-08-24T02:00:00Z",
 		)
@@ -303,7 +303,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 		@test find_node(angoisse.nodes, node -> node.node_type isa SubLemma) === nothing
 	end
 
-	voice_negative(harness, block; exhaustive = false) = commit(
+	voice_negative(harness, block; exhaustive = false) = commit!(
 		harness, voice_variant_pass, present(harness, voice_variant_pass, block),
 		Decision(:negative); decision_procedure = "test",
 	)
@@ -354,7 +354,7 @@ using DeepLittre.Resolve: resolve, plain_text, route_spans, UsgTarget,
 				"Avaler des poires d'angoisse",
 			)],
 		)
-		@test_throws DeepLittre.Adjudication.ReviewItem commit(
+		@test_throws DeepLittre.Adjudication.ReviewItem commit!(
 			harness, sublemma_pass, present(harness, sublemma_pass, block), overclaiming;
 			decision_procedure = "test",
 		)

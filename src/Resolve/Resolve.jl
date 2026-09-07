@@ -1,6 +1,6 @@
 """
-The only place that decides what the corpus means: explicit source markup plus durable judgments,
-resolved into the representation both renderers consume. See `src/Resolve/README.md`.
+The only place that decides what the corpus means: everything is
+resolved into the representation both renderers consume.
 """
 module Resolve
 
