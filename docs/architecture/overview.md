@@ -84,7 +84,7 @@ Familièrement. Avaler des poires d'angoisse, subir des mortifications, de vifs 
 
 Judgments select substrings of that text and are stored as byte intervals in it.
 
-Alongside the projected text, the block is given a *classification surface*: the block's kind, its projected text, the explicit markers found in it, and the citation context supplied with it. This is exactly the material a classifier is shown, serialized deterministically and hashed once as `surface_sha256`. The hash is what tells a later build whether a stored judgment still describes the material it was made about. If the surface is identical, the judgment stands and its projected intervals are mapped onto current source positions. If the surface changed, the judgment is stale, and a development build reports and skips it while a release build refuses it.
+Alongside the projected text, the block is given a *classification surface*: the entry's headword and printed entry-level `<nature>` labels, the containing rubrique if there is one, the block's kind, its projected text, the explicit markers found in it, and the citation context supplied with it. This is exactly the material a classifier is shown, serialized deterministically and hashed once as `surface_sha256`. The hash is what tells a later build whether a stored judgment still describes the material it was made about. If the surface is identical, the judgment stands and its projected intervals are mapped onto current source positions. If the surface changed, the judgment is stale, and a development build reports and skips it while a release build refuses it.
 
 The block's raw span is stored too, as a locator to find it again quickly. The hash decides whether the judgment applies.
 
@@ -148,7 +148,7 @@ Here Littré is opening what amounts to a small entry underneath the verb: a pri
 
 The `qualification_scope` verdict on this block is negative, and its note gives the reason: *v. réfl. governs the pronominal alternant that contains it*. That is the containment default doing its job. The marker sits at 15–24, inside the asserted node, so the rule that a marker governs the innermost node containing it already puts the grammatical property where it belongs, and there is nothing to record.
 
-The scope pass is easier to understand now when you set these two blocks side by side. On the ANGOISSE indent the default would have assigned *Familièrement.* the entire block, which is wrong, so a positive record names the narrower target. On this block the default is already right, so the verdict is negative: every explicit marker here scopes by containment.
+Set the two blocks side by side and the scope pass becomes legible. On the ANGOISSE indent the default would have handed *Familièrement.* the entire block, which is wrong, so a positive record names the narrower target. On this block the default is already right, so the verdict is negative: a record saying that someone looked, and that every explicit marker here scopes by containment.
 
 Note also that `v. réfl.` is an inline `<nature>`, sitting inside a block rather than in the entry header. The same element in an `<entete>` describes the whole lemma, as in `ÉVADER (S')`, and produces no voice variant at all.
 

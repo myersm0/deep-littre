@@ -12,12 +12,23 @@ The pass version is the semantic invalidation knob. It changes when the actual c
 
 For each eligible block the harness constructs a canonical classification surface consisting of:
 
+- the entry's headword
+- the entry-level `<nature>` labels, as the source prints them
+- the containing rubrique's name, where the block sits in one
 - block kind
 - projected direct-content text
-- explicit `<semantique>`/`<nature>` marker locations and text
+- explicit `<semantique>`/`<nature>` marker locations, source element, `type` attribute where the source supplies one, and text
 - deterministic citation context supplied with the target
 
+The first three are entry context. A pass asks a narrow question about one block, but several of those questions cannot be read without knowing which dictionary entry the block belongs to: `voice_variant` asks whether material introduces a new reflexive alternant, and whether the lemma is *already* reflexive is evidence, which `ÉVADER (S')` states in its entete as `<nature>v. réfl.</nature>`. Entry-level natures are carried as printed rather than as the resolver's normalization of them, so a producer's answer does not depend on routing tables.
+
+A marker's `type` is source markup, not an inferred label, and it is carried for the same reason its text is: for a scope question, whether Gannaz wrote `<nature>` or `<semantique type="domaine">` is evidence about what the marker governs. It is present only where XMLittré supplies it.
+
+The surface deliberately stops there. Sibling blocks, parent text, neighbouring senses, normalized grammatical facts, and the outputs of other passes are all excluded: coupling one pass's surface to another's verdicts would make the passes interdependent, and widening the surface toward a whole-entry dump would defeat the point of a narrow question.
+
 The serialization is deterministic and length-prefixed and is hashed once as `surface_sha256`.
+
+Everything in that list bears on staleness, which is what makes the list a decision rather than a convenience. Entry context widens the blast radius accordingly: existing surface components are block-local, so a stale verdict has meant that this block's material changed, whereas an edit to an entete now stales every verdict in that entry. That is the conservative reading, and it is intended — a producer that was shown a headword may have used it.
 
 `surface_json(pass, item)` is the same surface as a producer receives it: one JSON object carrying the pass name, version, and question; the block's raw locator and `surface_sha256`; and the kind, target text, markers, and context that the hash covers. The producer answers in text against `target`, quoting `source` and `surface_sha256` so the answer can be matched to the item it was asked about and refused if the surface has since changed. The pipeline reads nothing else back from the producer; how the surface is turned into a prompt and the answer into a `Decision` lives with the producer.
 

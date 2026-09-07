@@ -194,7 +194,9 @@ Neither pass adjudicates **what** a marker means. Type and norm remain determini
 
 Adjudication identity is semantic rather than positional. A record stores the current raw block span `(file, start_byte, end_byte)` only as a fast locator, and stores one `surface_sha256` over the canonical material actually presented for classification.
 
-The classification surface includes the projected target text, target kind, explicit qualification markers, and deterministic citation context. Context is therefore evidence: changing a citation can make a structural verdict stale even when the target block text itself is unchanged. This is intentionally conservative.
+The classification surface includes the entry's headword and printed entry-level `<nature>` labels, the containing rubrique's name where there is one, the projected target text, target kind, explicit qualification markers with their source element and `type` attribute, and deterministic citation context.
+
+Everything on that list is evidence, so everything on it bears on staleness. Changing a citation can make a structural verdict stale even when the target block text is unchanged, and editing an entry header stales every verdict in that entry. This is intentionally conservative: a verdict made against material that has since changed is not a verdict about the current material.
 
 Semantic selections inside the target — node, form, gloss, residual, scope marker, and scope target — are stored as half-open byte intervals in projected classifier text. They are translated to current parser-view/raw coordinates only after the record's classification surface has been validated.
 

@@ -4,7 +4,7 @@ The four limitations listed in the root README, stated in the pipeline's own ter
 
 ## Entete markup is flattened into header notes
 
-`entry_header` emits the entete material that is neither the entry's pronunciation nor a label qualifying it as `<note type="header">`, one note per contiguous run. Loose text, an `<indent>`, a cross-reference, and the pronunciation and label of a further headword form all belong to the run they sit in; a run printing no letter or digit is just separator punctuation, it doesn't carry anything.
+`entry_header` emits the entete material that is neither the entry's pronunciation nor a label qualifying it as `<note type="header">`, one note per contiguous run. Loose text, an `<indent>`, a cross-reference, and the pronunciation and label of a further headword form all belong to the run they sit in; a run printing no letter or digit is separator punctuation and carries nothing.
 
 The note does not carry the type of a `<semantique>` inside it. `inline_from` builds the note through `gather_node!`, which has no branch for `<semantique>` and so recurses and absorbs the text. The printed label survives; the fact that Gannaz typed it does not.
 
@@ -44,7 +44,7 @@ The unresolved cases are bare lemmas shared by several entries that the source d
 
 A reference may carry a fragment naming one of the target entry's rubriques — `tache#etymologie`, `indice#supplement`, `battant#historique`. These resolve to the rubrique's raw anchor, which SQLite records in `content_segments.resolved_entry`.
 
-The TEI renderer doesn't mint an identifier for a rubrique. `<note>` can't hold `<cit>` under Lex-0, so a rubrique's citations are lifted to entry level while its prose stays in a note; the rubrique boundary is therefore not expressed in TEI at all, and `target_name` finds nothing to point at. Those references are emitted without a target, so the SQLite and TEI resolution figures do not agree.
+The TEI renderer doesn't mint an identifier for a rubrique. `<note>` cannot hold `<cit>` under Lex-0, so a rubrique's citations are lifted to entry level while its prose stays in a note; the rubrique boundary is therefore not expressed in TEI at all, and `target_name` finds nothing to point at. Those references are emitted without a target, so the SQLite and TEI resolution figures do not agree.
 
 Of the 43 fragment references visible in `content_segments`, 7 are unresolved. Three name a section the entry does not have — DRESSANT carries no rubriques, HAYON only an ÉTYMOLOGIE, and none of the five MÔLE entries a supplement — which is the source pointing at material that lives elsewhere, and belongs on the upstream defects list. The rest are references whose lemma is ambiguous and whose fragment would disambiguate it, though the resolver does not use it for that.
 

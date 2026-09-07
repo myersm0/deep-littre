@@ -16,6 +16,14 @@ Each record carries a raw block span only as its current locator and one `surfac
 
 `test/adjudication/test_committed_store.jl` validates this store against the corpus beside it, regenerates the canonical JSONL byte-for-byte, and resolves through it.
 
+When the classification surface changes, every record's `surface_sha256` goes stale at once and the store has to be rehashed:
+
+```
+julia --project=. bin/rehash_store.jl test/corpus/source test/corpus/adjudication
+```
+
+That recomputes the hashes and leaves every other field alone. It is correct only while the projection is unchanged, since projected selections keep their meaning; a change to `block_text_version` invalidates the selections themselves and the verdicts have to be authored again.
+
 ## Building against it
 
 ```
