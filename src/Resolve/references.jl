@@ -1,18 +1,5 @@
-"""
-Littré writes a cross-reference as a lemma, optionally with a homograph index and a
-fragment: `abject`, `avoir.1`, `zéro#var2`, `faux.1#var26`, `tache#etymologie`. A
-homograph index names the source entry whose `sens` attribute carries that number; it is
-not an ordinal in document order. A fragment names either a variante of the target entry
-or one of its named rubriques. None of those references is an identifier of anything the
-pipeline emits, so the reference has to be resolved against the corpus before either
-renderer can point at its destination.
+# cross-reference resolution against the corpus
 
-Resolution produces a raw anchor, not a rendered identifier. `xml:id` values are the TEI
-renderer's business and SQLite keys on anchors, so the resolver states which entry,
-variante or rubrique is meant and each renderer names it in its own terms. A reference
-that does not resolve carries no anchor, and the compliance contract then requires a
-textual reference rather than a guessed pointer.
-"""
 struct CrossReferenceIndex
 	by_headword::Dict{String, Vector{Census.SourceEntry}}
 	by_lemma::Dict{String, Vector{Census.SourceEntry}}
@@ -52,8 +39,6 @@ function only_or_nothing(entries)::Union{Nothing, Census.SourceEntry}
 end
 
 """
-	select_entry(candidates, homograph)
-
 The one entry a candidate set names, or `nothing` where it names none or several. A bare
 lemma resolves only against a single candidate; a homograph index selects the candidate
 whose source `sens` carries that number, and selects nothing when several do.
@@ -72,8 +57,6 @@ function select_entry(
 end
 
 """
-	select_target(index, lemma, homograph)
-
 Exact-headword candidates are tried before lemma candidates. `MI` is a headword in its
 own right while `abject` is the lemma of `ABJECT, ECTE` and matches no headword, so the
 two need different lookups and the exact one is the more specific claim. A homograph
@@ -104,8 +87,6 @@ function variante_span(entry::Census.SourceEntry, number::Int)::Union{Nothing, R
 end
 
 """
-	fold_rubrique(name)
-
 The comparison key for a rubrique name and for a fragment naming one. Fragments are
 printed lowercase, unaccented and sometimes pluralised against a `@nom` that is none of
 those: `#supplement` names `SUPPLÉMENT AU DICTIONNAIRE` and `#proverbes` names both
@@ -117,8 +98,6 @@ fold_rubrique(name::AbstractString)::String =
 	rstrip(fold_headword(first(split(strip(name), ' '))), 's')
 
 """
-	rubrique_span(entry, fragment)
-
 The rubrique the fragment names, or `nothing`. Littré prints PROVERBE inside the sense
 it illustrates as well as at entry level, so an entry can carry several rubriques of one
 name; entry-level ones are preferred, and a fragment that still names more than one
@@ -148,8 +127,6 @@ function variante_number(fragment::AbstractString)::Union{Nothing, Int}
 end
 
 """
-	resolve_reference(index, reference)
-
 The raw anchor a `<a ref="...">` names, or `nothing` where no honest answer exists: a
 lemma no entry carries, a homograph index that no candidate carries in its source `sens`
 attribute, a variante number the entry does not have, a fragment naming no rubrique of

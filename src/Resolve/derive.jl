@@ -1,9 +1,5 @@
-"""
-Resolution combines two qualitatively different inputs without conflating them:
-deterministic facts reconstructed from explicit source markup, and durable judgments
-read from the adjudication store. Deleting the store must still yield a coarse corpus
-carrying every explicit XMLittré fact.
-"""
+# resolution proper
+
 const AnchorKey = Tuple{String, Int, Int}
 
 
@@ -429,8 +425,6 @@ function asserted_nodes(
 end
 
 """
-    separator_between(document, form, gloss)
-
 The raw material lying between two adjacent constituents. Littré separates a sub-lemma's
 form from its gloss with punctuation that sits in neither span, so without this the
 comma in `Avaler des poires d'angoisse, subir des mortifications` is unreconstructible
@@ -512,8 +506,6 @@ contained_in_any(span::RawSpan, nodes::Vector{ResolvedNode})::Bool =
 	any(node -> Source.covers(node.span, span), nodes)
 
 """
-    apply_scopes(state, block, qualifications)
-
 Rewrite each marker's scope target from any applicable scope adjudication. A marker with
 no adjudication keeps `ContainedScope`, which is a stated geometric rule rather than a
 guess, so the absence of a record never becomes a claim.
@@ -609,8 +601,6 @@ function merge_source_children(
 end
 
 """
-    inner_span(document, node)
-
 The parser-view interval between an element's open and close tags. The etymology
 segmenter is ported from v0.2 and consumes source markup directly, so it needs the
 element's content bytes rather than a projection.
@@ -683,8 +673,6 @@ function roman_value(numeral::AbstractString)::Union{Nothing, Int}
 end
 
 """
-    century_range(text)
-
 The half-open Gregorian years a printed century header covers, as `(not_before,
 not_after)`, or `nothing` when the header does not parse. `XVIe s.` is 1501–1600: the
 ordinal names the century, not the years.
@@ -1055,8 +1043,6 @@ function rubrique_items(
 end
 
 """
-    carry_date_range(items)
-
 Attach the most recent century header to each following citation. Items are already in
 source order, so the header printed over a group of attestations reaches every member of
 that group and stops at the next header.
@@ -1120,8 +1106,6 @@ const printed_form = r"[A-ZÀ-ÞŒÆ]{2,}"
 # ===== entry header =====
 
 """
-    qualifying_natures(document, header)
-
 How many of the entete's `<nature>` elements qualify the headword itself. The first
 always does. A later one does only if nothing since the one before announces a second
 headword form, which the source announces in one of two ways: the form printed in
@@ -1173,8 +1157,6 @@ function entry_grammar(
 end
 
 """
-    entry_header(document, node, references)
-
 The entete material that is neither the entry's pronunciation nor a label qualifying it,
 as one note per contiguous run. The first `<prononciation>` and the qualifying
 `<nature>` elements are the boundaries; everything between them — loose text, an

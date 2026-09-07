@@ -1,11 +1,12 @@
 # Deep-Littré documentation
 
-Design and serialization specifications for the pipeline. These describe how the code behaves, not how it came to.
+Design and serialization specifications for the pipeline. These describe how the code behaves.
 
-For an overview, start with the top-level [`README.md`](../README.md). Each `src/*/README.md` explains one layer's implementation; these documents state the contracts those layers implement.
+Start with [`architecture/overview.md`](architecture/overview.md), which introduces the vocabulary the rest of these documents use by following one entry from the source file to the published output. The other architecture documents assume it. For the project as a whole, see the top-level [`README.md`](../README.md); each `src/*/README.md` explains one layer's implementation, while these documents state the contracts those layers implement.
 
 ## Architecture
 
+- [`architecture/overview.md`](architecture/overview.md) — blocks, adjudication, projection, nodes, qualifications and closure, worked through ANGOISSE and DISPENSER.
 - [`architecture/semantic-model.md`](architecture/semantic-model.md) — span-anchored nodes, qualifications, relations, scope targets, coverage populations, and the derivation of ordinary senses by exhaustion.
 - [`architecture/source-representation.md`](architecture/source-representation.md) — raw and patched source views, spans, transform mapping, patch behaviour, the classifier-facing projection, and release provenance.
 - [`architecture/adjudication-authoring.md`](architecture/adjudication-authoring.md) — the authoring harness, the classification surface, selections, and record applicability.
@@ -19,4 +20,3 @@ For an overview, start with the top-level [`README.md`](../README.md). Each `src
 ## Limitations
 
 - [`known-limitations.md`](known-limitations.md) — the limitations listed in the top-level README, stated in the pipeline's own terms with the measurement behind each.
-

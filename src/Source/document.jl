@@ -29,8 +29,6 @@ function read_document(path::AbstractString; patches::Vector{Patch} = Patch[])::
 end
 
 """
-	element_index(file, view, parsed)
-
 Map every element's parser-view interval to its node, built in one pass at construction.
 
 Without it, locating an element by span means searching from the document root, which at the top
@@ -60,8 +58,6 @@ element_at(document::SourceDocument, span::ViewSpan)::XML.FlatNode =
 	end
 
 """
-	source_paths(directory)
-
 The corpus files in `directory`, in a deterministic order. Dotfiles are excluded: an editor swap
 file or a macOS AppleDouble sidecar can be named `._a.xml`, which would otherwise enter the census
 as another document and change the population hash. One function owns this selection so that
@@ -73,8 +69,6 @@ source_paths(directory::AbstractString)::Vector{String} = sort(filter(
 ))
 
 """
-	read_corpus(directory; patches_path, progress)
-
 `progress` is called after each file with its name, byte count, patch count and elapsed seconds.
 A full-corpus build is long enough that a silent read looks like a hang, and per-file timings are
 what localize a slow file without a second run.

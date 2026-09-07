@@ -39,8 +39,6 @@ function raw_position(transform::TransformMap, position::Int, side::Symbol)::Tup
 end
 
 """
-	to_raw(transform, span)
-
 Map a parser-view span to the smallest raw interval covering it. The second return value is
 true when either boundary fell strictly inside transformed text, meaning the boundary has no
 one-to-one raw counterpart and the resulting anchor is a synthetic sub-interval of the
@@ -58,10 +56,9 @@ function to_raw(transform::TransformMap, span::ViewSpan)::Tuple{RawSpan, Bool}
 end
 
 """
-	to_view(transform, span)
-
-Inverse of `to_raw`: the smallest parser-view interval covering the raw span. Used when an
-adjudicated raw anchor must be located in the current parser view.
+One boundary of the inverse of `to_raw`, from which `to_view` builds the smallest
+parser-view interval covering a raw span. Used when an adjudicated raw anchor must be
+located in the current parser view.
 """
 function view_position(transform::TransformMap, position::Int, side::Symbol)::Int
 	drift = 0

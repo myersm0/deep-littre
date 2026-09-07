@@ -1,9 +1,5 @@
-"""
-SQLite is a queryable mirror of the same resolved semantic model and provenance, never
-an independent interpretation. `node_type` is null exactly where the semantic type is
-underdetermined, so the coarse/derived distinction survives into the database rather
-than being flattened into a generic sense.
-"""
+# queryable mirror of the resolved model
+
 const schema = """
 create table entries (
 	entry_id text primary key,
@@ -238,8 +234,6 @@ segment_columns(::Resolve.TextRun) = (
 )
 
 """
-    insert_segments!(writer, owner_kind, owner_id, items)
-
 The ordered inline pieces of a definition, a rubrique's prose, or a citation's
 quotation, each with its own anchor. The flattened text column beside it stays for
 reading and search; this is where the structure the resolver recovered remains queryable

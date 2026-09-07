@@ -1,9 +1,5 @@
-"""
-Inline content assembly. A node's definition is the ordered residual content of its span
-after structural child nodes, promoted qualification markers, citations, and other
-separately emitted block-level facts are carved out. Inline semantic and presentational
-structures are transformed in place, so a cross-reference stays inside the definition.
-"""
+# ordered inline content assembly
+
 mutable struct InlineBuilder
 	document::Source.SourceDocument
 	references::Union{Nothing, CrossReferenceIndex}
@@ -79,8 +75,6 @@ end
 # ===== absorbing source text =====
 
 """
-    decode_reference(source, position, limit)
-
 The decoded text of the entity or character reference beginning at `position`, and the
 position after it, or `nothing` when no reference resolves there. Semantic text is what
 Littré wrote, not what XML syntax required, so `&amp;` reaches the renderers and the
@@ -244,8 +238,6 @@ end
 # ===== assembled content =====
 
 """
-    inline_from(document, nodes; excluded = ViewSpan[])
-
 Inline content assembled from an explicit run of sibling nodes rather than from a whole
 element. Rubrique prose arrives as the material between citations, which is a slice of a
 paragraph's children, not a subtree. Optional exclusions carve deterministic lead labels

@@ -1,6 +1,5 @@
-"""
-Deterministic routing of printed Littré labels to normalized qualification targets.
-"""
+# routing of printed Littré labels to normalized qualification targets
+
 struct GramElement
 	kind::String
 	norm::String
@@ -186,8 +185,6 @@ function route_atom(atom::AbstractString, tables::NormTables = norm_tables)::Ato
 end
 
 """
-	route_spans(content)
-
 Whole-string POS parse first, so `s. m. et f.` stays one reading instead of splitting on
 the connector. Each target travels with the printed span it was routed from.
 """
