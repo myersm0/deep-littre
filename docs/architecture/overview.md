@@ -148,7 +148,7 @@ Here Littré is opening what amounts to a small entry underneath the verb: a pri
 
 The `qualification_scope` verdict on this block is negative, and its note gives the reason: *v. réfl. governs the pronominal alternant that contains it*. That is the containment default doing its job. The marker sits at 15–24, inside the asserted node, so the rule that a marker governs the innermost node containing it already puts the grammatical property where it belongs, and there is nothing to record.
 
-The scope pass is easier to understand now when you set these two blocks side by side. On the ANGOISSE indent the default would have assigned *Familièrement.* to the entire block, which is wrong, so a positive record names the narrower target. On this block the default is already right, so the verdict is negative — which is not an absence of information but the statement that every explicit marker here scopes by containment.
+The scope pass is easier to understand now when you set these two blocks side by side. On the ANGOISSE indent the default would have assigned *Familièrement.* the entire block, which is wrong, so a positive record names the narrower target. On this block the default is already right, so the verdict is negative: every explicit marker here scopes by containment.
 
 Note also that `v. réfl.` is an inline `<nature>`, sitting inside a block rather than in the entry header. The same element in an `<entete>` describes the whole lemma, as in `ÉVADER (S')`, and produces no voice variant at all.
 
@@ -202,7 +202,7 @@ With the three verdicts applied, the sub-lemma becomes a nested entry and the re
 </sense>
 ```
 
-The same facts go to SQLite, where the node, its constituents, the qualification and its target, and the citation are all queryable, each keyed to its position in the source.
+The same facts go to SQLite, where the node, its constituents, the qualification and its target, and the citation are all queryable, each carrying the file and byte range it came from.
 
 The `xml:id` values are made by the renderer for the document it is writing. Adjudication refers to material by classification surface and projected interval, so these identifiers carry no judgment and are free to change when structure does.
 
