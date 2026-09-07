@@ -33,11 +33,6 @@ function validate_span(text::AbstractString, span::Span)::Span
 	return span
 end
 
-"""
-    view_span(file, text, range)
-
-Convert an inclusive XML.jl `sourcespan` range into the project's half-open form.
-"""
 function view_span(
 	file::AbstractString, text::AbstractString, range::UnitRange{Int},
 )::ViewSpan

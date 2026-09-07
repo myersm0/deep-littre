@@ -181,8 +181,6 @@ function read_pass(store::Store, pass::AbstractString)::Vector{ExaminationRecord
 end
 
 """
-    merge_pass!(store, pass, records)
-
 Add records to a pass without rewriting the verdicts already in it. A record whose
 locator is already held is refused; superseding a verdict must be intentional, by
 regenerating the pass with `write_pass!`.

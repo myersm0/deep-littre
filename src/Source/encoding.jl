@@ -33,11 +33,6 @@ line_starts(text::AbstractString)::Vector{Int} = [1; findall(==('\n'), text) .+ 
 
 line_count(text::AbstractString)::Int = length(line_starts(text))
 
-"""
-    line_bounds(text, starts, line)
-
-Half-open byte interval of `line`, excluding its terminating newline.
-"""
 function line_bounds(
 	text::AbstractString, starts::Vector{Int}, line::Int,
 )::Tuple{Int, Int}

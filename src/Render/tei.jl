@@ -57,8 +57,6 @@ function mint!(
 end
 
 """
-    sense_candidate(prefix, index, nested)
-
 Positional, not a collision counter: `angoisse_s3` is the entry's third sense and
 `angoisse_s3.2` the second sense inside it. `mint!` still guards genuine collisions,
 since homographs normalize to the same headword slug, but no longer supplies the
@@ -70,9 +68,7 @@ sense_candidate(prefix::AbstractString, index::Int, nested::Bool)::String =
 const NameTable = Dict{RawSpan, String}
 
 """
-    assign_names(corpus)
-
-Every `xml:id` the document will carry, minted in render order and keyed by raw anchor.
+The names assigned to one node. Every `xml:id` the document will carry is minted in render order and keyed by raw anchor.
 A cross-reference can only be pointed at a target whose identifier is already known, so
 naming happens in its own pass and the render walk does no minting at all.
 
@@ -194,8 +190,6 @@ function assign_names(corpus::Resolve.ResolvedCorpus)::Names
 end
 
 """
-    target_name(names, resolved)
-
 The identifier a resolved cross-reference points at, or `nothing`. The compliance
 contract admits an internal `target="#xml-id"` only where the target is reliably
 resolved, and prefers a textual reference to a guessed pointer, so an unresolved
@@ -395,8 +389,6 @@ function render_citation(
 end
 
 """
-    render_node(io, node, names, depth)
-
 A node with an underdetermined type is serialized as `<sense><def>…</def></sense>`
 without implying that an adjudicator positively established an ordinary sense. A
 positively asserted `SubLemma` becomes a nested `<entry type="relatedEntry">`, which is
@@ -592,11 +584,10 @@ function render_etym_segment(
 end
 
 """
-    render_rubrique(io, rubrique, names, depth)
-
-`<note>` cannot hold `<cit>` under Lex-0, so a rubrique's citations are lifted to entry
-level while its prose stays in a note. Items are emitted in source order, which keeps a
-century label adjacent to the attestations it introduces. The rubrique boundary is
+The rubriques nested directly inside another rubrique. `<note>` cannot hold `<cit>` under
+Lex-0, so a rubrique's citations are lifted to entry level while its prose stays in a
+note, and items are emitted in source order, which keeps a century label adjacent to the
+attestations it introduces. The rubrique boundary is
 therefore not expressed in TEI; the `subtype` and the rubrique's raw anchor in SQLite
 carry that association instead.
 """
@@ -763,8 +754,6 @@ function render_rubrique_item(
 end
 
 """
-    rubriques_under(rubriques, node_id)
-
 The rubriques the source placed inside a given block. Littré writes PROVERBE inside the
 very sense it illustrates; emitting every rubrique at entry level would keep the
 material but lose which sense it belonged to. A rubrique whose parent is the entry, or

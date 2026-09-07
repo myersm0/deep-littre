@@ -318,8 +318,6 @@ struct SurfaceExport
 end
 
 """
-	surface_json(pass, item)
-
 The classification surface as a producer sees it: everything `surface_sha256` covers,
 plus the pass, its question, and the locator and hash a response must quote to be
 committed. Nothing here is interpreted on the way back in; the producer answers in text

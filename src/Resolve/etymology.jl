@@ -1,19 +1,5 @@
-"""
-Etymology segmentation. Ported from the v0.2 `etym.jl`, which remains the calibrated
-reference: the tokenizer, cluster grammar, gloss extraction, rescue path, and suspect
-heuristic are unchanged, because they were tuned against the full corpus and re-deriving
-them would silently change verdicts.
+# etymology segmentation: deterministic enrichment, not adjudication
 
-Two things differ. Segments no longer build markup strings — that is the renderer's
-business now. And segments whose position is known carry a raw anchor, threaded from the
-event range: the content string is a slice of the parser view at a known offset, so form
-and anchor events convert exactly. Connectors and prose carry no anchor of their own and
-are located by their block.
-
-This is deterministic enrichment, not adjudication. It is reconstructed every build from
-source plus the committed language table, and its suspect residue is a generated review
-finding rather than a stored judgment.
-"""
 struct EtymLanguageTable
 	languages::Dict{String, Tuple{String, String}}
 	skip::Set{String}
@@ -635,8 +621,6 @@ function segmentable(content::AbstractString, events::Vector{EtymEvent})::Bool
 end
 
 """
-    segment_etymology(content, table)
-
 Markup outside the recognized event inventory could be severed across segments, so such
 content falls back to a single prose segment rather than being emitted half-formed. The
 fallback carries its reason so that an etymology which was never analyzed is
