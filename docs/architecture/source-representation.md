@@ -1,10 +1,10 @@
 # Source representation
 
-Deep-Littré separates upstream bytes from the patched parser view without making either coordinate system adjudication identity. The upstream bytes are XMLittré, an intermediate digital edition of Littré rather than a transparent representation of the printed dictionary.
+Deep-Littré separates upstream bytes from the patched parser view without making either coordinate system adjudication identity. The upstream bytes are XMLittré, an intermediate digital edition of Littré.
 
 ## Relationship to the print edition
 
-XMLittré combines transcription with editorial normalization and interpretation. Its distributed XML therefore contains facts about Gannaz's edition as well as facts inherited from Littré: author abbreviations may be expanded, `<exemple>` marks spans that are not typographically distinguished in print, and rubrique structure records editorially encoded scope and position.
+XMLittré combines transcription with editorial normalization. Its distributed XML therefore contains facts about Gannaz's edition as well as facts inherited from Littré: author abbreviations may be expanded, `<exemple>` marks spans that are not typographically distinguished in print, and rubrique structure records editorially encoded scope and position.
 
 Deep-Littré treats explicit XMLittré markup deterministically because it is explicit in the upstream edition, but does not thereby claim that every such fact is directly printed in Littré. Byte anchors establish traceability to XMLittré, not independent fidelity to the page image. Where XMLittré and the print differ, a raw anchor faithfully identifies the XMLittré reading.
 

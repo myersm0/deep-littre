@@ -2,9 +2,9 @@
 
 The semantic layer: what a source block yields, how those facts are anchored, and how ordinary senses are derived. Source-position mechanics live in `source-representation.md`.
 
-## A block is not a type
+## The `<indent>`
 
-XMLittré `<indent>` is a source-layout container, not a semantic type. One source block may contain several independently true facts at once. The semantic layer therefore describes those facts directly rather than assigning one mutually exclusive label to the container.
+XMLittré `<indent>` is a source-layout container. One source block may contain several heterogenous facts. The semantic layer describes those facts.
 
 A source block yields:
 
@@ -16,14 +16,16 @@ explicit target references
 unassigned/coarse remainder where adjudication is incomplete
 ```
 
+Each of these will be explained in detail.
+
 ## Why orthogonality is required
 
 Adjudication is performed one semantic class at a time. Each adjudication pass must add information without invalidating settled facts from another pass.
 
-A single enum cannot do that. In the sample, for example:
+A single enum can't do that. In the sample corpus, for example:
 
-- `angoisse_s3.1` contains the register label *Familièrement.*, the multiword unit *Avaler des poires d'angoisse*, and its gloss;
-- `boue_s2.2` contains the figurative label *Fig.* and the multiword unit *Bâtir sur la boue* with its gloss.
+- `angoisse_s3.1` contains the register label *Familièrement.*, the multiword unit *Avaler des poires d'angoisse*, and its gloss
+- `boue_s2.2` contains the figurative label *Fig.* and the multiword unit *Bâtir sur la boue* with its gloss
 
 Forcing one label onto either block necessarily discards another true fact. The representation therefore allows a usage qualification and a form-bearing semantic node to coexist on the same material.
 
@@ -31,18 +33,18 @@ Forcing one label onto either block necessarily discards another true fact. The 
 
 Source objects answer questions such as:
 
-- where is this material in XMLittré;
-- what source element contains it;
-- what raw bytes does it occupy;
-- what rubrique or entry contains it.
+- where is this material in XMLittré
+- what source element contains it
+- what raw bytes does it occupy
+- what rubrique or entry contains it
 
 Semantic objects answer questions such as:
 
-- is this span a sub-lemma;
-- is this a voice variant;
-- which span or node does a usage label qualify;
-- is this a cross-reference;
-- what structure should the renderers derive.
+- is this span a sub-lemma
+- is this a voice variant
+- which span or node does a marker qualify
+- is this a cross-reference
+- what structure should the renderers derive
 
 Semantic adjudication never mutates or reparents the source tree.
 
@@ -64,23 +66,19 @@ There is no node type meaning "unclassified" or "not adjudicated". Those are wor
 
 ## Structural alternatives
 
-The current structural alternatives are `{SubLemma, VoiceVariant}`. Both are form-bearing;
-`Sense` is not.
+The current structural alternatives are `{SubLemma, VoiceVariant}`. Both are form-bearing; `Sense` is not.
 
 ### VoiceVariant
 
-A `VoiceVariant` is **a separately presented form-bearing pronominal or reflexive alternant of the
-lemma that introduces or governs its own sense material.** Littré sometimes effectively opens a
-subsidiary entry under a verb — a printed `SE …` form followed by its own senses — which is what
-justifies giving it a node and serializing it entry-like.
+A `VoiceVariant` is **a separately presented form-bearing pronominal or reflexive alternant of the lemma that introduces or governs its own sense material.** Littré sometimes effectively opens a subsidiary entry under a verb — a printed `SE …` form followed by its own senses — which is what justifies giving it a node and serializing it entry-like.
 
 It is deliberately narrower than the general voice/construction category:
 
-- an explicit `SE + verb` form functioning as a new grammatical alternant → `VoiceVariant`;
-- a printed reflexive transition that actually introduces such a form and subsequent senses → `VoiceVariant`;
-- `v. réfl.` merely stating that the current lemma or sense is used reflexively → grammatical property;
-- `Se dit …` prose with no separately recoverable form-bearing alternant → grammatical information;
-- active, neutral, passive, impersonal and other construction shifts routed by `usg_gram_norms.toml` → grammatical `construction`, unless the source separately presents a new form-bearing variant.
+- an explicit `SE + verb` form functioning as a new grammatical alternant → `VoiceVariant`
+- a printed reflexive transition that actually introduces such a form and subsequent senses → `VoiceVariant`
+- `v. réfl.` merely stating that the current lemma or sense is used reflexively → grammatical property
+- `Se dit …` prose with no separately recoverable form-bearing alternant → grammatical information
+- active, neutral, passive, impersonal and other construction shifts routed by `usg_gram_norms.toml` → grammatical `construction`, unless the source separately presents a new form-bearing variant
 
 The operative distinction is not reflexive-versus-other-construction. It is:
 
@@ -98,40 +96,26 @@ VoiceVariant
     definition: Être départi. Les honneurs se dispensent quelquefois au hasard.
 ```
 
-The structural adjudication says a separately form-bearing variant is present. The deterministic
-enrichment says what construction characterizes it. Neither is derivable from the other. By
-contrast `ÉVADER (S')`, whose entry-header `<nature>v. réfl.</nature>` describes the whole lemma,
-carries the grammatical property and no `VoiceVariant` node.
+The structural adjudication says a separately form-bearing variant is present. The deterministic enrichment says what construction characterizes it. Neither is derivable from the other. By contrast `ÉVADER (S')`, whose entry-header `<nature>v. réfl.</nature>` describes the whole lemma, carries the grammatical property and no `VoiceVariant` node.
 
-The pass is therefore narrowed by its **question**, not by its population: it draws on the same
-`structural_blocks` population as `SubLemma` and asks whether the material introduces a separately
-form-bearing pronominal or reflexive variant rather than merely stating a grammatical construction
-or usage.
+The pass is therefore narrowed by its **question**, not by its population: it draws on the same `structural_blocks` population as `SubLemma` and asks whether the material introduces a separately form-bearing pronominal or reflexive variant rather than merely stating a grammatical construction or usage.
 
 ## Sub-lemma constituents
 
-A `SubLemma` may carry constituent spans such as:
+A `SubLemma` may be composed of spans such as:
 
-- one or more `form` constituents;
-- at most one `gloss`.
+- one or more `form` constituents
+- at most one `gloss`
 
-These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting. A form constituent may also carry an editorial `value` when one printed surface span licenses more than one normalized reading.
+These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting. A form constituent may also have an editorial `value` when one printed surface span licenses more than one normalized reading. (TODO: example?)
 
 Two multi-form geometries are admitted. Distinct printed forms use disjoint source spans on one node. Alternative readings of one coordinated printed form use coincident form spans with distinct editorial values. Partially overlapping form spans fail closed. The first resolved form is the node's primary form for naming and convenience queries; all forms remain explicit constituents.
 
-Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation
-that belongs to neither span. Durable adjudication stores their intervals in projected classifier
-text. When a valid verdict is applied, those intervals are materialized to current raw spans inside
-the node's raw extent; the material between the final printed form span and gloss is therefore recoverable
-as the node's `separator`. Constituent spans are retained through resolution into both outputs rather
-than being reduced to their text, and no renderer may drop the separator or graft it onto a
-constituent it does not belong to. A constituent's semantic text is reconstructed through the same
-projection used for adjudication rather than by blindly slicing its raw interval, because a
-contiguous source interval may legitimately cover interior markup.
+Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation that belongs to neither span. Durable adjudication (TODO: do we really need to say "durable"?) stores their intervals in projected classifier text. When a valid verdict is applied, those intervals are materialized to current raw spans inside the node's raw extent; the material between the final printed form span and gloss is therefore recoverable as the node's `separator`. Constituent spans are retained through resolution into both outputs rather than being reduced to their text, and no renderer may drop the separator or graft it onto a constituent it does not belong to. A constituent's semantic text is reconstructed through the same projection used for adjudication rather than by blindly slicing its raw interval, because a contiguous source interval may legitimately cover interior markup.
 
 A block may contain more than one sub-lemma. A node's primary span is contiguous; discontinuous form material is represented by multiple explicit constituent/source spans rather than by redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
 
-Semantic node spans are laminar: two nodes are disjoint or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review; the resolver and renderers do not invent a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
+Semantic node spans are laminar: either the two nodes are disjoint, or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review; the resolver and renderers do not invent a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
 
 ## Qualifications
 
@@ -139,16 +123,16 @@ Qualifications are zero-or-more facts that name their target explicitly.
 
 Usage axes are named after the TEI Lex-0 closed typology:
 
-- `socioCultural`;
-- `attitude`;
-- `meaningType`;
-- `domain`;
-- `temporal`;
-- `frequency`;
-- `textType`;
-- `normativity`;
-- `geographic`;
-- `hint`.
+- `socioCultural`
+- `attitude`
+- `meaningType`
+- `domain`
+- `temporal`
+- `frequency`
+- `textType`
+- `normativity`
+- `geographic`
+- `hint`
 
 `register` is deliberately absent: it spans several Lex-0 types at once, so printed labels route directly to the axis or axes they belong to. Compound labels such as *familièrement et fig.* may produce multiple qualifications of different axes.
 
@@ -171,57 +155,33 @@ A qualification is never merely "on the block". Its scope is represented by an e
 - sibling-node range;
 - rubrique.
 
-Containment is the deterministic default: a marker governs the innermost resolved node whose span
-contains it. That is a stated geometric rule, not a heuristic guess, so it needs no adjudication
-and the absence of a record never becomes a claim.
+Containment is the deterministic default: a marker governs the innermost resolved node whose span contains it. That is a stated geometric rule, not a heuristic guess, so it needs no adjudication and the absence of a record never becomes a claim.
 
-The `qualification_scope` pass records **departures** from that default for explicit
-`<semantique>`/`<nature>` markers. Its question is whether any such marker governs something other
-than the block containing it; a negative outcome is the positive statement that every explicit
-marker here scopes by containment. A positive outcome carries scope assertions naming the printed
-marker and the projected span of the material it governs — a span rather than a node id, because
-the node it lands on may be derived at resolution and have no durable identity.
+The `qualification_scope` pass records **departures** from that default for explicit `<semantique>`/`<nature>` markers. Its question is whether any such marker governs something other than the block containing it; a negative outcome is the positive statement that every explicit marker here scopes by containment. A positive outcome carries scope assertions naming the printed marker and the projected span of the material it governs — a span rather than a node id, because the node it lands on may be derived at resolution and have no durable identity.
 
-The `bare_qualification` pass handles the separate case where Littré prints a qualification label
-as ordinary prose and XMLittré supplies no marker element. A positive record identifies the exact
-printed marker span and the projected span it governs. It may not claim text already represented by
-an explicit marker. Valid records from either pass materialize their projected intervals to current
-raw spans before resolution.
+The `bare_qualification` pass handles the separate case where Littré prints a qualification label as ordinary prose and XMLittré supplies no marker element. A positive record identifies the exact printed marker span and the projected span it governs. It may not claim text already represented by an explicit marker. Valid records from either pass materialize their projected intervals to current raw spans before resolution.
 
-Neither pass adjudicates **what** a marker means. Type and norm remain deterministic products of
-the committed normalization tables. `qualification_scope` changes only the target of an explicit
-marker; `bare_qualification` establishes a previously unmarked printed boundary plus its target,
-after which the same resolver-side routing applies.
+Neither pass adjudicates **what** a marker means. Type and norm remain deterministic products of the committed normalization tables. `qualification_scope` changes only the target of an explicit marker; `bare_qualification` establishes a previously unmarked printed boundary plus its target, after which the same resolver-side routing applies.
 
 ## Adjudication identity and stale detection
 
-Durable adjudication identity is semantic rather than positional. A record stores the current raw block
-span `(file, start_byte, end_byte)` only as a fast locator and stores one `surface_sha256` over the
-canonical material actually presented for classification.
+Durable adjudication identity is semantic rather than positional. A record stores the current raw block span `(file, start_byte, end_byte)` only as a fast locator and stores one `surface_sha256` over the canonical material actually presented for classification.
 
-The classification surface includes the projected target text, target kind, explicit qualification
-markers, and deterministic citation context. Context is therefore evidence: changing a citation can
-make a structural verdict stale even when the target block text itself is unchanged. This is
-intentionally conservative.
+The classification surface includes the projected target text, target kind, explicit qualification markers, and deterministic citation context. Context is therefore evidence: changing a citation can make a structural verdict stale even when the target block text itself is unchanged. This is intentionally conservative.
 
-Semantic selections inside the target — node, form, gloss, residual, scope marker, and scope target —
-are stored as half-open byte intervals in projected classifier text. They are translated to current
-parser-view/raw coordinates only after the record's classification surface has been validated.
+Semantic selections inside the target — node, form, gloss, residual, scope marker, and scope target — are stored as half-open byte intervals in projected classifier text. They are translated to current parser-view/raw coordinates only after the record's classification surface has been validated.
 
 Application proceeds conservatively:
 
-1. inspect the block at the stored locator;
-2. if it is still an eligible block, require its classification surface hash to match;
+1. inspect the block at the stored locator
+2. if it is still an eligible block, require its classification surface hash to match
 3. if the old locator no longer names a block, recover only a unique same-file eligible block with
-   the same surface hash;
-4. otherwise mark the verdict stale.
+   the same surface hash
+4. otherwise mark the verdict stale
 
-If an eligible block still occupies the old locator but its surface changed, no fallback search is
-performed. A development build reports and skips stale verdicts; a strict release rejects them.
-Malformed record geometry is a store-integrity error, not a stale verdict.
+If an eligible block still occupies the old locator but its surface changed, no fallback search is performed. A development build reports and skips stale verdicts; a strict release rejects them. Malformed record geometry is a store-integrity error, not a stale verdict.
 
-Line number, headword, source ordinal, and generated `xml:id` remain useful navigation fields but do
-not bear adjudication identity. Detailed transform mapping is defined in `source-representation.md`.
+Line number, headword, source ordinal, and generated `xml:id` remain useful navigation fields but do not bear adjudication identity. Detailed transform mapping is defined in `source-representation.md`.
 
 ## Authoritative adjudication records
 

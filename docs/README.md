@@ -1,6 +1,6 @@
 # Deep-Littré documentation
 
-Design and serialization specifications for the pipeline. These describe how the code behaves, not how it came to.
+Design and serialization specifications for the pipeline. These describe how the code behaves.
 
 For an overview, start with the top-level [`README.md`](../README.md). Each `src/*/README.md` explains one layer's implementation; these documents state the contracts those layers implement.
 
