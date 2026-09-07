@@ -18,10 +18,12 @@ end
 
 const block_text_projection = "block_text"
 const block_text_version = 2
+const block_text_description = "Direct content of one source block: descendant blocks and \
+citations excluded, markup stripped, entity and character references decoded, whitespace runs \
+collapsed."
 
 skipped_in_projection(name::AbstractString)::Bool =
 	name in ("indent", "variante", "rubrique", "résumé", "cit")
-
 
 # ===== building a projection =====
 
@@ -213,7 +215,6 @@ function project(document::Source.SourceDocument, node::XML.FlatNode)::Projected
 	)
 end
 
-
 # ===== moving between the projection and the parser view =====
 
 covering_segments(projection::ProjectedView, inside) =
@@ -247,7 +248,10 @@ function to_projected(
 	projection::ProjectedView, view_span::ViewSpan,
 )::Union{Nothing, ProjectedSpan}
 	view_span.file == projection.file ||
-		error("span file $(view_span.file) does not match projection $(projection.file)")
+		error(
+			"span file $(view_span.file) does not match projection file " *
+			"$(projection.file)",
+		)
 	covering = covering_segments(projection, candidate ->
 		candidate.view_end > view_span.start_byte &&
 		candidate.view_start < view_span.end_byte
@@ -277,7 +281,6 @@ function projected_text(projection::ProjectedView, view_span::ViewSpan)::String
 	isnothing(span) && return ""
 	return projected_text(projection, span)
 end
-
 
 # ===== locating a selection =====
 

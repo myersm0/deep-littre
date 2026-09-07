@@ -1361,8 +1361,7 @@ function resolve(
 	]
 	unresolved_references = ReviewFinding[
 		ReviewFinding(
-			"reference_unresolved", "ib. with no antecedent",
-			citation.span,
+			"reference_unresolved", "ib. with no antecedent in the entry", citation.span,
 		)
 		for entry in entries for citation in all_entry_citations(entry)
 		if citation.reference_resolution == :unresolved

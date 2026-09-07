@@ -146,12 +146,16 @@ function read_shard(
 		catch failure
 			integrity_error("$(location): cannot read record: $(sprint(showerror, failure))")
 		end
-		record.pass == pass ||
-			integrity_error("$(location): $(record.record_id) declares pass $(record.pass)")
-		shard_of(record) == shard ||
-			integrity_error("$(location): $(record.record_id) belongs in shard $(shard_of(record))")
-		isempty(strip(record.decision_procedure)) &&
-			integrity_error("$(location): $(record.record_id) names no decision procedure")
+		record.pass == pass || integrity_error(
+			"$(location): record $(record.record_id) declares pass " *
+			"$(record.pass), expected $(pass)",
+		)
+		shard_of(record) == shard || integrity_error(
+			"$(location): record $(record.record_id) belongs in shard $(shard_of(record))",
+		)
+		isempty(strip(record.decision_procedure)) && integrity_error(
+			"$(location): record $(record.record_id) names no decision procedure",
+		)
 		record.record_id in seen_ids &&
 			integrity_error("duplicate record id $(record.record_id) in pass $(pass)")
 		push!(seen_ids, record.record_id)
