@@ -2,7 +2,7 @@
 
 Status: **normative worked examples for v0.3**.
 
-Companion to `tei-lex0-compliance.md`. These examples are not a chronological record of the July compliance pass. They show the structures the v0.3 renderer should produce after semantic adjudication, while distinguishing them from coarse output that remains valid before adjudication is complete.
+Companion to `tei-lex0-compliance.md`. These examples show the structures the renderer should produce after semantic adjudication, alongside the coarse output that remains valid before adjudication is complete.
 
 All examples target the pinned TEI Lex-0 v0.9.5 RNG. When an example and the probe disagree, the probe/schema wins and this file must be updated.
 
@@ -27,11 +27,11 @@ All examples target the pinned TEI Lex-0 v0.9.5 RNG. When an example and the pro
 
 Important points:
 
-- every `<entry>` has `xml:id` and `xml:lang`;
-- top-level entries are `type="mainEntry"`;
-- `<form>` is typed;
-- entry grammar is a direct child of `<entry>`;
-- the lemma `<orth>` preserves the printed headword; casing normalization is not published merely because the renderer can compute it internally.
+- every `<entry>` has `xml:id` and `xml:lang`
+- top-level entries are `type="mainEntry"`
+- `<form>` is typed
+- entry grammar is a direct child of `<entry>`
+- the lemma `<orth>` preserves the printed headword, casing included
 
 ## 2. Cross-reference in etymology: AGAMIE
 
@@ -52,46 +52,69 @@ The cross-reference is a relation. `Voy.` belongs inside the `<xr>` as `<lbl>`. 
 
 ## 3. One source block, several semantic facts: ANGOISSE
 
-The development corpus contains:
+The development corpus contains, inside the entry's third sense:
 
 ```xml
 <indent><semantique type="indicateur">Familièrement.</semantique> Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.
+<cit aut="MOL." ref="Escarb. 15">Je vous présente des poires de bon-chrétien pour des poires d'angoisse que vos cruautés me font avaler tous les jours</cit>
+</indent>
 ```
 
-v0.2 can preserve the register fact but leaves the multiword unit inside the definition:
+Before adjudication, the register fact is preserved and the multiword unit stays inside the definition. The indent is a block, so it takes its own positional slot beneath the variante:
 
 ```xml
-<sense xml:id="angoisse_s3.1">
-  <usg type="socioCultural" norm="familiar">familièrement.</usg>
-  <def>Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.</def>
-  ...
-</sense>
-```
-
-After v0.3 adjudication establishes both a `SubLemma` and the scope of the register qualification, the target is structurally richer:
-
-```xml
-<sense xml:id="angoisse_s3">
+<sense xml:id="angoisse_s3" n="3">
   <def>Poire d'angoisse, poire d'un goût très âpre.</def>
-  <entry xml:id="angoisse_avaler_des_poires_d_angoisse"
-         xml:lang="fr-x-lit19c"
-         type="relatedEntry">
-    <form type="lemma">
-      <orth value="avaler des poires d'angoisse"/>
-    </form>
-    <sense xml:id="angoisse_avaler_des_poires_d_angoisse_s1">
-      <usg type="socioCultural" norm="familiar">familièrement.</usg>
-      <def>subir des mortifications, de vifs déplaisirs.</def>
-      <cit type="example">
-        <quote>Je vous présente des poires de bon-chrétien pour des poires d'angoisse que vos cruautés me font avaler tous les jours</quote>
-        <bibl><author>MOL.</author><biblScope>Escarb. 15</biblScope></bibl>
-      </cit>
-    </sense>
-  </entry>
+  <sense xml:id="angoisse_s3.1">
+    <usg type="socioCultural" norm="familiar">Familièrement.</usg>
+    <def>Avaler des poires d'angoisse, subir des mortifications, de vifs déplaisirs.</def>
+    <cit type="example" xml:id="angoisse_c2">
+      <quote>Je vous présente des poires de bon-chrétien pour des poires d'angoisse que vos cruautés me font avaler tous les jours</quote>
+      <bibl>
+        <author>MOL.</author>
+        <biblScope>Escarb. 15</biblScope>
+      </bibl>
+    </cit>
+  </sense>
+  <sense xml:id="angoisse_s3.2">
+    <def>Poire d'angoisse, espèce de bâillon en fer dont se servaient les voleurs pour étouffer les cris.</def>
+  </sense>
 </sense>
 ```
 
-The exact published `xml:id` is a renderer concern; the semantic facts are the anchored sub-lemma, its form/gloss constituents, and the qualification targeted to it.
+Once adjudication establishes the `SubLemma` and the scope of the register qualification, the unit becomes a nested entry and the label moves onto it. The `angoisse_s3.1` slot remains, because the block remains: the sense that occupies it now carries the nested entry and nothing else, its printed content having been claimed by the marker and the sub-lemma's constituents.
+
+```xml
+<sense xml:id="angoisse_s3" n="3">
+  <def>Poire d'angoisse, poire d'un goût très âpre.</def>
+  <sense xml:id="angoisse_s3.1">
+    <entry xml:id="angoisse_avaler_des_poires_d_angoisse"
+           xml:lang="fr-x-lit19c"
+           type="relatedEntry">
+      <form type="lemma">
+        <orth value="avaler des poires d'angoisse"/>
+      </form>
+      <pc>,</pc>
+      <sense xml:id="angoisse_avaler_des_poires_d_angoisse_s1">
+        <usg type="socioCultural" norm="familiar">Familièrement.</usg>
+        <def>subir des mortifications, de vifs déplaisirs.</def>
+        <cit type="example" xml:id="angoisse_c2">
+          <quote>Je vous présente des poires de bon-chrétien pour des poires d'angoisse que vos cruautés me font avaler tous les jours</quote>
+          <bibl>
+            <author>MOL.</author>
+            <biblScope>Escarb. 15</biblScope>
+          </bibl>
+        </cit>
+      </sense>
+    </entry>
+  </sense>
+  <sense xml:id="angoisse_s3.2">
+    <def>Poire d'angoisse, espèce de bâillon en fer dont se servaient les voleurs pour étouffer les cris.</def>
+  </sense>
+</sense>
+```
+
+Both shapes are true of the same source. The coarse one asserts less; neither invents anything Littré did not print. The published `xml:id` values are a renderer concern, and the printed label keeps its capital, since `<usg>` carries the marker text as printed. What adjudication contributed is the sub-lemma, its form and gloss constituents, and the qualification's target.
 
 ## 4. Figurative qualification plus sub-lemma: BOUE
 
@@ -101,7 +124,7 @@ Sample source:
 <indent><semantique type="indicateur">Fig.</semantique> Bâtir sur la boue, se bercer de vaines espérances.
 ```
 
-v0.2 serializes the figurative reading as a nested sense:
+Coarse output serializes the figurative reading as a nested sense:
 
 ```xml
 <sense xml:id="boue_s2.2" ana="figurative">
@@ -110,7 +133,7 @@ v0.2 serializes the figurative reading as a nested sense:
 </sense>
 ```
 
-v0.3 removes the redundant `ana` classification and can represent the multiword unit independently. The `relatedEntry` remains nested inside the containing sense:
+After adjudication the multiword unit is represented independently, and the redundant `ana` classification is gone. The `relatedEntry` nests inside the containing sense:
 
 ```xml
 <sense xml:id="boue_s2">
@@ -127,17 +150,15 @@ v0.3 removes the redundant `ana` classification and can represent the multiword 
 </sense>
 ```
 
-Again, this is possible because `meaningType=figurative` and `SubLemma` are independent facts rather than competing `IndentRole` values.
+As with ANGOISSE, this works because `meaningType=figurative` and `SubLemma` are independent facts about the same material.
 
 ## 5. Implicit sub-lemma: CABINET
 
-The July analysis identified:
+Here a form/gloss pair sits embedded in definition prose, with nothing in the markup to set it off:
 
 ```text
 Tenir cabinet, tenir conseil.
 ```
-
-as a form/gloss pair embedded in definition prose.
 
 After adjudication, the related entry is nested inside the containing sense:
 
@@ -167,13 +188,13 @@ The old `<re type="locution">` route is not used.
 
 ## 6. A supposed locution that is really a sub-sense: CABINET
 
-The July worked example also exposed the opposite error. A sentence such as:
+The opposite error is just as easy to make. A sentence such as:
 
 ```text
 Le cabinet tout entier donna sa démission
 ```
 
-was at one point emitted as a locution form even though the following definition explains a metonymic sense of *cabinet* (the members of the council).
+reads like a form, but the following definition explains a metonymic sense of *cabinet*, the members of the council. It is an example, not a sub-lemma.
 
 Target after adjudication:
 
@@ -311,7 +332,7 @@ Do not silently normalize it to a guessed abbreviation.
 
 ## 12. Remarque citations: no `<dictScrap>`
 
-The July example for FLEURER used:
+An earlier FLEURER encoding used:
 
 ```xml
 <note type="remarque">
@@ -322,9 +343,7 @@ The July example for FLEURER used:
 </note>
 ```
 
-That pattern is obsolete for this project because the pinned RNG rejects `<dictScrap>`.
-
-The renderer instead uses a probed schema-valid arrangement. In v0.2, note/rubrique prose and citations are separated where necessary, with citations emitted at an allowed sibling level. v0.3 preserves that rule unless a new probe establishes a better valid structure.
+The pinned RNG rejects `<dictScrap>`, so the renderer uses a probed schema-valid arrangement instead: note and rubrique prose are separated from citations where necessary, with the citations emitted at an allowed sibling level. That rule holds unless a new probe establishes a better valid structure.
 
 The important requirement is that the citation remains represented and associated through the semantic/source model; the renderer must not invent an invalid wrapper to mimic the print nesting.
 
@@ -345,7 +364,7 @@ Prescriptive prose that Littré happens to place in the pronunciation field may 
 <note type="pronunciation">...</note>
 ```
 
-In v0.3 that distinction should be established by an explicit adjudication/property path rather than by renderer-length or keyword heuristics.
+That distinction should be established by an explicit adjudication or property path rather than by renderer-length or keyword heuristics.
 
 ## 14. Coarse serialization before adjudication
 

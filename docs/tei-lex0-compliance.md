@@ -4,25 +4,25 @@ Status: **normative for v0.3 serialization**.
 
 Target: **TEI Lex-0 v0.9.5 (2026-02-08), pinned in the repository**.
 
-This document replaces the July compliance worklog as the current project specification. The July research remains useful provenance, but several recommendations drawn from prose chapters or the etymology paper were later overruled by the published RNG. The schema and committed probe verdicts are the arbiter.
+The schema and the committed probe verdicts are the arbiter here. Where earlier research drew a recommendation from Lex-0's prose chapters or the etymology paper and the published RNG disagrees, the RNG wins.
 
-The v0.2 release established an important baseline: all 78,599 entries and the whole document validate against the pinned RNG. v0.3 may change semantic structure, but it must preserve that validation gate.
+The validation baseline is that all 78,599 entries and the whole document validate against the pinned RNG. Semantic structure may change; that gate holds.
 
 ## Authority and method
 
 For a disputed construct:
 
-1. add or consult a minimal case in the Lex-0 probe corpus;
-2. validate it against the pinned RNG with `jing`;
-3. treat the verdict as authoritative for this project;
-4. update this document and the worked examples if the verdict changes a prior interpretation.
+1. add or consult a minimal case in the Lex-0 probe corpus
+2. validate it against the pinned RNG with `jing`
+3. treat the verdict as authoritative for this project
+4. update this document and the worked examples if the verdict changes a prior interpretation
 
 Do not infer conformance from TEI P5, the Lex-0 prose alone, or Bowers et al. when the pinned RNG says otherwise.
 
-Two July-era corrections are already settled:
+Two corrections of this kind are already settled:
 
-- `<dictScrap>` is admitted nowhere relevant by the pinned RNG and must not be emitted;
-- direct `<date>` inside `<etym>` is rejected by the pinned RNG, so historical century metadata uses the validated project pattern described below.
+- `<dictScrap>` is admitted nowhere relevant by the pinned RNG and must not be emitted
+- direct `<date>` inside `<etym>` is rejected by the pinned RNG, so historical century metadata uses the validated project pattern described below
 
 ## Document shell
 
@@ -34,12 +34,12 @@ The document root is:
 
 The header contains:
 
-- `fileDesc/titleStmt` with full and abbreviated titles;
-- `editionStmt` for the TEI Lex-0 edition statement;
-- `publicationStmt` with explicit availability/licence;
-- `sourceDesc/listBibl type="dictionaries"` with structured records for Littré and XMLittré;
-- `profileDesc/langUsage`;
-- `revisionDesc`.
+- `fileDesc/titleStmt` with full and abbreviated titles
+- `editionStmt` for the TEI Lex-0 edition statement
+- `publicationStmt` with explicit availability and licence
+- `sourceDesc/listBibl type="dictionaries"` with structured records for Littré and XMLittré
+- `profileDesc/langUsage`
+- `revisionDesc`
 
 The object language is `fr-x-lit19c`; the working language is `fr`.
 
@@ -71,16 +71,16 @@ Top-level dictionary entries use:
 <entry xml:id="..." xml:lang="fr-x-lit19c" type="mainEntry">
 ```
 
-Form-bearing semantic substructures use the Lex-0 recursive-entry mechanism. In v0.3:
+Form-bearing semantic substructures use the Lex-0 recursive-entry mechanism:
 
-- `SubLemma` normally serializes as `type="relatedEntry"`;
-- a form-bearing `VoiceVariant` may serialize as `type="homonymicEntry"` where the resolved structure warrants an entry-like grammatical variant.
+- `SubLemma` normally serializes as `type="relatedEntry"`
+- a form-bearing `VoiceVariant` may serialize as `type="homonymicEntry"` where the resolved structure warrants an entry-like grammatical variant
 
 Every emitted `<sense>` carries `xml:id`.
 
 The renderer may emit a coarse `<sense><def>…</def></sense>` for material whose finer semantic structure remains unadjudicated. That is a serialization fallback, not a workflow annotation.
 
-`ana="unclassified"` is not emitted in v0.3.
+`ana="unclassified"` is not emitted.
 
 ## Forms
 
@@ -94,7 +94,7 @@ Entry lemmas preserve the printed form directly:
 </form>
 ```
 
-The renderer does not add a casing-normalization claim merely because it can normalize a headword internally. Editorially reconstructed/read forms use the separate `@value` convention below.
+Printed casing is kept as printed. Editorially reconstructed or read forms use the separate `@value` convention below.
 
 Where a form is editorially extracted rather than printed as a standalone lemma, use the validated condensed-lemma pattern with `@value` rather than pretending that the source printed a separate orthographic token:
 
@@ -129,16 +129,16 @@ Grammatical facts attached to a particular sense or form are placed on that targ
 
 `<usg>` uses the Lex-0 closed typology accepted by the pinned RNG:
 
-- `temporal`;
-- `geographic`;
-- `domain`;
-- `frequency`;
-- `textType`;
-- `attitude`;
-- `socioCultural`;
-- `meaningType`;
-- `normativity`;
-- `hint`.
+- `temporal`
+- `geographic`
+- `domain`
+- `frequency`
+- `textType`
+- `attitude`
+- `socioCultural`
+- `meaningType`
+- `normativity`
+- `hint`
 
 `register` is not a Lex-0 type and is never emitted.
 
@@ -151,13 +151,13 @@ Examples:
 <usg type="meaningType" norm="proverbial">prov.</usg>
 ```
 
-Compound printed labels may yield more than one `<usg>` element, including elements of different types. This follows the v0.3 semantic model: qualifications are orthogonal facts, not one source-side "register" value.
+Compound printed labels may yield more than one `<usg>` element, including elements of different types, since qualifications are orthogonal facts rather than one source-side register value.
 
 `hint` is the honest fallback for usage information that has been examined but has no supported typed home. It is not a replacement for unexamined adjudication state.
 
 ## Sub-lemmas and multiword units
 
-`<re>` is not part of the target representation. A multiword unit with its own form/gloss structure is represented recursively as a nested entry inside the sense to which it belongs:
+A multiword unit with its own form and gloss structure is represented recursively as a nested entry inside the sense it belongs to. `<re>` is not used:
 
 ```xml
 <sense xml:id="...">
@@ -171,11 +171,11 @@ Compound printed labels may yield more than one `<usg>` element, including eleme
 </sense>
 ```
 
-The decision that a span is a `SubLemma` comes from adjudication, not punctuation or an XMLittré locution tag alone.
+The decision that a span is a `SubLemma` comes from adjudication rather than from punctuation or an XMLittré locution tag.
 
-Punctuation between a nested entry's form and its gloss is recovered from the source and emitted as `<pc>` between `<form>` and `<sense>`, so `Tenir cabinet, tenir conseil.` round-trips as `<orth>Tenir cabinet</orth><pc>,</pc>…<def>tenir conseil.</def>`. The punctuation belongs to neither constituent and is not silently dropped.
+Punctuation between a nested entry's form and its gloss is recovered from the source and emitted as `<pc>` between `<form>` and `<sense>`, so `Tenir cabinet, tenir conseil.` round-trips as `<orth>Tenir cabinet</orth><pc>,</pc>…<def>tenir conseil.</def>`. That comma belongs to neither constituent, and it is the node's separator.
 
-A source block may simultaneously yield a sub-lemma and one or more usage qualifications. The `<usg>` elements are attached to the semantic target established by the adjudication record; they do not compete with the sub-lemma for a single block classification.
+A source block may yield both a sub-lemma and one or more usage qualifications. Each `<usg>` attaches to the semantic target its adjudication record establishes, independently of the sub-lemma.
 
 A proverb is not a separate usage axis. Where proverbial status is applicable, it is `meaningType=proverbial`, attached to the sense or sub-lemma it qualifies.
 
@@ -185,11 +185,11 @@ A proverb is not a separate usage axis. Where proverbial status is applicable, i
 
 Source `<mentioned>` material requires semantic handling:
 
-- a redundant copy of an already represented form/example may be omitted;
-- a novel example established by adjudication becomes `<cit type="example"><quote>…</quote></cit>`;
-- a phrase wrapper that merely preserves print emphasis may flatten to schema-valid `<hi rend="italic">` in contexts where the original source wrapper has no Lex-0 counterpart.
+- a redundant copy of an already represented form or example may be omitted
+- a novel example established by adjudication becomes `<cit type="example"><quote>…</quote></cit>`
+- a phrase wrapper that merely preserves print emphasis may flatten to schema-valid `<hi rend="italic">` where the original source wrapper has no Lex-0 counterpart
 
-The v0.3 renderer does not run heuristics over definition punctuation to invent this structure. It serializes resolved facts and otherwise preserves coarse prose.
+The renderer serializes resolved facts and otherwise preserves coarse prose, without running heuristics over definition punctuation to invent structure.
 
 A `<def>` is never punctuation alone. Littré prints a full stop after a label that XMLittré encloses without it — `<nature>Absolument</nature>.` — and once the surrounding material is claimed by markers and asserted nodes, that stop is all the definition content left. It is source-visible and is kept, but as `<pc>.</pc>` following the `<gramGrp>` or `<usg>`, not as `<def>.</def>`; a `<def>` asserts a definition that is not there. `<pc>` is schema-valid directly inside `<sense>`. The same rule covers any punctuation-only remainder, whatever the mark.
 
@@ -208,21 +208,11 @@ Synchronic examples use the validated form:
 
 The pinned schema has a closed `cit/@type` vocabulary. Do not use bare `<cit>` merely because an external etymology example does so if the probe rejects it.
 
-Littré's citation anaphors are resolved over the entry in **source** order — the semantic tree is
-built later and may reattach citations by containment, which would otherwise reorder them. The
-printed surface is never replaced. A resolved author therefore remains `<author corresp="#…">ID.</author>` in
-text, with `@corresp` pointing to the immediately preceding citation; an anaphoric `ib.` remains the
-printed `<biblScope>` text with the same kind of link. Every synchronic citation receives an
-`xml:id` so these links survive semantic reattachment.
+Littré's citation anaphors are resolved over the entry in **source** order — the semantic tree is built later and may reattach citations by containment, which would otherwise reorder them. The printed surface is never replaced. A resolved author therefore remains `<author corresp="#…">ID.</author>` in text, with `@corresp` pointing to the immediately preceding citation; an anaphoric `ib.` remains the printed `<biblScope>` text with the same kind of link. Every synchronic citation receives an `xml:id` so these links survive semantic reattachment.
 
-SQLite additionally carries the resolved author value for `ID.` because that value is established
-without bibliographic inference. It does not synthesize a resolved string for `ib.`: forms such as
-`ib. III` can retain the preceding work while changing the locus, so the durable fact is the
-antecedent citation rather than a guessed normalized reference. An `ID.` or `ib.` with no preceding
-citation produces an `author_unresolved` or `reference_unresolved` review finding respectively.
+SQLite additionally carries the resolved author value for `ID.` because that value is established without bibliographic inference. It does not synthesize a resolved string for `ib.`: forms such as `ib. III` can retain the preceding work while changing the locus, so the durable fact is the antecedent citation rather than a guessed normalized reference. An `ID.` or `ib.` with no preceding citation produces an `author_unresolved` or `reference_unresolved` review finding respectively.
 
-`@ana` carries epistemic provenance only. Anaphora resolution is a processing relation, not an
-epistemic classification, so it is not encoded there.
+`@ana` carries epistemic provenance only. Anaphora resolution is a processing relation, not an epistemic classification, so it is not encoded there.
 
 Bibliographic normalization beyond what can be established safely from Littré remains incremental; missing `biblScope/@unit` is not repaired by guessing.
 
@@ -241,7 +231,7 @@ Lexical cross-references use `<xr>/<ref>` with the required types:
 
 An internal `target="#xml-id"` is emitted only when the target is reliably resolved. A conformant textual reference is preferable to a guessed pointer.
 
-Cross-references are relations in the v0.3 semantic model, not usage qualifications.
+Cross-references are relations, not usage qualifications.
 
 ## Rubriques and notes
 
@@ -249,22 +239,18 @@ Cross-references are relations in the v0.3 semantic model, not usage qualificati
 
 ### Etymology and historique
 
-`<etym>` carries the etymological account of the `ÉTYMOLOGIE` rubrique and nothing else. Historical
-attestations are **not** folded into it; `HISTORIQUE` serializes at entry level, structurally
-parallel to `<etym>` rather than subordinate to it. See *Rubriques do not fold into `<etym>`* below
-for the encoding and the reasoning.
+`<etym>` carries the etymological account of the `ÉTYMOLOGIE` rubrique and nothing else. Historical attestations are **not** folded into it; `HISTORIQUE` serializes at entry level, structurally parallel to `<etym>` rather than subordinate to it. See *Rubriques do not fold into `<etym>`* below for the encoding and the reasoning.
 
-Two July-era recommendations remain superseded here:
+Two earlier recommendations are superseded here:
 
-- direct `<date>` inside `<etym>` is not used, because the pinned RNG rejects it;
-- historical citations retain a schema-admitted `type="example"`; the diachronic distinction is
-  carried by `cit/@subtype`, not by `@ana`, which v0.3 reserves for epistemic provenance.
+- direct `<date>` inside `<etym>` is not used, because the pinned RNG rejects it
+- historical citations retain a schema-admitted `type="example"`, and the diachronic distinction is carried by `cit/@subtype` rather than `@ana`, which is reserved for epistemic provenance
 
 ### Remarques and other notes
 
 `<dictScrap>` is not emitted. The pinned RNG rejects it in the probed contexts.
 
-When a note cannot contain a citation directly in the desired location, the renderer uses a schema-valid sibling/containing structure established by the probe rather than inserting `<dictScrap>` as an escape hatch. The v0.2 validated emitter places rubrique citations as allowed siblings after note content where necessary.
+When a note cannot contain a citation in the desired location, the renderer uses a schema-valid sibling or containing structure established by the probe, placing rubrique citations as allowed siblings after note content where necessary.
 
 ### Supplément
 
@@ -272,7 +258,7 @@ Supplement provenance remains explicit. Supplement material may stay in a `<note
 
 ## Etymology
 
-The etymology subsystem is retained conceptually because it already models orthogonal events/segments independently of `IndentRole`.
+The etymology subsystem models events and segments as orthogonal facts, independently of any block classification.
 
 Validated building blocks include:
 
@@ -316,112 +302,50 @@ Unresolved suspicious tokens are preserved rather than silently corrected, for e
 
 The project may mirror these residues in the adjudication/review database, but the visible token remains in the corpus.
 
-In v0.3 the segmenter is deterministic enrichment, not adjudication. It is reconstructed every
-build from source plus the committed `etym_language_table.toml`, and a suspect token becomes a
-generated `etymology_suspect` review finding rather than a stored judgment. Segments whose position
-is known — form events and anchors — carry a raw anchor; connectors and prose are located by their
-containing rubrique block. Anchoring granularity follows adjudication need, so if an etymological
-fact later requires a durable judgment, it acquires its own span at that point.
+The segmenter is deterministic enrichment rather than adjudication. It is reconstructed every build from source plus the committed `etym_language_table.toml`, and a suspect token becomes a generated `etymology_suspect` review finding rather than a stored judgment. Segments whose position is known — form events and anchors — carry a raw anchor, while connectors and prose are located by their containing rubrique block. Anchoring granularity follows adjudication need, so an etymological fact that later requires a durable judgment acquires its own span at that point.
 
 ### Unsegmented etymologies are counted, not marked
 
-Segmentation keys on Gannaz's italic and anchor markup, and that markup is uneven: an etymology
-carrying neither is often the same string a marked one would be, so it falls back to a single prose
-segment. The fallback emits an `etymology_unsegmented` review finding anchored to the containing
-block, with detail `no_events` when the paragraph carried no recognized markup and
-`unrecognized_markup` when markup outside the event inventory could have been severed across
-segments. That count is the denominator classification coverage is reported against.
+Segmentation keys on Gannaz's italic and anchor markup, and that markup is uneven: an etymology carrying neither is often the same string a marked one would be, so it falls back to a single prose segment. The fallback emits an `etymology_unsegmented` review finding anchored to the containing block, with detail `no_events` when the paragraph carried no recognized markup and `unrecognized_markup` when markup outside the event inventory could have been severed across segments. That count is the denominator classification coverage is reported against.
 
-The finding is the whole of the record. It is not marked in the TEI and not mirrored in the
-`etymology` table, because it states where this parser stopped rather than anything about Littré or
-Gannaz — `ana="suspect"` is a claim about a token in the text, `unsegmented` would be workflow
-state, and the published edition carries the first and not the second.
+The finding is the whole of the record. It is not marked in the TEI and not mirrored in the `etymology` table, because it states where this parser stopped rather than anything about Littré or Gannaz — `ana="suspect"` is a claim about a token in the text, `unsegmented` would be workflow state, and the published edition carries the first and not the second.
 
 ### Rubriques do not fold into `<etym>`
 
-v0.2 folded `HISTORIQUE` into `<etym>` with century markers and `ana="attestation"` citations. v0.3
-does not fold, on fidelity grounds. The v0.2 shape was never legal anyway — `<date>` may not sit
-beside `<cit>` inside `<etym>` — and the recorded fold decision is superseded.
+`HISTORIQUE` does not fold into `<etym>`, on fidelity grounds. An earlier encoding folded it, with century markers and `ana="attestation"` citations, but that shape was never legal: `<date>` may not sit beside `<cit>` inside `<etym>`.
 
-The enabling fact, verified against v0.9.5: `model.entryPart.top` admits `cit` and `lbl` directly,
-so entry content is `bibl, biblStruct, cit, entry, etym, figure, form, gramGrp, lbl, listBibl,
-metamark, note, num, pc, ref, sense, usg, xr`. A rubrique's citations therefore live at entry
-level, structurally parallel to `<etym>` rather than subordinate to it.
+The enabling fact, verified against v0.9.5: `model.entryPart.top` admits `cit` and `lbl` directly, so entry content is `bibl, biblStruct, cit, entry, etym, figure, form, gramGrp, lbl, listBibl, metamark, note, num, pc, ref, sense, usg, xr`. A rubrique's citations therefore live at entry level, structurally parallel to `<etym>` rather than subordinate to it.
 
-This is not a refinement. `<note>` cannot hold `<cit>` — its content is phrase-level only — so the
-previous `<note type="historical"><seg>` rendering silently destroyed every rubrique citation:
-261 of the development corpus's 818 citations, with their authors and references, reached neither
-output. The no-fold encoding recovers all of them.
+This is not a refinement. `<note>` cannot hold `<cit>` — its content is phrase-level only — so the previous `<note type="historical"><seg>` rendering silently destroyed every rubrique citation: 261 of the development corpus's 818 citations, with their authors and references, reached neither output. The no-fold encoding recovers all of them.
 
 Encoding:
 
-- citations are lifted to entry level as `<cit type="example" subtype="…">`, because `cit/@type` is
-  a closed list with no `attestation` value;
-- a century header becomes `<lbl type="dateRange">`, printed once over the group it introduces, as
-  the source prints it. HISTORIQUE's `Ajoutez :` lead marker becomes a separate
-  `<lbl type="supplement">`; either marker may precede the other, and any remaining lead text stays
-  prose. `<date>` cannot sit at entry level, so the machine-readable range is
-  additionally written into each attestation's `<bibl>` as
-  `<date notBefore="1501" notAfter="1600">XVIe s.</date>`. This repeats per citation what Littré
-  prints once, and is emitted anyway: without it the century survives only as prose and neither
-  output is queryable by date. Years are `xsd:gYear`, so a tenth-century range is `0901`, not
-  `901`. The resolver computes the range and carries it to the citations the header introduces;
-  neither renderer infers it;
-- remaining prose stays in `<note type="…">`, since `<seg>` is **not** legal at entry level;
-- rubriques render in **source order**. Entry content is unordered, and Littré puts `HISTORIQUE`
-  before `ÉTYMOLOGIE` in some entries and after in others.
+- citations are lifted to entry level as `<cit type="example" subtype="…">`, because `cit/@type` is a closed list with no `attestation` value
+- a century header becomes `<lbl type="dateRange">`, printed once over the group it introduces, as the source prints it. HISTORIQUE's `Ajoutez :` lead marker becomes a separate `<lbl type="supplement">`; either marker may precede the other, and any remaining lead text stays prose. `<date>` cannot sit at entry level, so the machine-readable range is additionally written into each attestation's `<bibl>` as `<date notBefore="1501" notAfter="1600">XVIe s.</date>`. This repeats per citation what Littré prints once, which is the price of a corpus queryable by date. Years are `xsd:gYear`, so a tenth-century range is `0901`, not `901`. The resolver computes the range and carries it to the citations the header introduces; neither renderer infers it
+- remaining prose stays in `<note type="…">`, since `<seg>` is not legal at entry level
+- rubriques render in source order, since entry content is unordered and Littré puts `HISTORIQUE` before `ÉTYMOLOGIE` in some entries and after in others
 
-A `<gramGrp>` at entry level carries only the labels that qualify the headword. Where the source
-announces a second headword form before a second label — printed in capitals in 79 entries,
-`ACCORDÉ … ACCORDÉE (a-kordée) s. f.`, or given its own `<prononciation>` in 4 — the label belongs
-to that form, and attaching it to the entry made the entry both masculine and feminine. Those
-labels go to the header note with the form they qualify, until a pass can lift the pair into a
-`<form>` of its own. Prose between two labels does not demote the second: TARGUER prints its
-conjugation between `v. a.` and `v. réfl.` and both stay in the `<gramGrp>`.
+A `<gramGrp>` at entry level carries only the labels that qualify the headword. Where the source announces a second headword form before a second label — printed in capitals in 79 entries, `ACCORDÉ … ACCORDÉE (a-kordée) s. f.`, or given its own `<prononciation>` in 4 — the label belongs to that form, and attaching it to the entry made the entry both masculine and feminine. Those labels go to the header note with the form they qualify, until a pass can lift the pair into a `<form>` of its own. Prose between two labels does not demote the second: TARGUER prints its conjugation between `v. a.` and `v. réfl.` and both stay in the `<gramGrp>`.
 
-`note/@type="header"` carries the entete material that is neither the pronunciation nor a
-part-of-speech label — 3,034 entries have some, and it is heterogeneous enough that any type naming
-the content would be a classification the source does not state. The type names its position
-instead: one note per contiguous run, in source order, after `<gramGrp>`, mirroring where Littré
-prints it. `<note>` is available at entry level via `model.global`. A later pass can lift a header
-note into `<form type="inflected">`, an extended `<gram>`, or a typed note without a schema change.
+`note/@type="header"` carries the entete material that is neither the pronunciation nor a part-of-speech label — 3,034 entries have some, and it is heterogeneous enough that any type naming the content would be a classification the source does not state. The type names its position instead: one note per contiguous run, in source order, after `<gramGrp>`, mirroring where Littré prints it. `<note>` is available at entry level via `model.global`. A later pass can lift a header note into `<form type="inflected">`, an extended `<gram>`, or a typed note without a schema change.
 
 Markup Gannaz placed inside a header note does not survive it. In 99 entries the material carries a `<semantique>` with an explicit type, 92 of them `type="domaine"`; the printed label is kept and the stated type is not. Recording it would mean a `<seg type="…">` inside the note, since `<note>` takes `macro.lexSpecialPara`, which admits `model.segLike` and not `<usg>`. See [`known-limitations.md`](known-limitations.md).
 
-`lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project
-convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the
-committed `dateRange` and `supplement`. Proverb material uses the singular token `proverb` both as
-`note/@type` and `cit/@subtype`.
+`lbl/@type` and `cit/@subtype` are unconstrained by the schema, so their values are project convention. Citation/note conventions are committed in `rubrique_conventions`; label types are the committed `dateRange` and `supplement`. Proverb material uses the singular token `proverb` both as `note/@type` and `cit/@subtype`.
 
-A `PROVERBE` or `PROVERBES` rubrique additionally preserves the printed heading, `Proverbe.` or
-`Proverbes.`. A direct `<lbl>` would be preferable in the abstract, but the pinned Lex-0 schema does
-not admit `<lbl>` inside `<sense>`, and proverb rubriques can occur there. When coarse proverb prose
-is the first rubrique content, the heading and prose therefore share one note:
-`<note type="proverb" xml:id="…"><seg type="label">Proverbe.</seg> …</note>`. This avoids a
-second indistinguishable proverb note and removes the generic outer `<seg>` formerly wrapped around
-the note content. Where no coarse prose note is available to carry the heading, the fallback remains
-a distinct `<note type="proverb" subtype="label">Proverbe.</note>`.
+A `PROVERBE` or `PROVERBES` rubrique additionally preserves the printed heading, `Proverbe.` or `Proverbes.`. A direct `<lbl>` would be preferable in the abstract, but the pinned Lex-0 schema does not admit `<lbl>` inside `<sense>`, and proverb rubriques can occur there. When coarse proverb prose is the first rubrique content, the heading and prose therefore share one note: `<note type="proverb" xml:id="…"><seg type="label">Proverbe.</seg> …</note>`. This avoids a second indistinguishable proverb note and removes the generic outer `<seg>` formerly wrapped around the note content. Where no coarse prose note is available to carry the heading, the fallback remains a distinct `<note type="proverb" subtype="label">Proverbe.</note>`.
 
-Where a coarse proverb contains prose plus lifted attestations, the content note receives an
-`xml:id` and each following proverb citation points back to that note with `@corresp`. This retains
-the relationship even though Lex-0 forbids `<cit>` inside `<note>`. Citation-only proverb material
-is left unlinked rather than given an invented target. For rubriques other than proverbs, the
-rubrique boundary is not expressed in TEI; the `subtype` distinguishes the kind, and SQLite retains
-`origin`, `rubrique`, and the raw anchor, so the grouping stays fully recoverable.
+Where a coarse proverb contains prose plus lifted attestations, the content note receives an `xml:id` and each following proverb citation points back to that note with `@corresp`. This retains the relationship even though Lex-0 forbids `<cit>` inside `<note>`. Citation-only proverb material is left unlinked rather than given an invented target. For rubriques other than proverbs, the rubrique boundary is not expressed in TEI; the `subtype` distinguishes the kind, and SQLite retains `origin`, `rubrique`, and the raw anchor, so the grouping stays fully recoverable.
 
-Two further findings from the same validation pass: `<dictScrap>` does not exist in Lex-0 v0.9.5,
-so the `remarque`-via-`dictScrap` plan is unimplementable and remarque citations take the same
-entry-level treatment; and the etymon-internal `<gloss>` accepts no attributes, so
-`<gloss xml:lang="fr">` is rejected and W4's specification of it is wrong. `<biblScope>` is valid
-alongside `<citedRange>`.
+Two further findings from the same validation pass: `<dictScrap>` does not exist in Lex-0 v0.9.5, so the `remarque`-via-`dictScrap` plan is unimplementable and remarque citations take the same entry-level treatment; and the etymon-internal `<gloss>` accepts no attributes, so `<gloss xml:lang="fr">` is rejected and W4's specification of it is wrong. `<biblScope>` is valid alongside `<citedRange>`.
 
 ## Phrase-level source wrappers
 
 XMLittré source wrappers such as `<exemple>`, `<mentioned>`, `<foreign>`, and verbatim italic `<i>` are not assumed to be legal in every Lex-0 content model.
 
-Where a wrapper represents only print emphasis and the richer source element is disallowed, v0.2 established a validated fallback to `<hi rend="italic">`, preserving `xml:lang` when available. Nested `<hi>` must respect the pinned content model; flatten redundant nesting rather than generating invalid markup.
+Where a wrapper represents only print emphasis and the richer source element is disallowed, the validated fallback is `<hi rend="italic">`, preserving `xml:lang` when available. Nested `<hi>` must respect the pinned content model; flatten redundant nesting rather than generating invalid markup.
 
-`<exemple>` is not such a wrapper. Comparison with the print shows that its contents are roman text and that the element records an XMLittré editorial judgment rather than typographic emphasis. Coarse output therefore preserves the inherited span as `<seg type="example">…</seg>` without `<hi>`. This explicitly supersedes the earlier v0.3 decision that rendered `<exemple>` as `<seg type="example"><hi rend="italic">…</hi></seg>`.
+`<exemple>` is not such a wrapper. Comparison with the print shows that its contents are roman text and that the element records an XMLittré editorial judgment rather than typographic emphasis. Coarse output therefore preserves the inherited span as `<seg type="example">…</seg>` without `<hi>`, superseding an earlier decision that wrapped it in `<hi rend="italic">`.
 
 Semantic structures such as etymons or examples should be represented by their dedicated Lex-0 elements when adjudication has established them, not merely by italic presentation.
 
@@ -429,7 +353,7 @@ Semantic structures such as etymons or examples should be represented by their d
 
 A true pronunciation remains `<pron>` inside the lemma form.
 
-Littré also places prescriptive or explanatory prose in the source pronunciation field. Such prose may serialize as `<note type="pronunciation">` when positively identified. The v0.3 architecture should move the decision out of renderer heuristics and into an explicit adjudication/property path; uncertain material stays coarse rather than being reclassified from stylistic cues alone.
+Littré also places prescriptive or explanatory prose in the source pronunciation field. Such prose may serialize as `<note type="pronunciation">` when positively identified. That decision belongs in an explicit adjudication or property path rather than in renderer heuristics, and uncertain material stays coarse rather than being reclassified from stylistic cues.
 
 ## Workflow and provenance annotations
 
@@ -437,17 +361,15 @@ Published TEI expresses claims about the dictionary, not pipeline progress.
 
 Therefore:
 
-- no `ana="unclassified"`;
-- no role names from the old classifier;
-- no heuristic confidence bucket merely because a pass has not run.
+- no `ana="unclassified"`
+- no role names from the old classifier
+- no heuristic confidence bucket merely because a pass has not run
 
 Project annotations that express a corpus fact or editorial epistemic claim may remain where the schema admits them, including:
 
 - `ana="suspect"` for explicitly preserved unresolved source tokens.
 
-`@ana` carries epistemic provenance only, and its permitted values are whitelisted by test so a new
-one must be consciously admitted. The diachronic distinction that v0.2 expressed as
-`ana="attestation"` is now `cit/@subtype="attestation"`.
+`@ana` carries epistemic provenance only, and its permitted values are whitelisted by test, so a new one must be consciously admitted. The diachronic distinction is carried by `cit/@subtype="attestation"`.
 
 Pass version, decision procedure, and unresolved verdict state live in the authoritative adjudication records. Coverage is computed against the current census/pass definitions and mirrored into SQLite; none of this workflow state is serialized as TEI semantics.
 
@@ -455,14 +377,11 @@ Pass version, decision procedure, and unresolved verdict state live in the autho
 
 Every released entry and sense receives the `xml:id` required by the pinned schema.
 
-Sense identifiers are positional: `angoisse_s3` is the third sense of the entry, `angoisse_s3.2`
-the second sense inside it. Dots are legal, since `xml:id` is an `xsd:ID` and therefore an NCName.
-Every sense is numbered, including an only child. Uniqueness is guarded separately, for the cases
-where two entries normalize to the same headword slug, so the ordinal always means position.
+Sense identifiers are positional: `angoisse_s3` is the third sense of the entry, `angoisse_s3.2` the second sense inside it. Dots are legal, since `xml:id` is an `xsd:ID` and therefore an NCName. Every sense is numbered, including an only child. Uniqueness is guarded separately, for the cases where two entries normalize to the same headword slug, so the ordinal always means position.
 
 Only source blocks take a positional slot. A `SubLemma` or `VoiceVariant` is named from its form (`angoisse_avaler_des_poires_d_angoisse`) and is not counted among its siblings, so asserting one inside a block does not renumber the source senses that follow it. A sense id is therefore stable under adjudication: verdicts landing over the course of a campaign leave every existing positional id naming the same source material.
 
-The ids are not stable under source change. A patch or upstream revision that adds or removes a block renumbers the blocks after it. v0.3 does not promise stability across pre-1.0 releases on that axis; a frozen identifier registry would be needed, and none is planned before 1.0.
+The ids are not stable under source change. A patch or upstream revision that adds or removes a block renumbers the blocks after it. Stability on that axis would need a frozen identifier registry, and none is planned before 1.0.
 
 Internal adjudication validity uses the canonical classification surface plus projected selections; the stored raw block span is only a locator. Opaque record/node ids identify authored objects without coupling them to positional TEI ids.
 
@@ -470,10 +389,10 @@ Internal adjudication validity uses the canonical classification surface plus pr
 
 A release is blocked unless:
 
-- the full document validates against the pinned RNG;
-- every entry validates in the per-entry harness;
-- the committed probe produces its expected verdicts;
-- no new schema workaround is introduced without a probe case;
-- TEI/SQLite semantic parity tests pass.
+- the full document validates against the pinned RNG
+- every entry validates in the per-entry harness
+- the committed probe produces its expected verdicts
+- no new schema workaround is introduced without a probe case
+- TEI and SQLite semantic parity tests pass
 
-The schema-valid v0.2 output remains a preservation oracle, but byte-for-byte or tree-for-tree equality is not expected from the v0.3 semantic rewrite.
+Earlier schema-valid output remains a preservation oracle for content, though byte-for-byte or tree-for-tree equality is not expected across a semantic rewrite.

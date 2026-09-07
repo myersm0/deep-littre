@@ -54,9 +54,9 @@ A semantic node has at most one node type.
 
 The initial structural node types are:
 
-- `Sense` — not form-bearing;
-- `SubLemma` — form-bearing;
-- `VoiceVariant` — form-bearing.
+- `Sense` — not form-bearing
+- `SubLemma` — form-bearing
+- `VoiceVariant` — form-bearing
 
 The model may grow additional structural node types, but adding one also changes the set of passes closure must exhaust before an ordinary `Sense` can be derived. Existing verdicts for the older passes remain valid; blocks simply remain structurally open until the new alternative has been examined.
 
@@ -87,7 +87,13 @@ separately form-bearing grammatical alternant  → VoiceVariant node
 grammatical fact about a sense or form         → grammatical property
 ```
 
-The two are orthogonal and routinely co-occur without duplication. `DISPENSER` variante 7 resolves as:
+The two are orthogonal and routinely co-occur without duplication. `DISPENSER` variante 7 reads:
+
+```xml
+<variante num="7">Se dispenser, <nature>v. réfl.</nature> Être départi. Les honneurs se dispensent quelquefois au hasard.</variante>
+```
+
+and resolves as:
 
 ```text
 VoiceVariant
@@ -107,15 +113,29 @@ A `SubLemma` may be composed of spans such as:
 - one or more `form` constituents
 - at most one `gloss`
 
-These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting. A form constituent may also have an editorial `value` when one printed surface span licenses more than one normalized reading. (TODO: example?)
+These are decomposition results inside the node's span. They are not node types and do not participate in structural-exhaustion accounting.
 
-Two multi-form geometries are admitted. Distinct printed forms use disjoint source spans on one node. Alternative readings of one coordinated printed form use coincident form spans with distinct editorial values. Partially overlapping form spans fail closed. The first resolved form is the node's primary form for naming and convenience queries; all forms remain explicit constituents.
+Two multi-form geometries are admitted. Distinct printed forms use disjoint source spans on one node, as in `BIEN`:
 
-Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation that belongs to neither span. Durable adjudication (TODO: do we really need to say "durable"?) stores their intervals in projected classifier text. When a valid verdict is applied, those intervals are materialized to current raw spans inside the node's raw extent; the material between the final printed form span and gloss is therefore recoverable as the node's `separator`. Constituent spans are retained through resolution into both outputs rather than being reduced to their text, and no renderer may drop the separator or graft it onto a constituent it does not belong to. A constituent's semantic text is reconstructed through the same projection used for adjudication rather than by blindly slicing its raw interval, because a contiguous source interval may legitimately cover interior markup.
+```text
+Bien de campagne, ou, absolument, bien, propriété rurale.
+[--- form ------]              [form]  [--- gloss ----]
+```
 
-A block may contain more than one sub-lemma. A node's primary span is contiguous; discontinuous form material is represented by multiple explicit constituent/source spans rather than by redefining `SourceSpan` as discontinuous. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
+Alternative readings of one coordinated printed form use coincident form spans distinguished by an editorial `value`. Littré writes *Enfanter une âme en ou à Jésus-Christ*, where the two readings share every byte of the printed surface and can only be told apart by writing them out:
 
-Semantic node spans are laminar: either the two nodes are disjoint, or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review; the resolver and renderers do not invent a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
+```text
+form span [17, 53)  value = "enfanter une âme en Jésus-Christ"
+form span [17, 53)  value = "enfanter une âme à Jésus-Christ"
+```
+
+A `value` is therefore an editorial reading of a span, needed when cutting the span cannot separate the forms. Partially overlapping form spans fail closed. The first resolved form is the node's primary form for naming and convenience queries; all forms remain explicit constituents.
+
+Constituents are generally not adjacent: Littré separates a form from its gloss with punctuation that belongs to neither span. The record stores their intervals in projected classifier text. When a valid verdict is applied, those intervals are materialized to current raw spans inside the node's raw extent, and the material between the final printed form span and the gloss is recoverable as the node's `separator`. Constituent spans are retained through resolution into both outputs rather than being reduced to their text, and no renderer may drop the separator or graft it onto a constituent it does not belong to. A constituent's semantic text is reconstructed through the same projection used for adjudication rather than by slicing its raw interval, because a contiguous source interval may legitimately cover interior markup.
+
+A block may contain more than one sub-lemma. A node's primary span is contiguous, and discontinuous form material is represented by multiple explicit constituent spans. Constituent offsets are produced by the authoring harness from selections in a versioned projection with source provenance, not by asking an adjudicator to locate raw bytes.
+
+Semantic node spans are laminar: either the two nodes are disjoint, or one strictly contains the other. Distinct nodes with coincident primary spans and nodes with partial crossing overlap are structural conflicts requiring review, and the resolver and renderers fail rather than apply a precedence rule. For a valid contained set, the smallest strict containing semantic span is the structural parent.
 
 ## Qualifications
 
@@ -150,14 +170,21 @@ A relation points from a node/span/rubrique to another lexical object or textual
 
 A qualification is never merely "on the block". Its scope is represented by an explicit target reference:
 
-- span;
-- semantic node;
-- sibling-node range;
-- rubrique.
+- span
+- semantic node
+- sibling-node range
+- rubrique
 
-Containment is the deterministic default: a marker governs the innermost resolved node whose span contains it. That is a stated geometric rule, not a heuristic guess, so it needs no adjudication and the absence of a record never becomes a claim.
+Containment is the deterministic default: a marker governs the innermost resolved node whose span contains it. Because that is a geometric rule stated in advance, it needs no adjudication, and the absence of a record never becomes a claim.
 
-The `qualification_scope` pass records **departures** from that default for explicit `<semantique>`/`<nature>` markers. Its question is whether any such marker governs something other than the block containing it; a negative outcome is the positive statement that every explicit marker here scopes by containment. A positive outcome carries scope assertions naming the printed marker and the projected span of the material it governs — a span rather than a node id, because the node it lands on may be derived at resolution and have no durable identity.
+The `qualification_scope` pass records **departures** from that default for explicit `<semantique>`/`<nature>` markers. Its question is whether any such marker governs something other than the block containing it. A negative outcome is the positive statement that every explicit marker here scopes by containment. A positive outcome carries scope assertions naming the printed marker and the projected span of the material it governs — a span rather than a node id, because the node it lands on may be derived at resolution and have no durable identity.
+
+The two committed verdicts in the development corpus show both outcomes on structurally similar material. In `DISPENSER` variante 7 the marker `v. réfl.` sits inside the `Se dispenser` voice variant, which is exactly what containment predicts, so the verdict is negative and nothing is asserted. In the `ANGOISSE` indent, containment would give *Familièrement.* the whole block, but the label governs only the sub-lemma *Avaler des poires d'angoisse*, so the verdict is positive and records the departure:
+
+```json
+"scopes": [{"marker": {"start_byte": 1,  "end_byte": 16},
+            "target": {"start_byte": 17, "end_byte": 93}}]
+```
 
 The `bare_qualification` pass handles the separate case where Littré prints a qualification label as ordinary prose and XMLittré supplies no marker element. A positive record identifies the exact printed marker span and the projected span it governs. It may not claim text already represented by an explicit marker. Valid records from either pass materialize their projected intervals to current raw spans before resolution.
 
@@ -165,7 +192,7 @@ Neither pass adjudicates **what** a marker means. Type and norm remain determini
 
 ## Adjudication identity and stale detection
 
-Durable adjudication identity is semantic rather than positional. A record stores the current raw block span `(file, start_byte, end_byte)` only as a fast locator and stores one `surface_sha256` over the canonical material actually presented for classification.
+Adjudication identity is semantic rather than positional. A record stores the current raw block span `(file, start_byte, end_byte)` only as a fast locator, and stores one `surface_sha256` over the canonical material actually presented for classification.
 
 The classification surface includes the projected target text, target kind, explicit qualification markers, and deterministic citation context. Context is therefore evidence: changing a citation can make a structural verdict stale even when the target block text itself is unchanged. This is intentionally conservative.
 
@@ -175,8 +202,7 @@ Application proceeds conservatively:
 
 1. inspect the block at the stored locator
 2. if it is still an eligible block, require its classification surface hash to match
-3. if the old locator no longer names a block, recover only a unique same-file eligible block with
-   the same surface hash
+3. if the old locator no longer names a block, recover only a unique same-file eligible block with the same surface hash
 4. otherwise mark the verdict stale
 
 If an eligible block still occupies the old locator but its surface changed, no fallback search is performed. A development build reports and skips stale verdicts; a strict release rejects them. Malformed record geometry is a store-integrity error, not a stale verdict.
@@ -189,10 +215,10 @@ Workflow meaning lives outside the semantic tree.
 
 For every eligible block/span and pass, the authoritative store distinguishes:
 
-- positive — examined and the class applies;
-- negative — examined and the class does not apply;
-- unresolved — examined but no decision is made;
-- absent record — not examined.
+- positive — examined and the class applies
+- negative — examined and the class does not apply
+- unresolved — examined but no decision is made
+- absent record — not examined
 
 An absent record is the ordinary intermediate state and is never read as a negative.
 
@@ -200,75 +226,64 @@ The authoritative store is a committed input. Generated `littre.db` may mirror i
 
 ## Census and eligible populations
 
-Coverage begins with a source-derived `SourceBlock` census independent of semantic traversal.
+Coverage begins with a source-derived `SourceBlock` census independent of semantic traversal. `SourceBlock` kinds are:
 
-Initial `SourceBlock` kinds include:
-
-- ordinary `<indent>`;
-- `<variante>`;
-- `<résumé>`-internal `<indent>` and `<variante>`;
-- rubrique-internal `<indent>` and `<variante>`;
-- direct rubrique content with no intervening block element;
-- `<entete>/<indent>`;
-- `<entete>/<nature>`.
+- ordinary `<indent>`
+- `<variante>`
+- `<résumé>`-internal `<indent>` and `<variante>`
+- rubrique-internal `<indent>` and `<variante>`
+- direct rubrique content with no intervening block element
+- `<entete>/<indent>`
+- `<entete>/<nature>`
 
 Containment is decided by ancestry, not element name, and résumé ancestry is consulted for both `<indent>` and `<variante>`. Résumé material summarizes senses represented elsewhere in the entry and is excluded from the structural population.
 
 `<prononciation>` is source data but is excluded from the `SourceBlock` census; it is form/commentary data handled by its own pipeline path.
 
-The `SourceBlock` census is universal over the defined adjudication-relevant block population, not over all XMLittré content. It answers “which source blocks exist for adjudication?”. Each adjudication pass declares a versioned eligible population drawn from that census.
+The census is universal over the adjudication-relevant block population, not over all XMLittré content. It answers "which source blocks exist for adjudication?". Each adjudication pass then declares a versioned eligible population drawn from it.
 
-The current structural and qualification populations use population version 2 and admit the same 341,125 full-corpus blocks: ordinary indents/variantes plus all three rubrique block kinds. Rubrique material is admitted to both because bare labels embedded there must be reachable by structural and qualification judgments alike. Résumé blocks and both entete kinds are excluded from both, for reasons given per kind in `src/Census/README.md`. The two sets are equal as a consequence of those independent per-kind decisions, not as a property being maintained: nothing compares them, and a kind admitted to one population and not the other would be an ordinary outcome rather than a defect.
+The current structural and qualification populations both use population version 2 and admit the same 341,125 full-corpus blocks: ordinary indents and variantes plus all three rubrique block kinds. Rubrique material is admitted to both because bare labels embedded there must be reachable by structural and qualification judgments alike. Résumé blocks and both entete kinds are excluded from both, for reasons given per kind in `src/Census/README.md`. The two sets coincide as a consequence of independent per-kind decisions; nothing compares them, and a kind admitted to one and not the other would be an ordinary outcome.
 
 ## Deriving ordinary `Sense`
 
-No single pass asserts that whatever it did not recognize must be an ordinary sense.
+Most blocks are ordinary senses: a definition, perhaps with examples, and nothing structurally special about them. No pass asserts this, because there is nothing positive to observe. An ordinary sense is what a block is when none of the structural alternatives are present, and absence is established only by looking for each thing that could have been there.
 
-Ordinary `Sense` is derived only by exhaustion of the current structural alternatives, presently:
+So `Sense` is derived by exhausting the current structural alternatives, presently:
 
 ```text
 {SubLemma, VoiceVariant}
 ```
 
-A persisted examination target is a census `SourceBlock`. Each structural pass examines the whole
-block. A negative result establishes that alternative as absent throughout the block. A positive
-result is exhaustive: asserted node spans plus explicit residual spans must completely partition the
-projected target. The harness checks that partition when authoring and application revalidates the
-persisted geometry before resolution.
+Until every one of them has been asked about, "no sub-lemma here" and "nobody has looked for one" are the same observation, and neither is read out of silence.
 
-Residual spans are therefore closure evidence, not independently addressable adjudication targets,
-and the store holds no per-residual verdicts. For closure, every current structural pass must have an
-applicable non-unresolved result and the combined assertions must be structurally compatible. If any
-pass is absent, stale, unresolved, or conflicting, ordinary `Sense` is not derived.
+A persisted examination target is a census `SourceBlock`, and each structural pass examines the whole block. A negative result establishes that alternative as absent throughout the block. A positive result is exhaustive: asserted node spans plus explicit residual spans must completely partition the projected target. The harness checks that partition when authoring, and application revalidates the persisted geometry before resolution.
+
+Residual spans are therefore closure evidence rather than independently addressable adjudication targets, and the store holds no per-residual verdicts. A block closes when every current structural pass has an applicable verdict that decided one way or the other, and the combined assertions are structurally compatible. If any pass is absent, stale, unresolved, or conflicting, ordinary `Sense` is not derived.
+
+The `ANGOISSE` indent closes on two verdicts: `sublemma` positive, asserting the multiword unit, and `voice_variant` negative. Both alternatives have been examined, so what the assertions did not claim resolves as an ordinary sense.
 
 ### Residuals are closure units, not node extents
 
-A residual span establishes the ordinary content of a closed structural container. It does not
-itself become a `Sense` node. For
+A residual span establishes the ordinary content of a closed structural container. It does not itself become a `Sense` node. For
 
 ```text
 prose A [SubLemma] prose B
 ```
 
-the resolved structure is one contiguous enclosing `Sense` whose span contains the positive
-child node:
+the resolved structure is one contiguous enclosing `Sense` whose span contains the positive child node:
 
 ```text
 Sense span:  [-------------------------]
 SubLemma:              [-------]
 ```
 
-with `prose A` and `prose B` supplying the definition content. This is what laminarity permits
-and what the Lex-0 nesting of `<entry type="relatedEntry"> `inside `<sense>` requires. Deriving a
-separate `Sense` per residual would manufacture discontinuous senses merely because a nested
-entry interrupts the definition.
+with `prose A` and `prose B` supplying the definition content. This is what laminarity permits and what the Lex-0 nesting of `<entry type="relatedEntry">` inside `<sense>` requires. Deriving a separate `Sense` per residual would manufacture discontinuous senses merely because a nested entry interrupts the definition.
 
-Closure may therefore derive one enclosing `Sense` containing positive child nodes; residual
-spans themselves need not become separate `Sense` nodes.
+Closure may therefore derive one enclosing `Sense` containing positive child nodes; residual spans themselves need not become separate `Sense` nodes.
 
-The derivation applies to the block's **direct content** — what remains once asserted structural children are carved out — and is valid only where the block is eligible for every current structural pass, every pass has an applicable non-unresolved verdict, and positive partitions have been validated.
+The derivation applies to the block's **direct content** — what remains once asserted structural children are carved out — and is valid only where the block is eligible for every current structural pass, every pass has an applicable decided verdict, and positive partitions have been validated.
 
-If a future release adds a new structural alternative, closure immediately requires that new pass as well. Existing verdict records for older passes do not become false or stale merely because the set grew; previously derived senses simply cease to close until the new alternative has been examined.
+If a future release adds a structural alternative, closure immediately requires that new pass as well. Existing verdict records for older passes do not become false or stale merely because the set grew; previously derived senses simply cease to close until the new alternative has been examined.
 
 ## Partial adjudication and coarse truth
 

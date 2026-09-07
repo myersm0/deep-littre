@@ -18,7 +18,7 @@ XMLittré gives each dictionary entry an `<entree>` with two parts: an `<entete>
 <variante num="1">Sentiment de resserrement à la région épigastrique, ...</variante>
 ```
 
-Senses are `<variante>` elements. Within a sense, further material is set off in `<indent>` elements. Named sections at the end of the entry are `<rubrique>` elements, each with a `@nom`. ANGOISSE carries five rubriques [TODO: I count three]: the history of the word (HISTORIQUE), its etymology (ÉTYMOLOGIE), and additions from Littré's 1877 supplement (SUPPLÉMENT AU DICTIONNAIRE).
+Senses are `<variante>` elements. Within a sense, further material is set off in `<indent>` elements. Named sections at the end of the entry are `<rubrique>` elements, each with a `@nom`. ANGOISSE carries three rubriques: the history of the word (HISTORIQUE), its etymology (ÉTYMOLOGIE), and additions from Littré's 1877 supplement (SUPPLÉMENT AU DICTIONNAIRE).
 
 The third sense is where the interesting problem lives:
 
@@ -36,7 +36,7 @@ The third sense is where the interesting problem lives:
 
 A *block* is a stretch of source that a semantic judgment can be made about. The `<variante>` above is a block, and so is each of the two `<indent>` elements inside it. Blocks nest: the two indents sit inside the variante, and the census records them in that relationship.
 
-Not every element is a block. The `<cit>` is a quotation, handled deterministically as a citation. The `<prononciation>` is form data with its own path through the pipeline. The `<nature>` in the entete is a block of its own kind, because a grammatical label is material a pass might have something to say about [TODO: we haven't defined "pass" yet].
+Not every element is a block. The `<cit>` is a quotation, handled deterministically as a citation. The `<prononciation>` is form data with its own path through the pipeline. The `<nature>` in the entete is a block of its own kind, since a grammatical label is something a judgment might be made about.
 
 The *census* enumerates every block in the corpus, walking the source's XML tree. It runs before any semantic work and depends on nothing semantic. Its purpose is to fix a denominator: when a pass later reports that it has examined a certain number of blocks, the population that number is measured against is a stable property of the source.
 
@@ -70,7 +70,7 @@ A pass declares, in code, its name and version, the population of blocks it appl
 
 Each pass answers with one of four outcomes for a given block: *positive*, the class applies; *negative*, it does not; *unresolved*, examined without reaching a decision; or no record at all, meaning the block has not been examined. The absence of a record is inconclusive.
 
-Asking one question at a time is what keeps the passes independent. A `sublemma` verdict on this block does not disturb the `qualification_scope` verdict, and adding a new pass later does not invalidate the records already made.
+Asking one question at a time keeps the passes independent. A `sublemma` verdict on this block does not disturb the `qualification_scope` verdict, and adding a new pass later does not invalidate the records already made.
 
 ## The projection and the surface
 
@@ -130,6 +130,28 @@ The marker is *Familièrement.* and its target is the sub-lemma. The default for
 
 Note what the scope record does not contain. It says which text the marker covers, and nothing about what the marker means. Turning *Familièrement.* into `type="socioCultural" norm="familiar"` is done by the committed normalization tables in `data/`, on every build, from the printed text.
 
+## A second block: DISPENSER
+
+The ANGOISSE indent shows one of the two structural alternatives asserted and the other denied. Seeing the other one asserted takes a second block. `DISPENSER` variante 7, at `d.xml` bytes 4732–4868, is:
+
+```xml
+<variante num="7">Se dispenser, <nature>v. réfl.</nature> Être départi. Les honneurs se dispensent quelquefois au hasard.</variante>
+```
+
+projecting to:
+
+```text
+Se dispenser, v. réfl. Être départi. Les honneurs se dispensent quelquefois au hasard.
+```
+
+Here Littré is opening what amounts to a small entry underneath the verb: a printed pronominal form, *Se dispenser*, with sense material of its own. The `voice_variant` verdict is positive and asserts a `VoiceVariant` over 1–90, the whole projected text, with form 1–13 and gloss 25–90. Its residual list is empty, since the node already accounts for everything.
+
+The `qualification_scope` verdict on this block is negative, and its note gives the reason: *v. réfl. governs the pronominal alternant that contains it*. That is the containment default doing its job. The marker sits at 15–24, inside the asserted node, so the rule that a marker governs the innermost node containing it already puts the grammatical property where it belongs, and there is nothing to record.
+
+The scope pass is easier to understand now when you set these two blocks side by side. On the ANGOISSE indent the default would have assigned *Familièrement.* to the entire block, which is wrong, so a positive record names the narrower target. On this block the default is already right, so the verdict is negative — which is not an absence of information but the statement that every explicit marker here scopes by containment.
+
+Note also that `v. réfl.` is an inline `<nature>`, sitting inside a block rather than in the entry header. The same element in an `<entete>` describes the whole lemma, as in `ÉVADER (S')`, and produces no voice variant at all.
+
 ## Qualifications and relations
 
 A *qualification* is a fact contributed by a marker: a register, a domain, a temporal note, a grammatical property. Every qualification names the text it applies to, so it is never merely attached to a block. Usage qualifications and grammatical ones are kept apart, since they occupy different positions in the output.
@@ -140,9 +162,11 @@ Both are separate from the node axis. A node has at most one type; qualification
 
 ## Deriving an ordinary sense
 
-Most blocks in the dictionary are ordinary senses. Nothing asserts this directly. `Sense` is derived by exhausting the alternatives: when every structural pass has examined a block with an applicable, non-unresolved verdict, and the results do not conflict, what remains is an ordinary sense. [TODO: this doesn't really make sense to me. Also, let's see if we can get rid of the double-negative in "non-unresolved."]
+Most blocks are ordinary senses: a definition, perhaps with examples, nothing structurally special. No pass asserts this, because there is nothing positive to observe. An ordinary sense is what a block is when none of the special structures are present, and absence is established only by looking for each thing that could have been there.
 
-For the ANGOISSE indent, `sublemma` is positive and `voice_variant` is negative. Both alternatives have been examined, so the block *closes*, and the material outside the asserted sub-lemma resolves as an ordinary `Sense` containing it.
+So `Sense` is derived. Once every structural pass has examined the block and answered, and the answers are compatible, the block is *closed*, and what the answers did not claim is an ordinary sense. Before that, "no sub-lemma here" and "nobody looked for one" are the same observation, and the pipeline declines to read either one out of silence.
+
+For the ANGOISSE indent, `sublemma` answered positive and `voice_variant` answered negative. Both structural questions have been asked, so the block closes: it resolves as a `Sense` spanning the whole indent, with the sub-lemma nested inside it.
 
 Closure is why the set of structural passes is declared in one place. Adding a fourth alternative immediately means blocks examined by only three no longer close, and stay coarse until the new question has been asked of them. Records already made stay valid.
 
