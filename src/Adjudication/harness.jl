@@ -90,7 +90,8 @@ struct ContextItem
 end
 
 struct SurfaceMarker
-	kind::String
+	element::String
+	type::Union{Nothing, String}
 	span::ProjectedSpan
 	source::RawSpan
 	text::String
@@ -100,6 +101,9 @@ struct AdjudicationItem
 	item_id::String
 	block::Census.SourceBlock
 	projection::ProjectedView
+	headword::String
+	entry_nature::Vector{String}
+	rubrique::Union{Nothing, String}
 	context::Vector{ContextItem}
 	markers::Vector{SurfaceMarker}
 end
@@ -199,12 +203,32 @@ mutable struct Harness
 	documents::Dict{String, Source.SourceDocument}
 	corpus::Census.CorpusCensus
 	blocks::Dict{Tuple{String, Int, Int}, Census.SourceBlock}
+	entries::Dict{String, Census.SourceEntry}
+	rubriques::Dict{String, String}
 	store::Store
 	surface_indices::Dict{String, SurfaceIndex}
 	record_indices::Dict{String, PassIndex}
 end
 
 anchor_key(span::RawSpan) = (span.file, span.start_byte, span.end_byte)
+
+function name_blocks!(
+	names::Dict{String, String}, blocks::Vector{Census.SourceBlock}, name::AbstractString,
+)
+	for block in blocks
+		names[block.source_id] = String(name)
+		name_blocks!(names, block.children, name)
+	end
+	return names
+end
+
+function rubrique_names(corpus::Census.CorpusCensus)::Dict{String, String}
+	names = Dict{String, String}()
+	for entry in Census.all_entries(corpus), rubrique in entry.rubriques
+		name_blocks!(names, rubrique.blocks, rubrique.name)
+	end
+	return names
+end
 
 function Harness(
 	documents::Vector{Source.SourceDocument}, corpus::Census.CorpusCensus, store::Store,
@@ -215,6 +239,8 @@ function Harness(
 		Dict(
 			anchor_key(block.raw_span) => block for block in Census.all_blocks(corpus)
 		),
+		Dict(entry.source_id => entry for entry in Census.all_entries(corpus)),
+		rubrique_names(corpus),
 		store,
 		Dict{String, SurfaceIndex}(),
 		Dict{String, PassIndex}(),
@@ -248,19 +274,41 @@ function citation_context(document::Source.SourceDocument, node::XML.FlatNode)
 	return items
 end
 
+function entry_natures(
+	document::Source.SourceDocument, entry::Census.SourceEntry,
+)::Vector{String}
+	natures = String[]
+	for child in XML.children(element_at(document, entry.view_span))
+		XML.nodetype(child) == XML.Element || continue
+		XML.tag(child) == "entete" || continue
+		for grandchild in XML.children(child)
+			XML.nodetype(grandchild) == XML.Element || continue
+			XML.tag(grandchild) == "nature" || continue
+			push!(natures, project(document, grandchild).text)
+		end
+	end
+	return natures
+end
+
 function surface_markers(
 	document::Source.SourceDocument, node::XML.FlatNode, projection::ProjectedView,
 )
 	markers = SurfaceMarker[]
 	for child in XML.children(node)
 		XML.nodetype(child) == XML.Element || continue
-		kind = XML.tag(child)
-		kind in ("semantique", "nature") || continue
+		element = XML.tag(child)
+		element in ("semantique", "nature") || continue
 		view = Source.node_view_span(document, child)
 		span = to_projected(projection, view)
 		isnothing(span) && continue
 		(raw, _) = Source.node_raw_span(document, child)
-		push!(markers, SurfaceMarker(kind, span, raw, projected_text(projection, span)))
+		push!(markers, SurfaceMarker(
+			element,
+			Source.attribute(child, "type"),
+			span,
+			raw,
+			projected_text(projection, span),
+		))
 	end
 	return markers
 end
@@ -271,10 +319,14 @@ function adjudication_item(
 	document = document_for(harness, block)
 	node = element_at(document, block.view_span)
 	projection = project(document, node)
+	entry = harness.entries[block.entry_id]
 	return AdjudicationItem(
 		String(item_id),
 		block,
 		projection,
+		entry.headword,
+		entry_natures(document, entry),
+		get(harness.rubriques, block.source_id, nothing),
 		citation_context(document, node),
 		surface_markers(document, node, projection),
 	)
@@ -293,16 +345,22 @@ function write_surface_part(io::IO, label::AbstractString, text::AbstractString)
 	return nothing
 end
 
+function marker_label(marker::SurfaceMarker)::String
+	typed = isnothing(marker.type) ? marker.element : "$(marker.element)=$(marker.type)"
+	return "marker:$(typed):$(marker.span.start_byte):$(marker.span.end_byte)"
+end
+
 function surface_text(item::AdjudicationItem)
 	buffer = IOBuffer()
+	write_surface_part(buffer, "headword", item.headword)
+	for (index, nature) in enumerate(item.entry_nature)
+		write_surface_part(buffer, "entry_nature:$(index)", nature)
+	end
+	isnothing(item.rubrique) || write_surface_part(buffer, "rubrique", item.rubrique)
 	write_surface_part(buffer, "kind", Census.kind_name(item.block.kind))
 	write_surface_part(buffer, "target", item.projection.text)
 	for marker in item.markers
-		write_surface_part(
-			buffer,
-			"marker:$(marker.kind):$(marker.span.start_byte):$(marker.span.end_byte)",
-			marker.text,
-		)
+		write_surface_part(buffer, marker_label(marker), marker.text)
 	end
 	for context in item.context
 		write_surface_part(buffer, "context:$(context.role)", context.text)
@@ -318,6 +376,8 @@ struct SurfaceExport
 end
 
 """
+	surface_json(pass, item)
+
 The classification surface as a producer sees it: everything `surface_sha256` covers,
 plus the pass, its question, and the locator and hash a response must quote to be
 committed. Nothing here is interpreted on the way back in; the producer answers in text
@@ -327,7 +387,8 @@ surface_json(pass::PassDefinition, item::AdjudicationItem)::String =
 	canonical_json(SurfaceExport(pass, item))
 
 write_json(io::IO, marker::SurfaceMarker) = object(io) do writer
-	field!(writer, "kind", marker.kind)
+	field!(writer, "element", marker.element)
+	field!(writer, "type", marker.type)
 	field!(writer, "span", marker.span)
 	field!(writer, "text", marker.text)
 end
@@ -347,6 +408,9 @@ write_json(io::IO, surface::SurfaceExport) = object(io) do writer
 	field!(writer, "exhaustive_extraction", pass.exhaustive_extraction)
 	field!(writer, "source", item.block.raw_span)
 	field!(writer, "surface_sha256", surface_sha256(item))
+	field!(writer, "headword", item.headword)
+	field!(writer, "entry_nature", item.entry_nature)
+	field!(writer, "rubrique", item.rubrique)
 	field!(writer, "kind", Census.kind_name(item.block.kind))
 	field!(writer, "target", item.projection.text)
 	field!(writer, "markers", item.markers)
