@@ -7,8 +7,8 @@
 
 Deep-Littré is a new edition built on top of XMLittré. It recovers more of the structure implicit in Littré's printed page, and publishes the result as [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html) XML and an SQLite database you can query.
 
-> [!IMPORTANT]
-v0.3 is in development, with a substantially revised schema for better textual fidelity. The full dictionary builds and validates, but the contextual classification layer has not yet been run. See [Status](#status) and [Known limitations](#known-limitations). I expect to release v0.3 around the end of September, 2026.
+> [!NOTE]
+The contextual classification layer described below has not been run, so divisions that depend on context, like detection of form/gloss pairs, are still published "coarsely" — that is, you cannot yet do things like query multi-word expressions separately from definitional content. That layer is v0.4 and is a work in progress, with a completion data estimated around the end of October, 2026.
 
 ## A small example: TRONQUER
 
@@ -96,9 +96,9 @@ The next stage, coming soon, asks deliberately narrow questions: given a stretch
 
 ## Status
 
-**v0.3, in development.** The pipeline builds the whole dictionary, validates its XML against the TEI Lex-0 schema, and produces both TEI and SQLite outputs. Most explicitly encoded source structure is already recovered and normalized, but the contextual judgment layer described above has not yet been run. Divisions like _En parlant des statues_ therefore remain coarse, for now.
-
-That classification work is next. It is intended to enrich the structure without replacing the underlying source-derived text.
+**v0.3.0.** The pipeline builds the whole dictionary, validates its XML against the pinned TEI Lex-0 schema, and produces both TEI and SQLite outputs.
+ 
+The classification work planned for v0.4 will further enrich the structure with finer-grained distinctions such as identification of form/gloss pairs, tagging of usage markers, etc.
 
 ### Known limitations
 
