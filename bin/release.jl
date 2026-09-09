@@ -11,7 +11,7 @@ using TOML
 
 const repo_root = normpath(joinpath(@__DIR__, ".."))
 const source_directory = get(ENV, "littre_source", joinpath(repo_root, "data", "source"))
-const output_directory = get(ENV, "littre_output", joinpath(repo_root, "data"))
+const output_directory = get(ENV, "littre_output", joinpath(repo_root, "data", "output"))
 const baseline_path = joinpath(repo_root, "test", "lex0_baseline.tsv")
 
 const corpus_name = "littre.tei.xml"
