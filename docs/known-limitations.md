@@ -1,6 +1,6 @@
 # Known limitations
 
-The four limitations listed in the root README, stated in the pipeline's own terms with the measurement behind each. Figures are from the current build unless noted; the scripts named beside them regenerate the numbers.
+The limitations listed in the root README, with the measurement behind each. Figures are from the current build unless noted; the scripts named beside them regenerate the numbers.
 
 ## Entete markup is flattened into header notes
 
