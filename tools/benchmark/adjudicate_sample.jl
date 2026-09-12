@@ -177,6 +177,17 @@ function residual_texts(target::AbstractString, node_ranges)
 	return filter(!isempty, pieces)
 end
 
+function read_forms(target::AbstractString, ranges)
+	forms = UnitRange{Int}[]
+	while true
+		span = read_range(
+			isempty(forms) ? "  form> " : "  form (another)> ", target, ranges,
+		)
+		isnothing(span) && return forms
+		push!(forms, span)
+	end
+end
+
 function author_structure(pass, item)
 	target = item.projection.text
 	ranges = findall(r"\S+", target)
@@ -184,15 +195,15 @@ function author_structure(pass, item)
 	node_ranges = UnitRange{Int}[]
 
 	while true
-		form = read_range("  form> ", target, ranges)
-		isnothing(form) && break
+		forms = read_forms(target, ranges)
+		isempty(forms) && break
 		gloss = read_range("  gloss> ", target, ranges)
-		extent = something(gloss, form)
-		node = min(first(form), first(extent)):max(last(form), last(extent))
+		extent = isnothing(gloss) ? forms : vcat(forms, gloss)
+		node = minimum(first, extent):maximum(last, extent)
 		push!(node_ranges, node)
 		push!(selections, Adjudication.FormSelection(
 			SubString(target, node),
-			SubString(target, form),
+			[SubString(target, form) for form in forms],
 			isnothing(gloss) ? nothing : SubString(target, gloss),
 		))
 		confirm("  another node? [y/N] ") || break

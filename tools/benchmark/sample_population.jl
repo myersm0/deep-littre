@@ -24,6 +24,12 @@ function settings()
 			default = 20260906
 		"--sample-id"
 			default = nothing
+		"--role"
+			required = true
+		"--frame"
+			required = true
+		"--allow-dirty"
+			action = :store_true
 		"--patches"
 			default = joinpath(repository_root, "patches", "patches.toml")
 		"--store"
@@ -32,7 +38,16 @@ function settings()
 			default = joinpath(repository_root, "benchmark", "samples")
 	end
 
-	parse_args(specification)
+	return parse_args(specification)
+end
+
+const roles = ("development", "protected", "final")
+const frames = ("population", "challenge", "cross_pass_core")
+
+function checked(value, permitted, name)
+	value in permitted ||
+		error("$(name) must be one of $(join(permitted, ", ")); got $(repr(value))")
+	return value
 end
 
 function git_value(command)
@@ -45,21 +60,17 @@ function git_value(command)
 	end
 end
 
-const trivial_rules = [
-	:empty => isempty,
-	:century_marker => text -> occursin(r"^[IVXLC]+e\s+s\.$", text),
-	:supplement_opener => text -> occursin(r"^\S+\.\s+Ajoutez\s*:$", text),
-]
-
-function trivial_rule(text)
-	for (name, rule) in trivial_rules
-		rule(text) && return name
-	end
-	return nothing
+function checked_sample_id(given, pass, n, seed)
+	isnothing(given) && return "$(pass.pass)_population_n$(n)_seed$(seed)"
+	startswith(given, pass.pass) ||
+		error("sample id $(repr(given)) does not name pass $(pass.pass)")
+	return given
 end
 
 function main()
 	arguments = settings()
+	role = checked(arguments["role"], roles, "--role")
+	frame = checked(arguments["frame"], frames, "--frame")
 
 	documents = Source.read_corpus(
 		arguments["source_dir"];
@@ -69,7 +80,7 @@ function main()
 	corpus = Census.census(documents)
 
 	pass = Adjudication.pass_definition(arguments["pass"])
-	pass === nothing && error("unknown adjudication pass: $(arguments["pass"])")
+	isnothing(pass) && error("unknown adjudication pass: $(arguments["pass"])")
 
 	population = Adjudication.eligible(pass, corpus)
 	population_size = length(population)
@@ -82,10 +93,12 @@ function main()
 	rng = MersenneTwister(seed)
 	selected = population[randperm(rng, population_size)[1:n]]
 
-	sample_id = something(
-		arguments["sample-id"],
-		"$(pass.pass)_population_n$(n)_seed$(seed)",
-	)
+	sample_id = checked_sample_id(arguments["sample-id"], pass, n, seed)
+
+	dirty = !isempty(git_value(`git status --porcelain`))
+	if dirty && role != "development" && !arguments["allow-dirty"]
+		error("refusing to draw a $(role) sample from a dirty working tree")
+	end
 
 	output_dir = joinpath(arguments["output-dir"], sample_id)
 	mkpath(output_dir)
@@ -105,10 +118,15 @@ function main()
 	membership_path = joinpath(output_dir, "membership.tsv")
 	manifest_path = joinpath(output_dir, "manifest.toml")
 
-	open(surfaces_path, "w") do io
+	items = [
+		Adjudication.adjudication_item(
+			harness, block, "$(sample_id):$(lpad(index, 4, '0'))",
+		)
 		for (index, block) in enumerate(selected)
-			item_id = "$(sample_id):$(lpad(index, 4, '0'))"
-			item = Adjudication.adjudication_item(harness, block, item_id)
+	]
+
+	open(surfaces_path, "w") do io
+		for item in items
 			println(io, Adjudication.surface_json(pass, item))
 		end
 	end
@@ -116,6 +134,7 @@ function main()
 	open(membership_path, "w") do io
 		println(io, join([
 			"rank",
+			"item_id",
 			"source_id",
 			"entry_id",
 			"headword",
@@ -126,12 +145,10 @@ function main()
 			"surface_sha256",
 		], '\t'))
 
-		for (index, block) in enumerate(selected)
-			item_id = "$(sample_id):$(lpad(index, 4, '0'))"
-			item = Adjudication.adjudication_item(harness, block, item_id)
-
+		for (index, (block, item)) in enumerate(zip(selected, items))
 			println(io, join([
 				index,
+				item.item_id,
 				block.source_id,
 				block.entry_id,
 				get(headwords, block.entry_id, ""),
@@ -147,11 +164,13 @@ function main()
 	manifest = Dict(
 		"sample_id" => sample_id,
 		"created_utc" => string(now(UTC)),
-		"purpose" => "development",
-		"sampling" => "population",
+		"role" => role,
+		"frame" => frame,
 		"design" => "simple_random_without_replacement",
+		"sampling_unit" => "eligible_block",
 		"sample_size" => n,
 		"seed" => seed,
+		"rng" => "MersenneTwister/randperm",
 		"inclusion_probability" => n / population_size,
 		"pass" => pass.pass,
 		"pass_version" => pass.pass_version,
@@ -164,7 +183,7 @@ function main()
 		"sample_hash" => Census.population_hash(selected),
 		"patched_source_sha256" => Source.patched_corpus_sha256(documents),
 		"repository_commit" => git_value(`git rev-parse HEAD`),
-		"repository_dirty" => !isempty(git_value(`git status --porcelain`)),
+		"repository_dirty" => dirty,
 		"julia_version" => string(VERSION),
 	)
 
@@ -172,14 +191,14 @@ function main()
 		TOML.print(io, manifest; sorted = true)
 	end
 
-	println("sample:		  $sample_id")
-	println("pass:			$(pass.pass) v$(pass.pass_version)")
-	println("population:	  $(pass.population) v$(pass.population_version)")
+	println("sample:          $sample_id  ($(frame), $(role))")
+	println("pass:            $(pass.pass) v$(pass.pass_version)")
+	println("population:      $(pass.population) v$(pass.population_version)")
 	println("population size: $population_size")
 	println("population hash: $(Census.population_hash(population))")
-	println("sample size:	 $n")
-	println("sample hash:	 $(Census.population_hash(selected))")
-	println("output:		  $output_dir")
+	println("sample size:     $n")
+	println("sample hash:     $(Census.population_hash(selected))")
+	println("output:          $output_dir")
 end
 
 main()
