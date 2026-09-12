@@ -8,7 +8,7 @@
 Deep-Littré is a new edition built on top of XMLittré. It recovers more of the structure implicit in Littré's printed page, and publishes the result as [TEI Lex-0](https://dariah-eric.github.io/lexicalresources/pages/TEILex0/TEILex0.html) XML and an SQLite database you can query.
 
 > [!NOTE]
-The contextual classification layer described below has not been run, so divisions that depend on context, like detection of form/gloss pairs, are still published "coarsely" — that is, you cannot yet do things like query multi-word expressions separately from definitional content. That layer is v0.4 and is a work in progress, with a completion data estimated around the end of October, 2026.
+The contextual classification layer described below has not been run, so divisions that depend on context, like detection of form/gloss pairs, are still published "coarsely" — that is, you cannot yet do things like query multi-word expressions separately from definitional content. That layer is v0.4 and is a work in progress, with a completion date estimated around the end of October, 2026.
 
 ## A small example: TRONQUER
 
