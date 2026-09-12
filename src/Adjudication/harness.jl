@@ -34,6 +34,17 @@ const voice_variant_pass = PassDefinition(
 	"Does this material introduce a separately form-bearing pronominal or reflexive variant of the current lemma, rather than merely state a grammatical construction or usage?",
 )
 
+const decomposition_pass = PassDefinition(
+	"decomposition", 1, CitedForm(), "structural_blocks", 2,
+	block_text_projection, block_text_version, true,
+	"Which stretches are cited forms, and which text, if any, glosses each?",
+)
+
+const declared_passes = (
+	sublemma_pass, voice_variant_pass, decomposition_pass,
+	qualification_scope_pass, bare_qualification_pass,
+)
+
 const current_passes = (
 	sublemma_pass, voice_variant_pass,
 	qualification_scope_pass, bare_qualification_pass,
@@ -43,9 +54,9 @@ const structural_passes = filter(pass -> !isnothing(pass.node_type), current_pas
 const scope_passes = filter(pass -> isnothing(pass.node_type), current_passes)
 
 function pass_definition(name::AbstractString)::Union{Nothing, PassDefinition}
-	index = findfirst(pass -> pass.pass == name, current_passes)
+	index = findfirst(pass -> pass.pass == name, declared_passes)
 	isnothing(index) && return nothing
-	return current_passes[index]
+	return declared_passes[index]
 end
 
 in_structural_population(::Census.Indent) = true
@@ -250,7 +261,7 @@ end
 function validate_store(harness::Harness)::Symbol
 	directories = store_pass_directories(harness.store)
 	isempty(directories) && return :empty
-	known = Set(pass.pass for pass in current_passes)
+	known = Set(pass.pass for pass in declared_passes)
 	unknown = filter(directory -> !(directory in known), directories)
 	if !isempty(unknown)
 		reason = "store contains records for undeclared pass $(join(unknown, ", "))"

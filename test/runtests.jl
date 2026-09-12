@@ -80,6 +80,7 @@ try
 		run_test_file("source/test_transform.jl")
 		run_test_file("source/test_parser.jl")
 		run_test_file("census/test_census.jl")
+		run_test_file("adjudication/test_declared_passes.jl")
 		run_test_file("adjudication/test_projection.jl")
 		run_test_file("adjudication/test_harness.jl")
 		run_test_file("adjudication/test_multi_form.jl")

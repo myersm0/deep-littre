@@ -3,13 +3,16 @@ abstract type NodeType end
 struct Sense <: NodeType end
 struct SubLemma <: NodeType end
 struct VoiceVariant <: NodeType end
+struct CitedForm <: NodeType end
 
 node_type_name(::Sense) = "Sense"
 node_type_name(::SubLemma) = "SubLemma"
 node_type_name(::VoiceVariant) = "VoiceVariant"
+node_type_name(::CitedForm) = "CitedForm"
 
 const node_types = Dict{String, NodeType}(
-	node_type_name(type) => type for type in (Sense(), SubLemma(), VoiceVariant())
+	node_type_name(type) => type for
+	type in (Sense(), SubLemma(), VoiceVariant(), CitedForm())
 )
 
 node_type(name::AbstractString)::NodeType = get(node_types, name) do
@@ -20,6 +23,7 @@ form_bearing(::Nothing) = false
 form_bearing(::Sense) = false
 form_bearing(::SubLemma) = true
 form_bearing(::VoiceVariant) = true
+form_bearing(::CitedForm) = true
 
 const outcomes = (:positive, :negative, :unresolved)
 
