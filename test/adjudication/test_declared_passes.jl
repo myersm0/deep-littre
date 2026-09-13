@@ -9,6 +9,18 @@ using DeepLittre.Adjudication: declared_passes, current_passes, structural_passe
 			Set(current_passes)
 	end
 
+	@testset "the canonical question is pinned to its pass version" begin
+		questions = Dict(
+			("decomposition", 1) =>
+				"Which stretches are cited forms, and which text, if any, glosses each?",
+		)
+		for pass in declared_passes
+			key = (pass.pass, pass.pass_version)
+			haskey(questions, key) || continue
+			@test pass.question == questions[key]
+		end
+	end
+
 	@testset "decomposition is authorable but invisible to closure" begin
 		@test pass_definition("decomposition") === decomposition_pass
 		@test decomposition_pass in declared_passes
@@ -31,4 +43,20 @@ using DeepLittre.Adjudication: declared_passes, current_passes, structural_passe
 		)
 		@test validate_store(harness) == :valid
 	end
+end
+
+@testset "the decomposition population excludes narrative rubriques" begin
+	using DeepLittre.Adjudication: population_predicate, decomposition_pass
+	using DeepLittre.Census: Indent, RubriqueIndent, Variante
+
+	admits = population_predicate(decomposition_pass.population)
+	@test admits(Indent(), nothing)
+	@test admits(Variante(), nothing)
+	@test admits(RubriqueIndent(), "REMARQUE")
+	@test admits(RubriqueIndent(), "PROVERBES")
+	@test !admits(RubriqueIndent(), "HISTORIQUE")
+	@test !admits(RubriqueIndent(), "ÉTYMOLOGIE")
+
+	structural = population_predicate("structural_blocks")
+	@test structural(RubriqueIndent(), "ÉTYMOLOGIE")
 end

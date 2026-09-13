@@ -35,7 +35,7 @@ const voice_variant_pass = PassDefinition(
 )
 
 const decomposition_pass = PassDefinition(
-	"decomposition", 1, CitedForm(), "structural_blocks", 2,
+	"decomposition", 1, CitedForm(), "decomposition_blocks", 1,
 	block_text_projection, block_text_version, true,
 	"Which stretches are cited forms, and which text, if any, glosses each?",
 )
@@ -79,11 +79,22 @@ in_qualification_population(::Census.RubriqueDirect) = true
 in_qualification_population(::Census.EnteteIndent) = false
 in_qualification_population(::Census.EnteteNature) = false
 
+const excluded_decomposition_rubriques = ("HISTORIQUE", "ÉTYMOLOGIE")
+
+in_structural_population(kind::Census.BlockKind, _) = in_structural_population(kind)
+in_qualification_population(kind::Census.BlockKind, _) =
+	in_qualification_population(kind)
+
+in_decomposition_population(kind::Census.BlockKind, rubrique) =
+	in_structural_population(kind) && !(rubrique in excluded_decomposition_rubriques)
+
 const structural_blocks_population = "structural_blocks"
+const decomposition_blocks_population = "decomposition_blocks"
 const qualification_blocks_population = "qualification_blocks"
 
 function population_predicate(name::AbstractString)
 	name == structural_blocks_population && return in_structural_population
+	name == decomposition_blocks_population && return in_decomposition_population
 	name == qualification_blocks_population && return in_qualification_population
 	return error("unknown population $(name)")
 end
@@ -92,7 +103,10 @@ function eligible(
 	pass::PassDefinition, corpus::Census.CorpusCensus,
 )::Vector{Census.SourceBlock}
 	admits = population_predicate(pass.population)
-	return filter(block -> admits(block.kind), Census.all_blocks(corpus))
+	names = rubrique_names(corpus)
+	return filter(Census.all_blocks(corpus)) do block
+		return admits(block.kind, get(names, block.source_id, nothing))
+	end
 end
 
 struct ContextItem
@@ -344,7 +358,9 @@ function adjudication_item(
 end
 
 function present(harness::Harness, pass::PassDefinition, block::Census.SourceBlock)
-	population_predicate(pass.population)(block.kind) ||
+	population_predicate(pass.population)(
+		block.kind, get(harness.rubriques, block.source_id, nothing),
+	) ||
 		throw(ReviewItem("", pass.pass, "ineligible_target", string(block.raw_span)))
 	return adjudication_item(harness, block, string(uuid4()))
 end
@@ -487,7 +503,8 @@ function target_block!(
 	admits = population_predicate(pass.population)
 	exact = get(harness.blocks, anchor_key(record.source), nothing)
 	if !isnothing(exact)
-		admits(exact.kind) || return nothing
+		admits(exact.kind, get(harness.rubriques, exact.source_id, nothing)) ||
+			return nothing
 		item = adjudication_item(harness, exact, "")
 		surface_sha256(item) == record.surface_sha256 && return exact
 		return nothing
