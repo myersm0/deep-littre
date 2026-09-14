@@ -662,3 +662,16 @@ line = 109679
 old = '<cit aut="ID." ref="Ép. IV">'
 new = '<cit aut="BOILEAU" ref="Ép. IV">'
 
+
+## Other fixes that have come up during classification
+
+# an apparent OCR error added spaces on either side of a hyphen
+# in these two instances; confirmed by looking at the printed Littre
+[[patches]]
+file = "d.xml"
+line = 126644
+old = "<indent>Grande - duchesse, femme d'un grand - duc"
+new = "<indent>Grande-duchesse, femme d'un grand-duc"
+
+
+
