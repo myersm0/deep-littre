@@ -58,6 +58,8 @@ The initial structural node types are:
 - `SubLemma` — form-bearing
 - `VoiceVariant` — form-bearing
 
+A fourth type, `CitedForm`, is form-bearing but is not a structural alternative. It is emitted only by the `decomposition` pass, which the pipeline does not consume; see *Decomposition* below.
+
 The model may grow additional structural node types, but adding one also changes the set of passes closure must exhaust before an ordinary `Sense` can be derived. Existing verdicts for the older passes remain valid; blocks simply remain structurally open until the new alternative has been examined.
 
 Containment is structural, not typal. A `VoiceVariant` may contain senses; a `SubLemma` may or may not; rubriques may contain semantic nodes. Node type does not encode whether a node can contain children.
@@ -202,12 +204,13 @@ Semantic selections inside the target — node, form, gloss, residual, scope mar
 
 Application proceeds conservatively:
 
-1. inspect the block at the stored locator
-2. if it is still an eligible block, require its classification surface hash to match
-3. if the old locator no longer names a block, recover only a unique same-file eligible block with the same surface hash
-4. otherwise mark the verdict stale
+1. require the record's pass to resolve and its `pass_version` to match
+2. inspect the block at the stored locator
+3. if a block is there, require it to be in the pass's current population and its classification surface hash to match
+4. if the old locator no longer names a block, recover only a unique same-file eligible block with the same surface hash
+5. otherwise mark the verdict stale
 
-If an eligible block still occupies the old locator but its surface changed, no fallback search is performed. A development build reports and skips stale verdicts; a strict release rejects them. Malformed record geometry is a store-integrity error, not a stale verdict.
+If a block still occupies the old locator but has left the population or its surface changed, no fallback search is performed. Narrowing a population therefore stales the records whose blocks it excludes. A development build reports and skips stale verdicts; a strict release rejects them. Malformed record geometry is a store-integrity error, not a stale verdict.
 
 Line number, headword, source ordinal, and generated `xml:id` remain useful navigation fields but do not bear adjudication identity. Detailed transform mapping is defined in `source-representation.md`.
 
@@ -245,6 +248,8 @@ Containment is decided by ancestry, not element name, and résumé ancestry is c
 The census is universal over the adjudication-relevant block population, not over all XMLittré content. It answers "which source blocks exist for adjudication?". Each adjudication pass then declares a versioned eligible population drawn from it.
 
 The current structural and qualification populations both use population version 2 and admit the same 341,125 full-corpus blocks: ordinary indents and variantes plus all three rubrique block kinds. Rubrique material is admitted to both because bare labels embedded there must be reachable by structural and qualification judgments alike. Résumé blocks and both entete kinds are excluded from both, for reasons given per kind in `src/Census/README.md`. The two sets coincide as a consequence of independent per-kind decisions; nothing compares them, and a kind admitted to one and not the other would be an ordinary outcome.
+
+`decomposition_blocks` is the first population to look past block kind. It admits what `structural_blocks` admits, less any block whose containing rubrique is HISTORIQUE or ÉTYMOLOGIE: those rubriques hold century markers, etymological argument, and language-form lists, which carry no cited usage of the headword. A population predicate therefore receives the block's kind and the name of its containing rubrique.
 
 ## Deriving ordinary `Sense`
 
@@ -304,6 +309,16 @@ Generated TEI `xml:id` values are rendering identifiers, not adjudication identi
 Cross-release `xml:id` stability is not promised before 1.0. Adjudication proceeds by classification surfaces, projected selections, a locator, and opaque internal ids, so semantic work is not coupled to positional TEI identifiers.
 
 If stable public ids become a requirement, that is a separate release-contract decision.
+
+## Decomposition
+
+The classification campaign for v0.4 does not author `sublemma` and `voice_variant` directly. The question those passes ask — does this material present a sub-lemma, or a separately form-bearing pronominal variant — proved not to be operationally clear, and the two differ only in which forms count. The campaign instead splits the work in two.
+
+The `decomposition` pass asks which stretches of a block are cited forms of the headword, and which text, if any, glosses each. A form is any stretch illustrating usage of the headword; a gloss defines a form, not the headword. A positive record is an exhaustive partition into `CitedForm` nodes, each with one or more form constituents and at most one gloss, plus residual — the same geometry as a `SubLemma` record. It asserts nothing about what kind of thing a form/gloss pair is.
+
+A later stage characterizes each pair, and only its verdicts become pipeline constructs such as `SubLemma` or `VoiceVariant`. Until that stage exists, `sublemma` and `voice_variant` remain the current structural passes and `decomposition` is declared but not current: it can be authored and stored, and nothing in resolution reads it. How the later stage's verdicts replace the current structural passes in closure is not yet settled.
+
+The provisional TEI carrier for decomposition output is section 16 of [`../tei-lex0-examples.md`](../tei-lex0-examples.md). Adjudication guidance and findings are in [`../campaign/`](../campaign/).
 
 ## Passes, not a classification task
 

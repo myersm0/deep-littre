@@ -18,13 +18,15 @@ data/adjudication/
 
 JSONL is canonical and deterministic. There is no store manifest.
 
+Resolution consumes only the passes in `current_passes`. A declared pass outside that set, such as `decomposition`, may have a store directory but contributes nothing to closure, scope, or coverage. Benchmark gold is written under `benchmark/` with the same record format and never enters the build; see [`../campaign/benchmark-regime.md`](../campaign/benchmark-regime.md).
+
 ## Applying a record
 
 An `ExaminationRecord` is first matched to the current census. Its raw block span is a fast locator, while `surface_sha256` decides whether the old judgment still describes the current classification surface.
 
 When valid, projected selections are translated through the current projection and source transform into runtime raw spans. Downstream resolver code receives `AppliedRecord`/anchored assertions and does not need to know how the durable record survived coordinate drift.
 
-A missing old locator may be recovered only by a unique same-file surface-hash match. A changed block at the old locator is stale, with no fallback search.
+A missing old locator may be recovered only by a unique same-file surface-hash match. A changed block at the old locator is stale, with no fallback search, and so is a block that has left the pass's current population.
 
 Ordinary builds report stale records and skip them. Strict release builds reject them. Malformed or internally inconsistent records are store-integrity errors in both modes.
 

@@ -15,7 +15,15 @@ Start with [`architecture/overview.md`](architecture/overview.md), which introdu
 ## TEI Lex-0
 
 - [`tei-lex0-compliance.md`](tei-lex0-compliance.md) — serialization rules against the pinned TEI Lex-0 v0.9.5 RNG.
-- [`tei-lex0-examples.md`](tei-lex0-examples.md) — worked source-to-TEI examples illustrating those rules.
+- [`tei-lex0-examples.md`](tei-lex0-examples.md) — worked source-to-TEI examples illustrating those rules; section 16, the decomposition carrier, is provisional for v0.4.
+
+## Classification campaign
+
+These describe how the v0.4 campaign builds and measures adjudications.
+
+- [`campaign/benchmark-regime.md`](campaign/benchmark-regime.md) — per-pass ground truth, sample frames and roles, provenance, contamination, and evaluation priorities.
+- [`campaign/decomposition-guidance.md`](campaign/decomposition-guidance.md) — versioned adjudication guidance for the `decomposition` pass.
+- [`campaign/decomposition-notes.md`](campaign/decomposition-notes.md) — samples drawn so far, the two-stage design, and open questions.
 
 ## Limitations
 

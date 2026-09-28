@@ -1,6 +1,6 @@
 # TEI Lex-0 examples for Deep-Littré
 
-Status: **normative worked examples for v0.3**.
+Status: sections 1–15 are **normative worked examples for v0.3**. Section 16 is provisional for v0.4.
 
 Companion to `tei-lex0-compliance.md`. These examples show the structures the renderer should produce after semantic adjudication, alongside the coarse output that remains valid before adjudication is complete.
 
@@ -402,3 +402,131 @@ This is not:
 ```
 
 because it states that the pipeline has not settled a classification. That information belongs in adjudication provenance and coverage records.
+
+## 16. Decomposition carrier: cited forms and glosses
+
+Status: **provisional, v0.4**.
+
+The decomposition pass marks stretches of a block as cited forms of the headword, and the text, if any, that glosses each. It asserts nothing about what kind of thing a form/gloss pair is. Promotion of some pairs to `<entry type="relatedEntry">` or `<entry type="homonymicEntry">` is a later stage. These shapes are the default carrier: the weakest honest claim, chosen so that an unrun later stage degrades to under-claiming rather than to error.
+
+A **gloss** defines the form. A **definition** defines the headword. `<gloss>` is permitted inside `cit` and `<def>` is not, so the schema keeps the two apart on its own.
+
+In this carrier, `cit/@type="example"` means *cited form pending promotion*, not *illustrative example proper*. `cit/@type` is a closed list — `cognate`, `cognateSet`, `etymon`, `example`, `translation`, `translationEquivalent` — and `example` is the only admissible wrapper for a glossed phrase. The type value does almost no work; the meaning is carried by the presence of `<gloss>` and by the schema's refusal of `<def>` in this position. Do not read the label as a claim that the material is an example.
+
+### 16.1 Form with gloss: BANQUE
+
+Source: `Maison de banque, maison qui s'occupe principalement des opérations de banque.`
+
+```xml
+<sense xml:id="banque.1">
+  <cit type="example">
+    <form type="phrase"><orth>Maison de banque</orth></form><pc>,</pc>
+    <gloss>maison qui s'occupe principalement des opérations de banque</gloss><pc>.</pc>
+  </cit>
+</sense>
+```
+
+`<form>` plus `<gloss>` directly in the `<sense>`, with no `cit` at all, also validates and makes no type claim. It is rejected as the default because a `cit` explicitly groups one form with its gloss, whereas loose siblings bind only by adjacency — ambiguous as soon as a sense holds more than one pair.
+
+### 16.2 Forms without gloss: DISTINGUÉ
+
+Source: `Qui porte le caractère de la distinction, de l'éminence, en parlant des personnes. Un personnage distingué. Des savants distingués.`
+
+```xml
+<sense xml:id="distingue.1">
+  <usg type="hint">en parlant des personnes</usg>
+  <def>Qui porte le caractère de la distinction, de l'éminence</def><pc>.</pc>
+  <cit type="example"><quote>Un personnage distingué</quote></cit><pc>.</pc>
+  <cit type="example"><quote>Des savants distingués</quote></cit><pc>.</pc>
+</sense>
+```
+
+The definition defines the headword, not the examples, so it is `<def>` and the examples are unglossed. Gloss presence selects the element without anyone deciding a type: `<form><orth>` when glossed, `<quote>` when not. Two unglossed forms are two nodes — nothing binds them without a shared gloss.
+
+`usg type="hint"` remains the honest home for a referent restriction: the schema has no `<colloc>` and no `usg/@type` meaning a selectional restriction. It is the sense's first child and governs the sense.
+
+### 16.3 Form embedded in a remark: DISPUTER
+
+Source, under `<rubrique nom="REMARQUE">`: `1. Disputer quelqu'un, pour dire lui faire querelle, n'est pas dans le Dictionnaire de l'Académie ; mais il est du langage familier et autorisé par quelques écrivains.`
+
+The adjudicated record is one node with a form and a gloss constituent. Two serializations are available from it, and the choice is the renderer's.
+
+Extracting a `cit`, with the remainder as a sibling note:
+
+```xml
+<sense xml:id="disputer.remarque.1" n="1">
+  <cit type="example">
+    <form type="phrase"><orth>Disputer quelqu'un</orth></form>
+    <gloss>pour dire lui faire querelle</gloss>
+  </cit>
+  <note type="remark">, n'est pas dans le Dictionnaire de l'Académie ; mais il est du
+    langage familier et autorisé par quelques écrivains.</note>
+</sense>
+```
+
+Or marking inline and leaving Littré's sentence whole:
+
+```xml
+<sense xml:id="disputer.remarque.1" n="1">
+  <note type="remark"><seg type="form">Disputer quelqu'un</seg>, <gloss>pour dire lui
+    faire querelle</gloss>, n'est pas dans le Dictionnaire de l'Académie ; mais il est
+    du langage familier et autorisé par quelques écrivains.</note>
+</sense>
+```
+
+Review prefers the second. The residual fragment in the first is not the reason — fragmentary residuals are expected and deliberate in this scheme. The reason is contiguity: under the split, the remark is no longer one text node, and reconstructing it means joining across an element boundary, which is noise for search over running prose. The cost is a lighter form marking, and a query for cited forms must union `form[@type='phrase']/orth` with `seg[@type='form']`.
+
+If adopted, state it as a rule for rubrique-embedded forms, not as a special case. Note that `<note>` admits `seg` and `gloss` but not `cit`, so only the second shape can keep the sentence whole.
+
+`note/@type="remark"` is defensible because *remark* is a genuine note kind. Do not generalize it into a rubrique-name-to-`@type` mapping: HISTORIQUE and PROVERBES do not become notes at all, and SUPPLÉMENT would be provenance in an attribute meant for kind. Rubric provenance belongs in the `@ana`/`@corresp` channel.
+
+### 16.4 Cited sentence with a paraphrase: FOSSÉ
+
+Source, under `<rubrique nom="PROVERBES">`: `Ce qui tombe dans le fossé est pour le soldat, c'est-à-dire ce qu'on laisse tomber est pour celui qui le ramasse.`
+
+```xml
+<sense xml:id="fosse.proverbes.1">
+  <cit type="example">
+    <form type="phrase"><orth>Ce qui tombe dans le fossé est pour le soldat</orth></form><pc>,</pc>
+    <gloss>c'est-à-dire ce qu'on laisse tomber est pour celui qui le ramasse</gloss><pc>.</pc>
+  </cit>
+</sense>
+```
+
+The paraphrase restates the whole cited clause rather than defining a word inside it. UTI POSSIDETIS takes the same shape, with its preceding definition left as `<def>`.
+
+The gloss retains its introducing formula. `pour dire`, `c'est-à-dire` and kin are a small closed set, recoverable at the head of a gloss span; `<lbl>` inside `cit` is their home if they are ever separated.
+
+### 16.5 Where a gloss ends
+
+A gloss ends where the form is fully defined. COUFIQUE reads:
+
+> Terme de philologie. Caractères coufiques, caractères dont se servaient les Arabes avant le IVe siècle de l'hégire. L'écriture coufique n'a pas de points diacritiques.
+
+`caractères dont se servaient les Arabes avant le IVe siècle de l'hégire` defines `Caractères coufiques` completely, so the gloss is over. The sentence after it predicates a property of a different nominal and is neither gloss nor cited form; it stays as prose in the parent sense.
+
+Littré's glosses are appositive noun phrases; his unattributed examples are bare fragments. An independent declarative with a finite verb has the shape of neither, which is the usable signal.
+
+### 16.6 Punctuation
+
+Two different operations, not to be conflated.
+
+**Separators between constituents** are lifted to `<pc>` unconditionally. The comma in `Maison de banque, maison qui…` falls between two adjudicated spans and belongs to neither.
+
+**Terminal punctuation of a form** depends on what the form is. If the form text is a complete sentence, its terminal punctuation is part of the quoted sentence and stays inside `<quote>`. If the form is an isolated phrase, the terminal punctuation is a separator — Littré is not attesting that the period belongs to the expression — and is lifted to `<pc>`:
+
+```xml
+<sense xml:id="chevroter.1">
+  <def>Dans la musique, battre d'une manière inégale les deux notes d'un trille</def><pc>.</pc>
+  <note>Il est actif aussi</note><pc>:</pc>
+  <cit type="example"><quote>chevroter un trille</quote></cit><pc>.</pc>
+</sense>
+```
+
+The motivation is corpus search as much as fidelity. CQL-style queries over multiword units — anchored patterns like `^[upos="VERB"] [lemma="un"] [upos="NOUN"]$`, or constraints on unit length — are polluted by a trailing period carrying no semantic weight.
+
+The adjudicator selects by token, so a phrase ending a sentence is recorded with its period (`chevroter un trille.`). That is an artifact of selection granularity, not a claim, and is not honoured here. Whether the trim happens at render time or has to reach the record depends on which artifact corpus search runs over — open.
+
+### 16.7 Degradation
+
+A block with no decomposition record, or with one whose later characterization has not run, serializes as in section 14: a `<sense>` with a `<def>` and no finer claim. Nothing above should ever require a later reviewer to *undo* an assertion — only to refine one. 16.1 refines upward into a `relatedEntry` with nothing reversed; 16.2 is already stable; 16.3's inline form marks without restructuring, which is why review prefers it.

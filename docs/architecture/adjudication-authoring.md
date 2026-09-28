@@ -8,6 +8,8 @@ Each pass declares in code its name/version, population, projection, structural 
 
 The pass version is the semantic invalidation knob. It changes when the actual classification question changes.
 
+Two sets of passes are kept apart. `declared_passes` is the registry: every pass the harness can look up, author against, and validate a store directory for. `current_passes` is the subset the pipeline consumes, and it alone drives closure, scope application, coverage, and the cross-pass conflict check. A pass that is declared but not current can be authored and stored without affecting the build, which is what an evaluation pass needs: adding it to `current_passes` as a structural pass would immediately stop every block it had not examined from closing. `decomposition` is such a pass; see [`../campaign/decomposition-notes.md`](../campaign/decomposition-notes.md).
+
 ## Classification surface
 
 For each eligible block the harness constructs a canonical classification surface consisting of:
@@ -40,7 +42,7 @@ Structural assertions therefore store projected node, form, gloss, and residual 
 
 ## Structural decisions
 
-`sublemma` and `voice_variant` are exhaustive structural alternatives. A positive answer must provide a complete partition of source-visible projected text into asserted node spans and residual spans. Negative and unresolved answers carry no assertions.
+`sublemma` and `voice_variant` are exhaustive structural alternatives. A positive answer must provide a complete partition of source-visible projected text into asserted node spans and residual spans. Negative and unresolved answers carry no assertions. `decomposition` is authored under the same geometry and exhaustiveness rules, emitting `CitedForm` nodes, but is not a structural alternative for closure.
 
 Crossing or coincident structural claims and constituents outside their node fail closed. Form constituents are the one exception: coincident forms are valid as distinct editorial readings of the same printed surface, as in *Enfanter une âme en ou à Jésus-Christ*, where two readings share every printed byte. Partially overlapping form spans fail closed.
 
@@ -74,11 +76,14 @@ The raw source block span is a lookup hint. `surface_sha256` is the stale-verdic
 
 At load/application time:
 
-1. if the old locator still names an eligible block, its surface must hash identically
-2. if that locator no longer names a block, a unique same-file eligible block with the same surface hash may be recovered automatically
-3. zero or multiple matches, or changed content, make the record stale
+1. a record whose pass no longer resolves, or whose `pass_version` differs from the pass's current version, is stale
+2. if the old locator still names a block, that block must be in the pass's current population and its surface must hash identically
+3. if that locator no longer names a block, a unique same-file eligible block with the same surface hash may be recovered automatically
+4. zero or multiple matches, a block that has left the population, or changed content make the record stale
 
 Coordinate drift is therefore absorbed, while changed classification material sends the record back for review.
+
+Population membership is checked before the surface hash. A record's population version is not compared, but its block's membership in the current population is, so narrowing a population predicate stales every record whose block it excludes. That is a way to retire records deliberately; it is not a change that leaves existing records untouched.
 
 ## Store integrity
 
