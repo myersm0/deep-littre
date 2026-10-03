@@ -4,9 +4,7 @@ Status: **normative for v0.3 serialization**.
 
 Target: **TEI Lex-0 v0.9.5 (2026-02-08), pinned in the repository**.
 
-The schema and the committed probe verdicts are the arbiter here. Where earlier research drew a recommendation from Lex-0's prose chapters or the etymology paper and the published RNG disagrees, the RNG wins.
-
-The validation baseline is that all 78,599 entries and the whole document validate against the pinned RNG. Semantic structure may change; that gate holds.
+Goal: validation of all 78,599 entries and of the whole document against the pinned RNG.
 
 ## Authority and method
 
@@ -21,7 +19,7 @@ Do not infer conformance from TEI P5, the Lex-0 prose alone, or Bowers et al. wh
 
 Two corrections of this kind are already settled:
 
-- `<dictScrap>` is admitted nowhere relevant by the pinned RNG and must not be emitted
+- `<dictScrap>` is not permitted
 - direct `<date>` inside `<etym>` is rejected by the pinned RNG, so historical century metadata uses the validated project pattern described below
 
 ## Document shell
@@ -41,7 +39,7 @@ The header contains:
 - `profileDesc/langUsage`
 - `revisionDesc`
 
-The object language is `fr-x-lit19c`; the working language is `fr`.
+The object language is `fr-x-lit19c`. The working language is `fr`.
 
 The current validated header pattern is:
 
@@ -78,7 +76,7 @@ Form-bearing semantic substructures use the Lex-0 recursive-entry mechanism:
 
 Every emitted `<sense>` carries `xml:id`.
 
-The renderer may emit a coarse `<sense><def>…</def></sense>` for material whose finer semantic structure remains unadjudicated. That is a serialization fallback, not a workflow annotation.
+The renderer may emit a coarse `<sense><def>…</def></sense>` for material whose finer semantic structure remains unadjudicated, as a serialization fallback.
 
 `ana="unclassified"` is not emitted.
 
@@ -173,7 +171,7 @@ A multiword unit with its own form and gloss structure is represented recursivel
 
 The decision that a span is a `SubLemma` comes from adjudication rather than from punctuation or an XMLittré locution tag.
 
-Punctuation between a nested entry's form and its gloss is recovered from the source and emitted as `<pc>` between `<form>` and `<sense>`, so `Tenir cabinet, tenir conseil.` round-trips as `<orth>Tenir cabinet</orth><pc>,</pc>…<def>tenir conseil.</def>`. That comma belongs to neither constituent, and it is the node's separator.
+Punctuation between a nested entry's form and its gloss is recovered from the source and emitted as `<pc>` between `<form>` and `<sense>`, so `Tenir cabinet, tenir conseil.` round-trips as `<orth>Tenir cabinet</orth><pc>,</pc>…<def>tenir conseil.</def>`. That comma doesn't belong to either constituent, and it's the node's separator.
 
 A source block may yield both a sub-lemma and one or more usage qualifications. Each `<usg>` attaches to the semantic target its adjudication record establishes, independently of the sub-lemma.
 
@@ -191,9 +189,9 @@ Source `<mentioned>` material requires semantic handling:
 
 The renderer serializes resolved facts and otherwise preserves coarse prose, without running heuristics over definition punctuation to invent structure.
 
-A `<def>` is never punctuation alone. Littré prints a full stop after a label that XMLittré encloses without it — `<nature>Absolument</nature>.` — and once the surrounding material is claimed by markers and asserted nodes, that stop is all the definition content left. It is source-visible and is kept, but as `<pc>.</pc>` following the `<gramGrp>` or `<usg>`, not as `<def>.</def>`; a `<def>` asserts a definition that is not there. `<pc>` is schema-valid directly inside `<sense>`. The same rule covers any punctuation-only remainder, whatever the mark.
+A `<def>` is never punctuation alone. Littré prints a full stop after a label that XMLittré encloses without it — `<nature>Absolument</nature>.` — and once the surrounding material is claimed by markers and asserted nodes, that stop is all the definition content left. It's source-visible and is kept, but as `<pc>.</pc>` following the `<gramGrp>` or `<usg>`, not as `<def>.</def>`. `<pc>` is schema-valid directly inside `<sense>`. The same rule covers any punctuation-only remainder, whatever the mark.
 
-Two uses of `<pc>` therefore occur inside a sense: separating a nested entry's form from its gloss, and carrying terminal punctuation of a label. Nothing in the markup distinguishes them; both are punctuation the source prints and no element owns.
+Two uses of `<pc>` therefore occur inside a sense: separating a nested entry's form from its gloss, and carrying terminal punctuation of a label. Nothing in the markup distinguishes them; both are punctuation the source prints, not owned by any element.
 
 ## Citations
 
@@ -206,7 +204,7 @@ Synchronic examples use the validated form:
 </cit>
 ```
 
-The pinned schema has a closed `cit/@type` vocabulary. Do not use bare `<cit>` merely because an external etymology example does so if the probe rejects it.
+The pinned schema has a closed `cit/@type` vocabulary. Don't use bare `<cit>` merely because an external etymology example does so if the probe rejects it.
 
 Littré's citation anaphors are resolved over the entry in **source** order — the semantic tree is built later and may reattach citations by containment, which would otherwise reorder them. The printed surface is never replaced. A resolved author therefore remains `<author corresp="#…">ID.</author>` in text, with `@corresp` pointing to the immediately preceding citation; an anaphoric `ib.` remains the printed `<biblScope>` text with the same kind of link. Every synchronic citation receives an `xml:id` so these links survive semantic reattachment.
 
@@ -239,7 +237,7 @@ Cross-references are relations, not usage qualifications.
 
 ### Etymology and historique
 
-`<etym>` carries the etymological account of the `ÉTYMOLOGIE` rubrique and nothing else. Historical attestations are **not** folded into it; `HISTORIQUE` serializes at entry level, structurally parallel to `<etym>` rather than subordinate to it. See *Rubriques do not fold into `<etym>`* below for the encoding and the reasoning.
+`<etym>` carries the etymological account of the `ÉTYMOLOGIE` rubrique and nothing else. Historical attestations are not folded into it; `HISTORIQUE` serializes at entry level, structurally parallel to `<etym>` rather than subordinate to it. See *Rubriques do not fold into `<etym>`* below for the encoding and the reasoning.
 
 Two earlier recommendations are superseded here:
 
