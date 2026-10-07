@@ -133,29 +133,42 @@ struct AdjudicationItem
 	markers::Vector{SurfaceMarker}
 end
 
+const Selection = Union{String, ProjectedSpan}
+
+as_selection(text::AbstractString)::Selection = String(text)
+as_selection(span::ProjectedSpan)::Selection = span
+as_selection(::Nothing) = nothing
+
 struct FormReading
-	selection::String
+	selection::Selection
 	value::Union{Nothing, String}
-end
-
-FormReading(selection::AbstractString) = FormReading(String(selection), nothing)
-
-struct FormSelection
-	node::String
-	forms::Vector{FormReading}
-	gloss::Union{Nothing, String}
-	function FormSelection(
-		node::AbstractString, forms::Vector{FormReading}, gloss = nothing,
-	)
-		return new(String(node), forms, isnothing(gloss) ? nothing : String(gloss))
+	function FormReading(chosen::Union{AbstractString, ProjectedSpan}, value = nothing)
+		return new(as_selection(chosen), isnothing(value) ? nothing : String(value))
 	end
 end
 
-FormSelection(node::AbstractString, form::AbstractString, gloss = nothing) =
-	FormSelection(node, FormReading[FormReading(form)], gloss)
+struct FormSelection
+	node::Selection
+	forms::Vector{FormReading}
+	gloss::Union{Nothing, Selection}
+	function FormSelection(
+		node::Union{AbstractString, ProjectedSpan},
+		forms::Vector{FormReading},
+		gloss = nothing,
+	)
+		return new(as_selection(node), forms, as_selection(gloss))
+	end
+end
 
-FormSelection(node::AbstractString, forms::Vector{<:AbstractString}, gloss = nothing) =
-	FormSelection(node, FormReading[FormReading(form) for form in forms], gloss)
+FormSelection(
+	node::Union{AbstractString, ProjectedSpan},
+	form::Union{AbstractString, ProjectedSpan},
+	gloss = nothing,
+) = FormSelection(node, FormReading[FormReading(form)], gloss)
+
+FormSelection(
+	node::Union{AbstractString, ProjectedSpan}, forms::Vector, gloss = nothing,
+) = FormSelection(node, FormReading[FormReading(form) for form in forms], gloss)
 
 struct ScopeSelection
 	marker::String
@@ -167,7 +180,7 @@ struct Decision
 	exhaustive::Bool
 	selections::Vector{FormSelection}
 	scopes::Vector{ScopeSelection}
-	residuals::Vector{String}
+	residuals::Vector{Selection}
 	notes::String
 end
 
@@ -456,6 +469,19 @@ function resolve_selection(
 		failure isa SelectionFailure || rethrow()
 		reject(item, pass, "unmappable_selection", "$(label): $(failure.reason)")
 	end
+end
+
+function resolve_selection(
+	item::AdjudicationItem,
+	pass::PassDefinition,
+	selection::ProjectedSpan,
+	label::AbstractString,
+)::ProjectedSpan
+	if !valid_projected_span(item.projection.text, selection)
+		reason = "$(label): $(selection) is not a span of the projected target"
+		reject(item, pass, "unmappable_selection", reason)
+	end
+	return selection
 end
 
 function validate_geometry(

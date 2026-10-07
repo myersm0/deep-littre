@@ -83,6 +83,7 @@ try
 		run_test_file("adjudication/test_declared_passes.jl")
 		run_test_file("adjudication/test_projection.jl")
 		run_test_file("adjudication/test_harness.jl")
+		run_test_file("adjudication/test_span_selections.jl")
 		run_test_file("adjudication/test_multi_form.jl")
 		run_test_file("adjudication/test_store.jl")
 		run_test_file("adjudication/test_committed_store.jl")

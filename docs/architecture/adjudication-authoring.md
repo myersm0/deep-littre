@@ -38,6 +38,8 @@ Everything in that list bears on staleness, which is what makes the list a decis
 
 The producer selects exact substrings in projected text. The harness requires each selection to have exactly one match and converts it to a half-open `ProjectedSpan`.
 
+A producer that has already located its selection may pass the `ProjectedSpan` itself, and the harness checks only that it is a valid span of the target. Text occurring more than once in a block, a form that recurs or a short residual like `;`, can't be selected uniquely as a string, and a model-driven producer meets that routinely. Projected spans are positions in the classification surface the producer was shown, not source coordinates.
+
 Structural assertions therefore store projected node, form, gloss, and residual intervals. A structural selection may name several forms. Disjoint selections represent separately printed forms; repeated selection of one surface span is permitted only when every coincident form carries a distinct editorial value. Scope assertions store projected marker and target intervals. Current raw spans are reconstructed only when a valid record is applied.
 
 ## Structural decisions

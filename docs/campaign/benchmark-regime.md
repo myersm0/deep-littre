@@ -116,13 +116,19 @@ Model and rule-development runs are versioned research runs. For each, preserve 
 
 The pass version is the invalidation unit and changes only when the canonical question changes. Prompts and rules are methods, and they evolve continuously toward answering the same question. A guidance revision that changes answers without changing the question is invisible to the pass version, so `decision_procedure` — which is producer-owned and opaque to the pipeline — should carry a versioned guidance identifier, so that items judged under superseded guidance can be found and re-adjudicated. `adjudicate_sample.jl` takes it as `--procedure` and defaults to `human/pilot`, which names no guidance version.
 
-Predictions from any method, including trivial deterministic rules, are written as JSONL keyed by `item_id`:
+Predictions from any method, including trivial deterministic rules, are ordinary examination records, committed through the production harness and written one per line to a run directory, with a sidecar recording what happened to every item. The method's identity goes in each record's `decision_procedure`. The same format for a rule and for a model means the scorer is written once, and since gold is made of the same records, scoring compares two sets of records. Predictions are frozen to disk before the corresponding items are labelled, and the adjudicator does not see them.
 
-```text
-{"item_id": …, "outcome": …, "method": "trivial_rules@1", "rule": …}
-```
+## Running a method
 
-The same format for a regex and for a model means the scorer is written once, and a deterministic rule can serve as the first method evaluated before any model exists. Predictions are frozen to disk before the corresponding items are labelled, and the adjudicator does not see them.
+`tools/benchmark/predict.jl` runs a prompt over a sample through Ollama. It builds each item through the harness, sends the prompt's system text, its examples as alternating user and assistant turns, and the item filled into the prompt's user template, and constrains the answer to a JSON schema: an outcome, and a list of nodes, each with forms and a gloss, the gloss empty when there is none. The answer is located in the target and committed through the harness, so anything production would reject is rejected here too.
+
+Locating is the runner's job, not the model's. Each form and gloss is found first exactly, then ignoring case, whitespace, and apostrophe style; where it occurs more than once, the first occurrence after the previous constituent wins. Each is then widened to whole whitespace-delimited tokens and trimmed of trailing `,;:`, which is the selection granularity of `adjudicate_sample.jl`, so a model's span and a human's are comparable. Node spans and residuals are derived as the authoring tool derives them.
+
+A run directory, by default `benchmark/samples/<sample_id>/predictions/<prompt>__<model>/`, holds `run.toml` (model, options, prompt name and hash, commit), `records.jsonl`, and `responses.jsonl`, one line per item with its status, timing, token counts, and the model's raw answer. Statuses other than `committed` are authoring failures, named by the harness's rejection category, or `unusable_answer` for output that isn't the requested JSON, or `unlocated_text` for a form or gloss not found in the target. Items outside the pass's current population are skipped as `ineligible`, as are items whose block has moved or whose surface has changed. A run resumes where it stopped, and refuses to resume under different settings. A transport failure stops the run rather than recording a failure for every remaining item.
+
+Prompts are TOML files under `prompts/<pass>/`, with a `name` that versions the prompt, `system` and `user` texts, and `[[example]]` tables. The user template takes `{{headword}}`, `{{entry_nature}}`, `{{rubrique}}`, `{{kind}}`, `{{target}}`, `{{markers}}`, and `{{context}}`; an example supplies any of these plus its `answer`.
+
+`tools/benchmark/score.jl` compares a run against gold, matching items by file and surface hash. It prints a summary, writes it to the run directory as `score.toml`, and writes the disagreements, each rendered as `render_gold.jl` renders gold, to `listing.txt`.
 
 ## Evaluation priorities
 
@@ -164,12 +170,15 @@ tools/benchmark/
 	sample_population.jl
 	adjudicate_sample.jl
 	render_gold.jl
+	predict.jl
 	score.jl
+
+prompts/<pass>/
 
 experiments/<pass>/
 ```
 
-`score.jl` and `experiments/` are planned and do not exist yet; neither does any `predictions/` directory.
+`experiments/` is planned and does not exist yet.
 
 Anything in `tools/` is re-runnable and produces a committed artifact under `benchmark/`. One-off corpus analysis goes in `experiments/`, whose gitignore is inverted — ignore everything, un-ignore `*.md`, `manifest.toml`, `metrics.toml`. The inverted default is what keeps that directory from becoming a catchall.
 
